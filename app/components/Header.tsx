@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Language = "vi" | "en";
 
 export default function Header() {
   const [language, setLanguage] = useState<Language>("vi");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const mobileButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("language");
@@ -39,6 +42,33 @@ export default function Header() {
       );
     };
   }, []);
+
+  // Đóng menu khi bấm ra bên ngoài
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(target) &&
+        mobileButtonRef.current &&
+        !mobileButtonRef.current.contains(target)
+      ) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+    };
+  }, [mobileMenuOpen]);
 
   const changeLanguage = (lang: Language) => {
     setLanguage(lang);
@@ -229,6 +259,7 @@ export default function Header() {
               MOBILE MENU BUTTON
               =================================================== */}
           <button
+            ref={mobileButtonRef}
             type="button"
             onClick={() => setMobileMenuOpen((value) => !value)}
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
@@ -268,12 +299,15 @@ export default function Header() {
           MOBILE MENU
           ======================================================= */}
       {mobileMenuOpen && (
-        <div className="border-t border-white/10 bg-black/75 px-4 pb-5 pt-3 backdrop-blur-md md:hidden">
+        <div
+          ref={mobileMenuRef}
+          className="absolute right-4 top-[calc(100%+8px)] w-56 overflow-hidden rounded-xl border border-white/20 bg-black/85 shadow-xl backdrop-blur-md sm:right-6 md:hidden"
+        >
           <nav className="flex flex-col">
             <Link
               href="/"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 py-3 text-sm font-medium text-white transition hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
             >
               {isVi ? "Trang chủ" : "Home"}
             </Link>
@@ -281,7 +315,7 @@ export default function Header() {
             <Link
               href="/#hotels"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 py-3 text-sm font-medium text-white transition hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
             >
               {isVi ? "Khách sạn" : "Hotels"}
             </Link>
@@ -289,7 +323,7 @@ export default function Header() {
             <Link
               href="/phong"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 py-3 text-sm font-medium text-white transition hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
             >
               {isVi ? "Phòng" : "Rooms"}
             </Link>
@@ -297,7 +331,7 @@ export default function Header() {
             <Link
               href="/trai-nghiem"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 py-3 text-sm font-medium text-white transition hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
             >
               {isVi ? "Trải nghiệm" : "Experiences"}
             </Link>
@@ -305,7 +339,7 @@ export default function Header() {
             <Link
               href="/blog"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 py-3 text-sm font-medium text-white transition hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
             >
               Blog
             </Link>
@@ -313,13 +347,13 @@ export default function Header() {
             <Link
               href="/lien-he"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 py-3 text-sm font-medium text-white transition hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
             >
               {isVi ? "Liên hệ" : "Contact"}
             </Link>
 
             {/* MOBILE LANGUAGE */}
-            <div className="flex items-center gap-3 pt-4">
+            <div className="flex items-center gap-3 px-5 py-3">
               <button
                 type="button"
                 onClick={() => changeLanguage("vi")}

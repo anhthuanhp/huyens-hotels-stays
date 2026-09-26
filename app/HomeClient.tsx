@@ -330,13 +330,13 @@ export default function HomeClient({
                     <div className="max-w-2xl text-white">
                       <h1
                         id={index === 0 ? "hero-heading" : undefined}
-                        className="text-2xl font-bold leading-tight text-white drop-shadow-md sm:text-3xl lg:text-4xl"
+                        className="text-sm font-bold leading-tight text-white drop-shadow-md sm:text-3xl lg:text-4xl"
                       >
                         {heroTitle}
                       </h1>
 
                       {heroDescription && (
-                        <p className="mt-3 max-w-xl text-base text-white drop-shadow-sm sm:text-lg">
+                        <p className="mt-2 max-w-xl text-xs text-white drop-shadow-sm sm:mt-3 sm:text-lg">
                           {heroDescription}
                         </p>
                       )}
