@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,6 +14,12 @@ type Booking = {
   status: string;
 };
 
+type Visit = {
+  session_id: string;
+  device_type: string;
+  created_at: string;
+};
+
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
 
@@ -21,6 +28,13 @@ export default function AdminDashboardPage() {
   const [todayCheckOut, setTodayCheckOut] = useState(0);
   const [confirmedCount, setConfirmedCount] = useState(0);
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
+
+  const [visitLoading, setVisitLoading] = useState(true);
+  const [todayViews, setTodayViews] = useState(0);
+  const [todayVisitors, setTodayVisitors] = useState(0);
+  const [sevenDayViews, setSevenDayViews] = useState(0);
+  const [sevenDayMobile, setSevenDayMobile] = useState(0);
+  const [sevenDayDesktop, setSevenDayDesktop] = useState(0);
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -72,6 +86,60 @@ export default function AdminDashboardPage() {
     loadDashboard();
   }, []);
 
+  useEffect(() => {
+    const loadVisitorStatistics = async () => {
+      setVisitLoading(true);
+
+      const now = new Date();
+
+      const startToday = new Date(now);
+      startToday.setHours(0, 0, 0, 0);
+
+      const startSevenDays = new Date(startToday);
+      startSevenDays.setDate(startSevenDays.getDate() - 6);
+
+      const { data, error } = await supabase
+        .from("website_visits")
+        .select("session_id, device_type, created_at")
+        .gte("created_at", startSevenDays.toISOString())
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Lỗi tải thống kê truy cập:", error);
+        setVisitLoading(false);
+        return;
+      }
+
+      const visits = (data ?? []) as Visit[];
+
+      const todayVisits = visits.filter((visit) => {
+        const visitDate = new Date(visit.created_at);
+        return visitDate >= startToday;
+      });
+
+      const todayVisitorIds = new Set(
+        todayVisits.map((visit) => visit.session_id)
+      );
+
+      setTodayViews(todayVisits.length);
+      setTodayVisitors(todayVisitorIds.size);
+
+      setSevenDayViews(visits.length);
+
+      setSevenDayMobile(
+        visits.filter((visit) => visit.device_type === "mobile").length
+      );
+
+      setSevenDayDesktop(
+        visits.filter((visit) => visit.device_type === "desktop").length
+      );
+
+      setVisitLoading(false);
+    };
+
+    loadVisitorStatistics();
+  }, []);
+
   const formatDate = (date: string) => {
     if (!date) return "";
 
@@ -113,6 +181,59 @@ export default function AdminDashboardPage() {
           value={loading ? "—" : confirmedCount}
         />
       </div>
+
+      <section className="mt-8 rounded-2xl border border-slate-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-semibold text-slate-900">
+              Thống kê truy cập website
+            </h2>
+
+            <p className="mt-1 text-xs text-slate-500">
+              Tổng quan lượt xem và khách truy cập.
+            </p>
+          </div>
+
+          <Link
+            href="/admin/thong-ke"
+            className="w-fit rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Xem chi tiết
+          </Link>
+        </div>
+
+        <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-5">
+          <VisitorCard
+            title="Lượt xem hôm nay"
+            value={visitLoading ? "—" : todayViews}
+            description="Hôm nay"
+          />
+
+          <VisitorCard
+            title="Khách hôm nay"
+            value={visitLoading ? "—" : todayVisitors}
+            description="Phiên truy cập duy nhất"
+          />
+
+          <VisitorCard
+            title="Lượt xem 7 ngày"
+            value={visitLoading ? "—" : sevenDayViews}
+            description="7 ngày gần nhất"
+          />
+
+          <VisitorCard
+            title="Mobile"
+            value={visitLoading ? "—" : sevenDayMobile}
+            description="Lượt xem · 7 ngày"
+          />
+
+          <VisitorCard
+            title="Desktop"
+            value={visitLoading ? "—" : sevenDayDesktop}
+            description="Lượt xem · 7 ngày"
+          />
+        </div>
+      </section>
 
       <div className="mt-8 rounded-2xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
@@ -202,6 +323,30 @@ function DashboardCard({
 
       <div className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
         {value}
+      </div>
+    </div>
+  );
+}
+
+function VisitorCard({
+  title,
+  value,
+  description,
+}: {
+  title: string;
+  value: string | number;
+  description: string;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+      <div className="text-sm text-slate-500">{title}</div>
+
+      <div className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+        {value}
+      </div>
+
+      <div className="mt-1 text-xs text-slate-400">
+        {description}
       </div>
     </div>
   );

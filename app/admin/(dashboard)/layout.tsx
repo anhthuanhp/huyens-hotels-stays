@@ -1,3 +1,4 @@
+
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
@@ -13,6 +14,10 @@ const menuItems = [
   {
     href: "/admin",
     label: "Tổng quan",
+  },
+  {
+    href: "/admin/thong-ke",
+    label: "Thống kê truy cập",
   },
   {
     href: "/admin/dat-phong",
@@ -39,8 +44,8 @@ const menuItems = [
     label: "Quản lý tiện nghi",
   },
   {
-  href: "/admin/chinh-sach",
-  label: "Quản lý chính sách",
+    href: "/admin/chinh-sach",
+    label: "Quản lý chính sách",
   },
   {
     href: "/admin/dich-vu",
