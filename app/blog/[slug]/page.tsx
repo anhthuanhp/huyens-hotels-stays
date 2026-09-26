@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { blogPosts } from "../../data/blog";
@@ -16,8 +18,7 @@ const { slug } = use(params);
 const [language, setLanguage] = useState<Language>("vi");
 
 useEffect(() => {
-const savedLanguage =
-localStorage.getItem("huyen-language");
+const savedLanguage = localStorage.getItem("huyen-language");
 
 if (savedLanguage === "vi" || savedLanguage === "en") {
   setLanguage(savedLanguage);
@@ -59,7 +60,7 @@ return (
 <div className="text-center">
 <h1 className="text-3xl font-semibold">
 {language === "vi"
-? "Kh├┤ng t├¼m thß║Ñy b├ái viß║┐t"
+? "Không tìm thấy bài viết"
 : "Article not found"}
 </h1>
 
@@ -68,7 +69,7 @@ return (
         className="mt-6 inline-block rounded-full bg-sky-600 px-6 py-3 text-sm font-semibold text-white"
       >
         {language === "vi"
-          ? "QUAY Lß║áI BLOG"
+          ? "QUAY LẠI BLOG"
           : "BACK TO BLOG"}
       </Link>
     </div>
@@ -102,23 +103,25 @@ Huyen's Hotels & Stays
 </Link>
 
       <nav className="hidden items-center gap-7 text-sm font-medium lg:flex">
-        <Link href="/" className="hover:text-sky-600">
-          {language === "vi" ? "TRANG CHß╗ª" : "HOME"}
+        <Link
+          href="/"
+          className="hover:text-sky-600"
+        >
+          {language === "vi" ? "TRANG CHỦ" : "HOME"}
         </Link>
 
         <Link
           href="/kham-pha-huyens"
           className="hover:text-sky-600"
         >
-          {language === "vi" ? "KH├üM PH├ü" : "DISCOVER"}
+          {language === "vi" ? "KHÁM PHÁ" : "DISCOVER"}
         </Link>
 
-        <Link href="/phong" className="hover:text-sky-600">
-          {language === "vi" ? "PH├ÆNG" : "ROOMS"}
-        </Link>
-
-        <Link href="/uu-dai" className="hover:text-sky-600">
-          {language === "vi" ? "╞»U ─É├âI" : "OFFERS"}
+        <Link
+          href="/phong"
+          className="hover:text-sky-600"
+        >
+          {language === "vi" ? "PHÒNG" : "ROOMS"}
         </Link>
 
         <Link
@@ -126,7 +129,7 @@ Huyen's Hotels & Stays
           className="hover:text-sky-600"
         >
           {language === "vi"
-            ? "TRß║óI NGHIß╗åM"
+            ? "TRẢI NGHIỆM"
             : "EXPERIENCES"}
         </Link>
 
@@ -141,6 +144,7 @@ Huyen's Hotels & Stays
       <div className="flex items-center gap-4">
         <div className="hidden items-center gap-2 text-xs font-semibold sm:flex">
           <button
+            type="button"
             onClick={() => {
               localStorage.setItem(
                 "huyen-language",
@@ -170,6 +174,7 @@ Huyen's Hotels & Stays
           <span className="text-slate-300">|</span>
 
           <button
+            type="button"
             onClick={() => {
               localStorage.setItem(
                 "huyen-language",
@@ -202,7 +207,7 @@ Huyen's Hotels & Stays
           className="rounded-full bg-sky-600 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-sky-700"
         >
           {language === "vi"
-            ? "─Éß║╢T PH├ÆNG"
+            ? "ĐẶT PHÒNG"
             : "BOOK NOW"}
         </Link>
       </div>
@@ -225,12 +230,12 @@ Huyen's Hotels & Stays
           <div className="mb-5 flex items-center gap-3 text-sm font-semibold uppercase tracking-wider text-sky-300">
             <span>{category}</span>
 
-            <span className="text-white/40">ΓÇó</span>
+            <span className="text-white/40">•</span>
 
             <span>
               {post.readTime}{" "}
               {language === "vi"
-                ? "ph├║t ─æß╗ìc"
+                ? "phút đọc"
                 : "min read"}
             </span>
           </div>
@@ -280,9 +285,9 @@ Huyen's Hotels & Stays
         href="/blog"
         className="inline-flex rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold transition hover:border-sky-600 hover:text-sky-600"
       >
-        ΓåÉ{" "}
+        ←{" "}
         {language === "vi"
-          ? "QUAY Lß║áI BLOG"
+          ? "QUAY LẠI BLOG"
           : "BACK TO BLOG"}
       </Link>
     </div>
@@ -292,13 +297,13 @@ Huyen's Hotels & Stays
   <section className="bg-slate-900 px-6 py-20 text-center text-white">
     <h2 className="text-3xl font-semibold md:text-4xl">
       {language === "vi"
-        ? "T├¼m n╞íi l╞░u tr├║ cho h├ánh tr├¼nh cß╗ºa bß║ín"
+        ? "Tìm nơi lưu trú cho hành trình của bạn"
         : "Find a place to stay for your journey"}
     </h2>
 
     <p className="mx-auto mt-4 max-w-2xl leading-7 text-white/70">
       {language === "vi"
-        ? "Kh├ím ph├í c├íc kh├ích sß║ín v├á homestay thuß╗Öc Huyen's Hotels & Stays."
+        ? "Khám phá các khách sạn và homestay thuộc Huyen's Hotels & Stays."
         : "Explore hotels and homestays from Huyen's Hotels & Stays."}
     </p>
 
@@ -307,7 +312,7 @@ Huyen's Hotels & Stays
       className="mt-8 inline-flex rounded-full bg-sky-600 px-7 py-3 font-semibold text-white transition hover:bg-sky-700"
     >
       {language === "vi"
-        ? "T├îM PH├ÆNG"
+        ? "TÌM PHÒNG"
         : "FIND A ROOM"}
     </Link>
   </section>
@@ -328,7 +333,7 @@ Huyen's Hotels & Stays
           className="hover:text-sky-600"
         >
           {language === "vi"
-            ? "Kh├ím ph├í"
+            ? "Khám phá"
             : "Discover"}
         </Link>
 
@@ -337,17 +342,8 @@ Huyen's Hotels & Stays
           className="hover:text-sky-600"
         >
           {language === "vi"
-            ? "Ph├▓ng"
+            ? "Phòng"
             : "Rooms"}
-        </Link>
-
-        <Link
-          href="/uu-dai"
-          className="hover:text-sky-600"
-        >
-          {language === "vi"
-            ? "╞»u ─æ├úi"
-            : "Offers"}
         </Link>
 
         <Link
@@ -355,7 +351,7 @@ Huyen's Hotels & Stays
           className="hover:text-sky-600"
         >
           {language === "vi"
-            ? "Trß║úi nghiß╗çm"
+            ? "Trải nghiệm"
             : "Experiences"}
         </Link>
 
