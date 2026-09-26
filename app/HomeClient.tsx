@@ -326,7 +326,7 @@ export default function HomeClient({
 
                   <div className="absolute inset-0 z-10 bg-black/15" />
 
-                  <div className="absolute inset-0 z-20 flex items-center px-4 sm:px-8">
+                  <div className="absolute inset-0 z-20 flex items-end px-4 pb-6 sm:px-8 sm:pb-8">
                     <div className="max-w-2xl text-white">
                       <h1
                         id={index === 0 ? "hero-heading" : undefined}
