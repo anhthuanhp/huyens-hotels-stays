@@ -82,7 +82,6 @@ export default function Header() {
             MENU DESKTOP
             ===================================================== */}
         <nav className="hidden items-center gap-8 md:flex">
-          {/* TRANG CHỦ */}
           <Link
             href="/"
             className="text-sm font-medium text-white transition hover:text-sky-300"
@@ -90,7 +89,6 @@ export default function Header() {
             {isVi ? "Trang chủ" : "Home"}
           </Link>
 
-          {/* KHÁCH SẠN */}
           <Link
             href="/#hotels"
             className="text-sm font-medium text-white transition hover:text-sky-300"
@@ -98,7 +96,6 @@ export default function Header() {
             {isVi ? "Khách sạn" : "Hotels"}
           </Link>
 
-          {/* PHÒNG */}
           <Link
             href="/phong"
             className="text-sm font-medium text-white transition hover:text-sky-300"
@@ -106,7 +103,6 @@ export default function Header() {
             {isVi ? "Phòng" : "Rooms"}
           </Link>
 
-          {/* TRẢI NGHIỆM */}
           <Link
             href="/trai-nghiem"
             className="text-sm font-medium text-white transition hover:text-sky-300"
@@ -114,7 +110,6 @@ export default function Header() {
             {isVi ? "Trải nghiệm" : "Experiences"}
           </Link>
 
-          {/* BLOG */}
           <Link
             href="/blog"
             className="text-sm font-medium text-white transition hover:text-sky-300"
@@ -122,7 +117,6 @@ export default function Header() {
             Blog
           </Link>
 
-          {/* LIÊN HỆ */}
           <Link
             href="/lien-he"
             className="text-sm font-medium text-white transition hover:text-sky-300"
@@ -139,7 +133,6 @@ export default function Header() {
               LANGUAGE DESKTOP
               =================================================== */}
           <div className="hidden items-center gap-2 md:flex">
-            {/* TIẾNG VIỆT */}
             <button
               type="button"
               onClick={() => changeLanguage("vi")}
@@ -175,11 +168,8 @@ export default function Header() {
               <span>VI</span>
             </button>
 
-            <span className="text-white/30">
-              |
-            </span>
+            <span className="text-white/30">|</span>
 
-            {/* TIẾNG ANH */}
             <button
               type="button"
               onClick={() => changeLanguage("en")}
@@ -206,28 +196,24 @@ export default function Header() {
                   fill="#012169"
                 />
 
-                {/* WHITE DIAGONALS */}
                 <path
                   d="M0 0L28 20M28 0L0 20"
                   stroke="#FFFFFF"
                   strokeWidth="4"
                 />
 
-                {/* RED DIAGONALS */}
                 <path
                   d="M0 0L28 20M28 0L0 20"
                   stroke="#C8102E"
                   strokeWidth="2"
                 />
 
-                {/* WHITE CROSS */}
                 <path
                   d="M14 0V20M0 10H28"
                   stroke="#FFFFFF"
                   strokeWidth="6"
                 />
 
-                {/* RED CROSS */}
                 <path
                   d="M14 0V20M0 10H28"
                   stroke="#C8102E"
@@ -247,11 +233,11 @@ export default function Header() {
             onClick={() => setMobileMenuOpen((value) => !value)}
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
-            className="flex h-10 w-10 items-center justify-center rounded-lg bg-black/20 text-white backdrop-blur-sm transition hover:bg-black/30 md:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-neutral-900 shadow-md transition hover:bg-neutral-100 md:hidden"
           >
             <span className="relative block h-5 w-5">
               <span
-                className={`absolute left-0 top-1 block h-0.5 w-5 bg-white transition ${
+                className={`absolute left-0 top-1 block h-0.5 w-5 bg-neutral-900 transition ${
                   mobileMenuOpen
                     ? "translate-y-2 rotate-45"
                     : ""
@@ -259,7 +245,7 @@ export default function Header() {
               />
 
               <span
-                className={`absolute left-0 top-2.5 block h-0.5 w-5 bg-white transition ${
+                className={`absolute left-0 top-2.5 block h-0.5 w-5 bg-neutral-900 transition ${
                   mobileMenuOpen
                     ? "opacity-0"
                     : "opacity-100"
@@ -267,7 +253,7 @@ export default function Header() {
               />
 
               <span
-                className={`absolute left-0 top-4 block h-0.5 w-5 bg-white transition ${
+                className={`absolute left-0 top-4 block h-0.5 w-5 bg-neutral-900 transition ${
                   mobileMenuOpen
                     ? "-translate-y-1 -rotate-45"
                     : ""
@@ -364,9 +350,7 @@ export default function Header() {
                 <span>VI</span>
               </button>
 
-              <span className="text-white/30">
-                |
-              </span>
+              <span className="text-white/30">|</span>
 
               <button
                 type="button"
