@@ -128,6 +128,41 @@ const customerReviews = [
 
 const SLIDE_DURATION = 20;
 
+const heroFallbackTexts = [
+  {
+    titleVi: "Thoải mái theo cách của bạn.",
+    titleEn: "Comfortable, your way.",
+    descriptionVi:
+      "Không gian lưu trú phù hợp cho mỗi hành trình.",
+    descriptionEn:
+      "A stay that fits every journey.",
+  },
+  {
+    titleVi: "Một nơi để nghỉ ngơi thật trọn vẹn.",
+    titleEn: "A place to truly unwind.",
+    descriptionVi:
+      "Tận hưởng sự thoải mái theo cách riêng của bạn.",
+    descriptionEn:
+      "Enjoy comfort in your own way.",
+  },
+  {
+    titleVi: "Ở gần hơn với những điều bạn yêu thích.",
+    titleEn: "Closer to what you love.",
+    descriptionVi:
+      "Các điểm lưu trú thuận tiện tại TP. Hồ Chí Minh.",
+    descriptionEn:
+      "Convenient stays in Ho Chi Minh City.",
+  },
+  {
+    titleVi: "Hành trình của bạn, lựa chọn của bạn.",
+    titleEn: "Your journey, your choice.",
+    descriptionVi:
+      "Khám phá những không gian lưu trú mang dấu ấn Huyen’s.",
+    descriptionEn:
+      "Discover stays with the Huyen’s touch.",
+  },
+] as const;
+
 export default function HomeClient({
   heroSlides,
   hotels,
@@ -251,58 +286,65 @@ export default function HomeClient({
             className="relative h-[320px] overflow-hidden rounded-2xl bg-neutral-900 sm:h-[360px] lg:h-[420px]"
             aria-live="polite"
           >
-            {heroSlides.map((slide, index) => (
-              <div
-                key={slide.id}
-                className="absolute inset-0"
-                style={{
-                  opacity: heroImagesReady ? undefined : index === 0 ? 1 : 0,
-                  animationName: heroImagesReady ? "heroFade" : "none",
-                  animationDuration: `${SLIDE_DURATION}s`,
-                  animationTimingFunction: "linear",
-                  animationIterationCount: "infinite",
-                  animationDelay: `${index * perSlide}s`,
-                  animationFillMode: "both",
-                }}
-              >
-                {slide.image_url && (
-                  <Image
-                    src={slide.image_url}
-                    alt={t(
-                      slide.title_vi,
-                      slide.title_en,
-                      "Banner trang chủ"
-                    )}
-                    fill
-                    priority={index === 0}
-                    quality={95}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) calc(100vw - 32px), 1280px"
-                    className="object-cover"
-                  />
-                )}
-              </div>
-            ))}
+            {heroSlides.map((slide, index) => {
+              const fallback =
+                heroFallbackTexts[index % heroFallbackTexts.length];
 
-            <div className="absolute inset-0 z-10 bg-black/15" />
+              const heroTitle = isVi
+                ? slide.title_vi || fallback.titleVi
+                : slide.title_en || fallback.titleEn;
 
-            <div className="absolute inset-0 z-20 flex items-center px-4 sm:px-8">
-              <div className="max-w-2xl text-white">
-                <h1
-                  id="hero-heading"
-                  className="text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl"
+              const heroDescription = isVi
+                ? slide.description_vi || fallback.descriptionVi
+                : slide.description_en || fallback.descriptionEn;
+
+              return (
+                <div
+                  key={slide.id}
+                  className="absolute inset-0"
+                  style={{
+                    opacity: heroImagesReady ? undefined : index === 0 ? 1 : 0,
+                    animationName: heroImagesReady ? "heroFade" : "none",
+                    animationDuration: `${SLIDE_DURATION}s`,
+                    animationTimingFunction: "linear",
+                    animationIterationCount: "infinite",
+                    animationDelay: `${index * perSlide}s`,
+                    animationFillMode: "both",
+                  }}
                 >
-                  {isVi
-                    ? "Khách sạn Quận 1 — Huyen's Hotels & Stays"
-                    : "Hotels in District 1 — Huyen's Hotels & Stays"}
-                </h1>
+                  {slide.image_url && (
+                    <Image
+                      src={slide.image_url}
+                      alt={heroTitle || "Banner trang chủ"}
+                      fill
+                      priority={index === 0}
+                      quality={95}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1280px) calc(100vw - 32px), 1280px"
+                      className="object-cover"
+                    />
+                  )}
 
-                <p className="mt-3 max-w-xl text-base text-white/90 sm:text-lg">
-                  {isVi
-                    ? "Lưu trú tiện nghi, riêng tư tại trung tâm Quận 1 TP.HCM. Đặt phòng trực tiếp giá tốt nhất."
-                    : "Comfortable stays in central District 1, HCMC. Book directly for best rates."}
-                </p>
-              </div>
-            </div>
+                  <div className="absolute inset-0 z-10 bg-black/15" />
+
+                  <div className="absolute inset-0 z-20 flex items-center px-4 sm:px-8">
+                    <div className="max-w-2xl text-white">
+                      <h1
+                        id={index === 0 ? "hero-heading" : undefined}
+                        className="text-2xl font-bold leading-tight text-white drop-shadow-md sm:text-3xl lg:text-4xl"
+                      >
+                        {heroTitle}
+                      </h1>
+
+                      {heroDescription && (
+                        <p className="mt-3 max-w-xl text-base text-white drop-shadow-sm sm:text-lg">
+                          {heroDescription}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
 
             <style>{`
               @keyframes heroFade {
