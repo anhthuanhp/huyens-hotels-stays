@@ -8,12 +8,11 @@ import Footer from "../components/Footer";
 type Language = "vi" | "en";
 
 export default function BlogPage() {
-  const [language, setLanguage] =
-    useState<Language>("vi");
+  const [language, setLanguage] = useState<Language>("vi");
 
   useEffect(() => {
     const savedLanguage =
-      localStorage.getItem("language");
+      localStorage.getItem("huyen-language");
 
     if (
       savedLanguage === "vi" ||
@@ -22,9 +21,7 @@ export default function BlogPage() {
       setLanguage(savedLanguage);
     }
 
-    const handleLanguageChange = (
-      event: Event
-    ) => {
+    const handleLanguageChange = (event: Event) => {
       const customEvent =
         event as CustomEvent<Language>;
 

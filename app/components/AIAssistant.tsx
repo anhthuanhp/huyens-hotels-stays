@@ -10,9 +10,7 @@ import {
 import { createPortal } from "react-dom";
 import {
   Bot,
-  ChevronDown,
   Loader2,
-  MessageCircle,
   Send,
   Sparkles,
   X,
@@ -28,6 +26,12 @@ type ChatMessage = {
   role: "user" | "assistant";
   content: string;
 };
+
+declare global {
+  interface WindowEventMap {
+    "open-ai-assistant": Event;
+  }
+}
 
 const INITIAL_MESSAGE_VI =
   "Xin chào! Tôi là trợ lý của Huyen's. Tôi có thể giúp bạn tìm thông tin về khách sạn, phòng, tiện nghi, giá phòng và đặt phòng.";
@@ -73,6 +77,28 @@ export default function AIAssistant({
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  /*
+   * Nhận lệnh từ nút Help trong ContactFloat.
+   * Đây là cùng một AIAssistant đang được render trong HomeClient.
+   */
+  useEffect(() => {
+    function handleOpenAI() {
+      setIsOpen(true);
+    }
+
+    window.addEventListener(
+      "open-ai-assistant",
+      handleOpenAI
+    );
+
+    return () => {
+      window.removeEventListener(
+        "open-ai-assistant",
+        handleOpenAI
+      );
+    };
   }, []);
 
   useEffect(() => {
@@ -275,58 +301,6 @@ export default function AIAssistant({
 
   const assistantUI = (
     <>
-      {!isOpen && (
-        <button
-          type="button"
-          onClick={() => setIsOpen(true)}
-          aria-label={
-            isVi
-              ? "Mở trợ lý AI"
-              : "Open AI assistant"
-          }
-          className="
-            fixed
-            bottom-5
-            right-5
-            z-[9999]
-            flex
-            h-14
-            w-14
-            items-center
-            justify-center
-            rounded-full
-            bg-blue-600
-            text-white
-            shadow-xl
-            transition
-            hover:scale-105
-            hover:bg-blue-700
-            active:scale-95
-          "
-        >
-          <MessageCircle size={25} />
-
-          <span
-            className="
-              absolute
-              -right-1
-              -top-1
-              flex
-              h-5
-              w-5
-              items-center
-              justify-center
-              rounded-full
-              bg-white
-              text-blue-600
-              shadow
-            "
-          >
-            <Sparkles size={12} />
-          </span>
-        </button>
-      )}
-
       {isOpen && (
         <div
           className="
@@ -706,3 +680,4 @@ export default function AIAssistant({
     document.body
   );
 }
+

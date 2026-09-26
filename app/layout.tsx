@@ -23,7 +23,7 @@ type LayoutProps = {
 export const metadata: Metadata = {
   title: "Huyen's Hotels & Stays — Khách sạn & Lưu trú tại Quận 1, TP.HCM",
   description:
-    "Khách sạn, guesthouse & homestay tại trung tâm Quận 1 TP.HCM. Không gian sạch sẽ, tiện nghi, riêng tư. Đặt phòng trực tiếp giá tốt nhất.",
+    "Khách sạn, guesthouse & homestay tại trung tâm TP.HCM. Không gian sạch sẽ, tiện nghi, riêng tư. Đặt phòng trực tiếp.",
   keywords: [
     "khách sạn quận 1",
     "homestay tphcm",
@@ -39,7 +39,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps) {
+export default function RootLayout({
+  children,
+}: LayoutProps) {
   return (
     <html
       lang="vi"

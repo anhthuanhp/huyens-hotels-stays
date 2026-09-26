@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -57,7 +56,7 @@ export default function RoomsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("language");
+    const savedLanguage = localStorage.getItem("huyen-language");
 
     if (savedLanguage === "vi" || savedLanguage === "en") {
       setLanguage(savedLanguage);
@@ -66,7 +65,10 @@ export default function RoomsPage() {
     const handleLanguageChange = (event: Event) => {
       const customEvent = event as CustomEvent<Language>;
 
-      if (customEvent.detail === "vi" || customEvent.detail === "en") {
+      if (
+        customEvent.detail === "vi" ||
+        customEvent.detail === "en"
+      ) {
         setLanguage(customEvent.detail);
       }
     };
@@ -74,7 +76,10 @@ export default function RoomsPage() {
     window.addEventListener("language-change", handleLanguageChange);
 
     return () => {
-      window.removeEventListener("language-change", handleLanguageChange);
+      window.removeEventListener(
+        "language-change",
+        handleLanguageChange
+      );
     };
   }, []);
 
@@ -104,12 +109,13 @@ export default function RoomsPage() {
           return;
         }
 
-        const hotels =
-          (hotelData ?? []).map((hotel) => ({
-            ...(hotel as Hotel),
-            business_model:
-              hotel.business_model === "monthly" ? "monthly" : "daily",
-          })) as Hotel[];
+        const hotels = (hotelData ?? []).map((hotel) => ({
+          ...(hotel as Hotel),
+          business_model:
+            hotel.business_model === "monthly"
+              ? "monthly"
+              : "daily",
+        })) as Hotel[];
 
         if (hotels.length === 0) {
           if (!cancelled) {
@@ -173,19 +179,23 @@ export default function RoomsPage() {
         let coverMap: Record<number, string> = {};
 
         if (roomIds.length > 0) {
-          const { data: mediaData, error: mediaError } = await supabase
-            .from("media")
-            .select(
-              "entity_id, public_url, is_cover, sort_order, status"
-            )
-            .eq("entity_type", "room")
-            .in("entity_id", roomIds)
-            .eq("status", "active")
-            .order("is_cover", { ascending: false })
-            .order("sort_order", { ascending: true });
+          const { data: mediaData, error: mediaError } =
+            await supabase
+              .from("media")
+              .select(
+                "entity_id, public_url, is_cover, sort_order, status"
+              )
+              .eq("entity_type", "room")
+              .in("entity_id", roomIds)
+              .eq("status", "active")
+              .order("is_cover", { ascending: false })
+              .order("sort_order", { ascending: true });
 
           if (mediaError) {
-            console.error("Load room media error:", mediaError);
+            console.error(
+              "Load room media error:",
+              mediaError
+            );
           } else {
             const media = (mediaData ?? []) as RoomMedia[];
 
@@ -251,7 +261,7 @@ export default function RoomsPage() {
       return language === "vi" ? "Liên hệ" : "Contact";
     }
 
-    return new Intl.NumberFormat("vi-VN").format(price) + "đ";
+    return `${new Intl.NumberFormat("vi-VN").format(price)} ₫`;
   };
 
   const getPriceUnit = (businessModel: BusinessModel) => {
@@ -264,10 +274,7 @@ export default function RoomsPage() {
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
-
-      {/* =====================================================
-          BACK TO MAIN
-          ===================================================== */}
+      {/* BACK TO MAIN */}
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center px-6 lg:px-10">
           <Link
@@ -275,6 +282,7 @@ export default function RoomsPage() {
             className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 transition hover:text-sky-600"
           >
             <span aria-hidden="true">←</span>
+
             <span>
               {language === "vi"
                 ? "Quay về trang chính"
@@ -284,9 +292,7 @@ export default function RoomsPage() {
         </div>
       </div>
 
-      {/* =====================================================
-          PAGE BANNER
-          ===================================================== */}
+      {/* PAGE BANNER */}
       <section className="relative mx-auto h-[220px] max-w-[1200px] overflow-hidden bg-[#eaf3f6]">
         <div className="relative z-10 flex h-full w-full items-center px-6 lg:px-10">
           <div className="text-slate-900">
@@ -309,9 +315,7 @@ export default function RoomsPage() {
         </div>
       </section>
 
-      {/* =====================================================
-          INTRO
-          ===================================================== */}
+      {/* INTRO */}
       <section className="mx-auto max-w-[1200px] px-6 py-16 lg:px-10">
         <div className="max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
@@ -332,9 +336,7 @@ export default function RoomsPage() {
         </div>
       </section>
 
-      {/* =====================================================
-          ROOM LIST
-          ===================================================== */}
+      {/* ROOM LIST */}
       <section className="mx-auto max-w-[1200px] px-6 pb-24 lg:px-10">
         {loading && (
           <div className="grid gap-8 md:grid-cols-2">
@@ -373,7 +375,9 @@ export default function RoomsPage() {
           <div className="grid gap-8 md:grid-cols-2">
             {rooms.map(({ room, hotel }) => {
               const roomName =
-                language === "vi" ? room.name_vi : room.name_en;
+                language === "vi"
+                  ? room.name_vi
+                  : room.name_en;
 
               const roomDescription =
                 language === "vi"
@@ -381,10 +385,14 @@ export default function RoomsPage() {
                   : room.description_en;
 
               const beds =
-                language === "vi" ? room.beds_vi : room.beds_en;
+                language === "vi"
+                  ? room.beds_vi
+                  : room.beds_en;
 
               const hotelName =
-                language === "vi" ? hotel.name_vi : hotel.name_en;
+                language === "vi"
+                  ? hotel.name_vi
+                  : hotel.name_en;
 
               const hotelAddress =
                 language === "vi"
@@ -443,7 +451,10 @@ export default function RoomsPage() {
 
                         {hotelAddress && (
                           <p className="mt-2 flex items-start gap-1.5 text-sm text-slate-500">
-                            <span aria-hidden="true">📍</span>
+                            <span aria-hidden="true">
+                              📍
+                            </span>
+
                             <span>{hotelAddress}</span>
                           </p>
                         )}
@@ -451,7 +462,9 @@ export default function RoomsPage() {
 
                       <div className="shrink-0 text-right">
                         <p className="text-xs text-slate-500">
-                          {language === "vi" ? "Từ" : "From"}
+                          {language === "vi"
+                            ? "Từ"
+                            : "From"}
                         </p>
 
                         <p className="text-lg font-bold text-slate-900">
@@ -554,9 +567,7 @@ export default function RoomsPage() {
         )}
       </section>
 
-      {/* =====================================================
-          CTA
-          ===================================================== */}
+      {/* CTA */}
       <section className="bg-slate-900">
         <div className="mx-auto max-w-[1200px] px-6 py-16 text-center lg:px-10">
           <h2 className="text-3xl font-semibold text-white md:text-4xl">
@@ -567,7 +578,7 @@ export default function RoomsPage() {
 
           <p className="mx-auto mt-4 max-w-2xl text-slate-300">
             {language === "vi"
-              ? "Tìm ngày lưu trú và kiểm tra phòng phù hợp với hành trình của bạn."
+              ? "Tìm ngay nơi lưu trú và kiểm tra phòng phù hợp với hành trình của bạn."
               : "Choose your dates and check the rooms available for your stay."}
           </p>
 
@@ -582,9 +593,7 @@ export default function RoomsPage() {
         </div>
       </section>
 
-      {/* =====================================================
-          FOOTER
-          ===================================================== */}
+      {/* FOOTER */}
       <footer className="bg-slate-950 text-white">
         <div className="mx-auto max-w-[1200px] px-6 py-12 lg:px-10">
           <div className="flex flex-col justify-between gap-8 md:flex-row">

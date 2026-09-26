@@ -125,11 +125,11 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
   const decreaseChildren = () => setChildren((v) => Math.max(0, v - 1));
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0">
       <div className="rounded-2xl border border-neutral-300 bg-white/70 p-2.5 shadow-lg backdrop-blur-md">
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-7">
+        <div className="grid min-w-0 grid-cols-2 gap-2 lg:grid-cols-7">
           {/* KHÁCH SẠN */}
-          <div className="lg:col-span-2">
+          <div className="col-span-2 min-w-0 lg:col-span-2">
             <label className="mb-1 block text-sm font-medium text-neutral-900">
               {isVi ? "Khách sạn" : "Hotel"}
             </label>
@@ -137,7 +137,7 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
             <select
               value={hotel}
               onChange={(e) => setHotel(e.target.value)}
-              className="h-9 w-full rounded-xl border border-neutral-400 bg-white px-4 text-sm text-neutral-900 shadow-sm outline-none transition hover:border-neutral-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+              className="h-9 w-full min-w-0 rounded-xl border border-neutral-400 bg-white px-3 text-sm text-neutral-900 shadow-sm outline-none transition hover:border-neutral-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 sm:px-4"
             >
               <option value="">
                 {isVi ? "Chọn khách sạn" : "Select hotel"}
@@ -152,14 +152,14 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
           </div>
 
           {/* NHẬN PHÒNG */}
-          <div className="min-w-0">
+          <div className="min-w-0 lg:col-span-1">
             <label className="mb-1 block text-sm font-medium text-neutral-900">
               {isVi ? "Nhận phòng" : "Check-in"}
             </label>
 
             <div
               onClick={() => openDatePicker(checkInRef)}
-              className="relative flex h-9 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-3 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-4"
+              className="relative flex h-9 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-2 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-4"
             >
               <input
                 ref={checkInRef}
@@ -179,11 +179,11 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
               />
 
               {checkIn ? (
-                <span className="relative z-0 block w-full truncate whitespace-nowrap text-sm text-neutral-900">
+                <span className="relative z-0 block w-full truncate whitespace-nowrap text-xs text-neutral-900 sm:text-sm">
                   {checkIn}
                 </span>
               ) : (
-                <span className="relative z-0 block w-full truncate whitespace-nowrap text-sm text-neutral-400">
+                <span className="relative z-0 block w-full truncate whitespace-nowrap text-xs text-neutral-400 sm:text-sm">
                   {isVi ? "Chọn ngày" : "Select date"}
                 </span>
               )}
@@ -191,14 +191,14 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
           </div>
 
           {/* TRẢ PHÒNG */}
-          <div className="min-w-0">
+          <div className="min-w-0 lg:col-span-1">
             <label className="mb-1 block text-sm font-medium text-neutral-900">
               {isVi ? "Trả phòng" : "Check-out"}
             </label>
 
             <div
               onClick={() => openDatePicker(checkOutRef)}
-              className="relative flex h-9 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-3 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-4"
+              className="relative flex h-9 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-2 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-4"
             >
               <input
                 ref={checkOutRef}
@@ -218,11 +218,11 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
               />
 
               {checkOut ? (
-                <span className="relative z-0 block w-full truncate whitespace-nowrap text-sm text-neutral-900">
+                <span className="relative z-0 block w-full truncate whitespace-nowrap text-xs text-neutral-900 sm:text-sm">
                   {checkOut}
                 </span>
               ) : (
-                <span className="relative z-0 block w-full truncate whitespace-nowrap text-sm text-neutral-400">
+                <span className="relative z-0 block w-full truncate whitespace-nowrap text-xs text-neutral-400 sm:text-sm">
                   {isVi ? "Chọn ngày" : "Select date"}
                 </span>
               )}
@@ -230,12 +230,12 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
           </div>
 
           {/* NGƯỜI LỚN */}
-          <div>
+          <div className="min-w-0 lg:col-span-1">
             <label className="mb-1 block text-sm font-medium text-neutral-900">
               {isVi ? "Người lớn" : "Adults"}
             </label>
 
-            <div className="flex h-9 w-full items-center justify-between rounded-xl border border-neutral-400 bg-white px-2 shadow-sm transition hover:border-neutral-500">
+            <div className="flex h-9 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
               <button
                 type="button"
                 onClick={decreaseAdults}
@@ -243,12 +243,12 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 aria-label={
                   isVi ? "Giảm số người lớn" : "Decrease adults"
                 }
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
               >
                 −
               </button>
 
-              <span className="min-w-[32px] text-center text-sm font-medium text-neutral-900">
+              <span className="min-w-[24px] text-center text-sm font-medium text-neutral-900">
                 {adults}
               </span>
 
@@ -258,7 +258,7 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 aria-label={
                   isVi ? "Tăng số người lớn" : "Increase adults"
                 }
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
               >
                 +
               </button>
@@ -266,12 +266,12 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
           </div>
 
           {/* TRẺ EM */}
-          <div>
+          <div className="min-w-0 lg:col-span-1">
             <label className="mb-1 block text-sm font-medium text-neutral-900">
               {isVi ? "Trẻ em" : "Children"}
             </label>
 
-            <div className="flex h-9 w-full items-center justify-between rounded-xl border border-neutral-400 bg-white px-2 shadow-sm transition hover:border-neutral-500">
+            <div className="flex h-9 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
               <button
                 type="button"
                 onClick={decreaseChildren}
@@ -279,12 +279,12 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 aria-label={
                   isVi ? "Giảm số trẻ em" : "Decrease children"
                 }
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
               >
                 −
               </button>
 
-              <span className="min-w-[32px] text-center text-sm font-medium text-neutral-900">
+              <span className="min-w-[24px] text-center text-sm font-medium text-neutral-900">
                 {children}
               </span>
 
@@ -294,7 +294,7 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 aria-label={
                   isVi ? "Tăng số trẻ em" : "Increase children"
                 }
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
               >
                 +
               </button>
@@ -302,7 +302,7 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
           </div>
 
           {/* NÚT TÌM */}
-          <div className="flex items-end">
+          <div className="col-span-2 flex items-end lg:col-span-1">
             <button
               type="button"
               onClick={handleSearch}

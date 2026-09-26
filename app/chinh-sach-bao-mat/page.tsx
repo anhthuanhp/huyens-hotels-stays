@@ -21,7 +21,7 @@ export default function PrivacyPolicyPage() {
 
   useEffect(() => {
     const savedLanguage =
-      localStorage.getItem("language") as Language | null;
+      localStorage.getItem("huyen-language") as Language | null;
 
     if (savedLanguage === "vi" || savedLanguage === "en") {
       setLanguage(savedLanguage);
@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
 
     const handleLanguageChange = () => {
       const currentLanguage =
-        localStorage.getItem("language") as Language | null;
+        localStorage.getItem("huyen-language") as Language | null;
 
       if (
         currentLanguage === "vi" ||
@@ -163,7 +163,10 @@ export default function PrivacyPolicyPage() {
             href="/"
             className="mb-8 inline-flex text-sm font-medium text-sky-600 hover:text-sky-700"
           >
-            ← {language === "vi" ? "Về trang chủ" : "Back to home"}
+            ←{" "}
+            {language === "vi"
+              ? "Về trang chủ"
+              : "Back to home"}
           </Link>
 
           {loading ? (

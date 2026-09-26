@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -8,7 +7,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BedDouble,
@@ -36,6 +35,7 @@ type Hotel = {
   description_en: string | null;
   image: string | null;
   status: string | null;
+  business_model: "daily" | "monthly" | null;
   latitude: number | null;
   longitude: number | null;
   map_url: string | null;
@@ -132,29 +132,15 @@ function parseAmenities(
           return item;
         }
 
-        if (
-          item &&
-          typeof item === "object"
-        ) {
-          const obj =
-            item as Record<
-              string,
-              unknown
-            >;
+        if (item && typeof item === "object") {
+          const obj = item as Record<string, unknown>;
 
           const selected =
             language === "vi"
-              ? obj.name_vi ??
-                obj.vi ??
-                obj.name
-              : obj.name_en ??
-                obj.en ??
-                obj.name;
+              ? obj.name_vi ?? obj.vi ?? obj.name
+              : obj.name_en ?? obj.en ?? obj.name;
 
-          return typeof selected ===
-            "string"
-            ? selected
-            : "";
+          return typeof selected === "string" ? selected : "";
         }
 
         return "";
@@ -168,40 +154,21 @@ function parseAmenities(
     if (!trimmed) return [];
 
     try {
-      const parsed = JSON.parse(
-        trimmed
-      );
+      const parsed = JSON.parse(trimmed);
 
       if (Array.isArray(parsed)) {
-        return parseAmenities(
-          parsed,
-          language
-        );
+        return parseAmenities(parsed, language);
       }
 
-      if (
-        parsed &&
-        typeof parsed === "object"
-      ) {
-        const obj =
-          parsed as Record<
-            string,
-            unknown
-          >;
+      if (parsed && typeof parsed === "object") {
+        const obj = parsed as Record<string, unknown>;
 
         const selected =
           language === "vi"
-            ? obj.name_vi ??
-              obj.vi ??
-              obj.name
-            : obj.name_en ??
-              obj.en ??
-              obj.name;
+            ? obj.name_vi ?? obj.vi ?? obj.name
+            : obj.name_en ?? obj.en ?? obj.name;
 
-        if (
-          typeof selected ===
-          "string"
-        ) {
+        if (typeof selected === "string") {
           return [selected];
         }
       }
@@ -213,27 +180,15 @@ function parseAmenities(
       .filter(Boolean);
   }
 
-  if (
-    typeof value === "object"
-  ) {
-    const obj =
-      value as Record<
-        string,
-        unknown
-      >;
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
 
     const selected =
       language === "vi"
-        ? obj.name_vi ??
-          obj.vi ??
-          obj.name
-        : obj.name_en ??
-          obj.en ??
-          obj.name;
+        ? obj.name_vi ?? obj.vi ?? obj.name
+        : obj.name_en ?? obj.en ?? obj.name;
 
-    return typeof selected ===
-      "string" &&
-      selected.trim()
+    return typeof selected === "string" && selected.trim()
       ? [selected.trim()]
       : [];
   }
@@ -241,140 +196,51 @@ function parseAmenities(
   return [];
 }
 
-function getRoomPrice(
-  room: Room
-): number | null {
-  const value =
-    room.base_price ??
-    room.price ??
-    null;
+function getRoomPrice(room: Room): number | null {
+  const value = room.base_price ?? room.price ?? null;
 
-  if (
-    value == null ||
-    value === ""
-  ) {
+  if (value == null || value === "") {
     return null;
   }
 
   const numberValue = Number(value);
 
-  return Number.isFinite(numberValue)
-    ? numberValue
-    : null;
+  return Number.isFinite(numberValue) ? numberValue : null;
 }
 
 /**
- * Tìm đơn vị giá trong dữ liệu Supabase.
- * Hỗ trợ các tên cột thường gặp.
+ * Đơn vị giá lấy đúng theo business_model
+ * được quy định tại admin/khach-san:
+ *
+ * daily   -> ngày
+ * monthly -> tháng
  */
-function getPriceUnit(
-  room: Room,
+function getBusinessModelUnit(
+  businessModel: "daily" | "monthly" | null | undefined,
   language: Language
 ): string {
-  const possibleKeys = [
-    "price_unit",
-    "pricing_unit",
-    "rate_unit",
-    "unit",
-    "price_type",
-    "pricing_type",
-    "rate_type",
-    "price_period",
-    "pricing_period",
-    "billing_unit",
-  ];
-
-  let value: unknown = null;
-
-  for (const key of possibleKeys) {
-    if (
-      room[key] !== undefined &&
-      room[key] !== null &&
-      room[key] !== ""
-    ) {
-      value = room[key];
-      break;
-    }
-  }
-
-  if (
-    value &&
-    typeof value === "object"
-  ) {
-    const obj =
-      value as Record<
-        string,
-        unknown
-      >;
-
-    value =
-      language === "vi"
-        ? obj.name_vi ??
-          obj.vi ??
-          obj.name ??
-          obj.value
-        : obj.name_en ??
-          obj.en ??
-          obj.name ??
-          obj.value;
-  }
-
-  const normalized =
-    String(value ?? "")
-      .trim()
-      .toLowerCase();
-
-  if (
-    normalized.includes("day") ||
-    normalized.includes("ngày") ||
-    normalized === "daily"
-  ) {
+  if (businessModel === "monthly") {
     return language === "vi"
-      ? "ngày"
-      : "day";
+      ? "tháng"
+      : "month";
   }
 
-  if (
-    normalized.includes("night") ||
-    normalized.includes("đêm") ||
-    normalized === "nightly"
-  ) {
-    return language === "vi"
-      ? "đêm"
-      : "night";
-  }
-
-  /*
-   * Nếu database dùng giá theo đêm
-   * nhưng chưa có giá trị đơn vị,
-   * giữ mặc định theo thông lệ phòng khách sạn.
-   */
   return language === "vi"
-    ? "đêm"
-    : "night";
+    ? "ngày"
+    : "day";
 }
 
-function getRoomSize(
-  room: Room
-): string {
-  const value =
-    room.size ??
-    room.area ??
-    null;
+function getRoomSize(room: Room): string {
+  const value = room.size ?? room.area ?? null;
 
-  if (
-    value == null ||
-    value === ""
-  ) {
+  if (value == null || value === "") {
     return "";
   }
 
   return String(value);
 }
 
-function getRoomGuests(
-  room: Room
-): number | null {
+function getRoomGuests(room: Room): number | null {
   const value =
     room.max_guests ??
     room.guests ??
@@ -385,14 +251,9 @@ function getRoomGuests(
     return null;
   }
 
-  const numberValue =
-    Number(value);
+  const numberValue = Number(value);
 
-  return Number.isFinite(
-    numberValue
-  )
-    ? numberValue
-    : null;
+  return Number.isFinite(numberValue) ? numberValue : null;
 }
 
 function getRoomBed(
@@ -400,28 +261,16 @@ function getRoomBed(
   language: Language
 ): string {
   if (language === "vi") {
-    return (
-      room.beds_vi ??
-      room.bed_type_vi ??
-      ""
-    );
+    return room.beds_vi ?? room.bed_type_vi ?? "";
   }
 
-  return (
-    room.beds_en ??
-    room.bed_type_en ??
-    ""
-  );
+  return room.beds_en ?? room.bed_type_en ?? "";
 }
 
-function formatPrice(
-  value: number | null
-): string {
+function formatPrice(value: number | null): string {
   if (value == null) return "";
 
-  return new Intl.NumberFormat(
-    "vi-VN"
-  ).format(value);
+  return new Intl.NumberFormat("vi-VN").format(value);
 }
 
 function formatDate(
@@ -430,22 +279,14 @@ function formatDate(
 ) {
   if (!value) return "";
 
-  const date = new Date(
-    value + "T00:00:00"
-  );
+  const date = new Date(value + "T00:00:00");
 
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return value;
   }
 
   return new Intl.DateTimeFormat(
-    language === "vi"
-      ? "vi-VN"
-      : "en-GB",
+    language === "vi" ? "vi-VN" : "en-GB",
     {
       day: "2-digit",
       month: "2-digit",
@@ -456,11 +297,15 @@ function formatDate(
 
 export default function HotelDetailPage() {
   const params = useParams();
+  const router = useRouter();
+
+  const rawSlug = params?.slug;
 
   const slug =
-    typeof params?.slug ===
-    "string"
-      ? params.slug
+    typeof rawSlug === "string"
+      ? rawSlug
+      : Array.isArray(rawSlug)
+      ? rawSlug[0] ?? ""
       : "";
 
   const [language, setLanguage] =
@@ -497,20 +342,14 @@ export default function HotelDetailPage() {
     useState(0);
 
   const checkInRef =
-    useRef<HTMLInputElement | null>(
-      null
-    );
+    useRef<HTMLInputElement | null>(null);
 
   const checkOutRef =
-    useRef<HTMLInputElement | null>(
-      null
-    );
+    useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const savedLanguage =
-      localStorage.getItem(
-        "huyen-language"
-      );
+      localStorage.getItem("huyen-language");
 
     if (
       savedLanguage === "vi" ||
@@ -544,7 +383,6 @@ export default function HotelDetailPage() {
           .from("hotels")
           .select("*")
           .eq("slug", slug)
-          .eq("status", "active")
           .maybeSingle();
 
         if (hotelError) {
@@ -563,12 +401,9 @@ export default function HotelDetailPage() {
           return;
         }
 
-        setHotel(
-          hotelData as Hotel
-        );
+        setHotel(hotelData as Hotel);
 
-        const hotelId =
-          hotelData.id;
+        const hotelId = hotelData.id;
 
         const [
           roomsResult,
@@ -577,60 +412,37 @@ export default function HotelDetailPage() {
           supabase
             .from("rooms")
             .select("*")
-            .eq(
-              "hotel_id",
-              hotelId
-            )
-            .eq(
-              "status",
-              "active"
-            )
+            .eq("hotel_id", hotelId)
+            .eq("status", "active")
             .order("id", {
               ascending: true,
             }),
 
           supabase
-            .from(
-              "hotel_ota_channels"
-            )
+            .from("hotel_ota_channels")
             .select(
               "id, hotel_id, ota_id, listing_url, external_hotel_id, status, sort_order"
             )
-            .eq(
-              "hotel_id",
-              hotelId
-            )
-            .eq(
-              "status",
-              "active"
-            )
-            .order(
-              "sort_order",
-              {
-                ascending: true,
-              }
-            ),
+            .eq("hotel_id", hotelId)
+            .eq("status", "active")
+            .order("sort_order", {
+              ascending: true,
+            }),
         ]);
 
-        if (
-          roomsResult.error
-        ) {
+        if (roomsResult.error) {
           throw roomsResult.error;
         }
 
-        if (
-          otaChannelsResult.error
-        ) {
+        if (otaChannelsResult.error) {
           throw otaChannelsResult.error;
         }
 
         const roomData =
-          (roomsResult.data ??
-            []) as Room[];
+          (roomsResult.data ?? []) as Room[];
 
         const otaChannelData =
-          (otaChannelsResult.data ??
-            []) as HotelOTAChannel[];
+          (otaChannelsResult.data ?? []) as HotelOTAChannel[];
 
         if (cancelled) {
           return;
@@ -639,9 +451,7 @@ export default function HotelDetailPage() {
         setRooms(roomData);
 
         const roomIds =
-          roomData.map(
-            (room) => room.id
-          );
+          roomData.map((room) => room.id);
 
         if (roomIds.length > 0) {
           const {
@@ -652,20 +462,11 @@ export default function HotelDetailPage() {
             .select(
               "id, entity_id, public_url, is_cover, sort_order"
             )
-            .eq(
-              "entity_type",
-              "room"
-            )
-            .in(
-              "entity_id",
-              roomIds
-            )
-            .order(
-              "sort_order",
-              {
-                ascending: true,
-              }
-            );
+            .eq("entity_type", "room")
+            .in("entity_id", roomIds)
+            .order("sort_order", {
+              ascending: true,
+            });
 
           if (mediaError) {
             throw mediaError;
@@ -673,22 +474,17 @@ export default function HotelDetailPage() {
 
           if (!cancelled) {
             setRoomMedia(
-              (mediaData ??
-                []) as RoomMedia[]
+              (mediaData ?? []) as RoomMedia[]
             );
           }
         } else {
           setRoomMedia([]);
         }
 
-        if (
-          otaChannelData.length >
-          0
-        ) {
+        if (otaChannelData.length > 0) {
           const otaIds =
             otaChannelData.map(
-              (item) =>
-                item.ota_id
+              (item) => item.ota_id
             );
 
           const {
@@ -699,77 +495,59 @@ export default function HotelDetailPage() {
             .select(
               "id, name, slug, logo, website, status, sort_order"
             )
-            .in(
-              "id",
-              otaIds
-            )
-            .eq(
-              "status",
-              "active"
-            );
+            .in("id", otaIds)
+            .eq("status", "active");
 
           if (platformError) {
             throw platformError;
           }
 
           const platforms =
-            (platformData ??
-              []) as OTAPlatform[];
+            (platformData ?? []) as OTAPlatform[];
 
           const platformMap =
-            new Map<
-              number,
-              OTAPlatform
-            >();
+            new Map<number, OTAPlatform>();
 
-          platforms.forEach(
-            (platform) => {
-              platformMap.set(
-                platform.id,
-                platform
-              );
-            }
-          );
+          platforms.forEach((platform) => {
+            platformMap.set(
+              platform.id,
+              platform
+            );
+          });
 
           const activeOtas =
             otaChannelData
-              .map(
-                (channel) => {
-                  const platform =
-                    platformMap.get(
-                      channel.ota_id
-                    );
+              .map((channel) => {
+                const platform =
+                  platformMap.get(
+                    channel.ota_id
+                  );
 
-                  if (
-                    !platform ||
-                    !channel.listing_url
-                  ) {
-                    return null;
-                  }
-
-                  return {
-                    id: channel.id,
-                    name:
-                      platform.name ??
-                      platform.slug ??
-                      "OTA",
-                    slug:
-                      platform.slug ??
-                      "",
-                    logo:
-                      platform.logo ??
-                      null,
-                    website:
-                      platform.website ??
-                      null,
-                    listing_url:
-                      channel.listing_url,
-                    sort_order:
-                      channel.sort_order ??
-                      0,
-                  };
+                if (
+                  !platform ||
+                  !channel.listing_url
+                ) {
+                  return null;
                 }
-              )
+
+                return {
+                  id: channel.id,
+                  name:
+                    platform.name ??
+                    platform.slug ??
+                    "OTA",
+                  slug:
+                    platform.slug ?? "",
+                  logo:
+                    platform.logo ?? null,
+                  website:
+                    platform.website ?? null,
+                  listing_url:
+                    channel.listing_url,
+                  sort_order:
+                    channel.sort_order ?? 0,
+                };
+              })
               .filter(
                 (
                   item
@@ -783,9 +561,7 @@ export default function HotelDetailPage() {
               );
 
           if (!cancelled) {
-            setOtas(
-              activeOtas
-            );
+            setOtas(activeOtas);
           }
         } else {
           setOtas([]);
@@ -822,26 +598,19 @@ export default function HotelDetailPage() {
   const roomMediaMap =
     useMemo(() => {
       const map =
-        new Map<
-          number,
-          RoomMedia[]
-        >();
+        new Map<number, RoomMedia[]>();
 
-      roomMedia.forEach(
-        (media) => {
-          const current =
-            map.get(
-              media.entity_id
-            ) ?? [];
+      roomMedia.forEach((media) => {
+        const current =
+          map.get(media.entity_id) ?? [];
 
-          current.push(media);
+        current.push(media);
 
-          map.set(
-            media.entity_id,
-            current
-          );
-        }
-      );
+        map.set(
+          media.entity_id,
+          current
+        );
+      });
 
       return map;
     }, [roomMedia]);
@@ -850,9 +619,7 @@ export default function HotelDetailPage() {
     room: Room
   ): string | null {
     const media =
-      roomMediaMap.get(
-        room.id
-      ) ?? [];
+      roomMediaMap.get(room.id) ?? [];
 
     const cover =
       media.find(
@@ -860,21 +627,16 @@ export default function HotelDetailPage() {
           item.is_cover === true
       );
 
-    if (
-      cover?.public_url
-    ) {
+    if (cover?.public_url) {
       return cover.public_url;
     }
 
     const firstMedia =
       media.find(
-        (item) =>
-          !!item.public_url
+        (item) => !!item.public_url
       );
 
-    if (
-      firstMedia?.public_url
-    ) {
+    if (firstMedia?.public_url) {
       return firstMedia.public_url;
     }
 
@@ -904,11 +666,16 @@ export default function HotelDetailPage() {
   }
 
   function handleSearch() {
-    if (
-      checkIn &&
-      checkOut &&
-      checkOut <= checkIn
-    ) {
+    if (!checkIn || !checkOut) {
+      alert(
+        language === "vi"
+          ? "Vui lòng chọn ngày nhận và trả phòng."
+          : "Please select check-in and check-out dates."
+      );
+      return;
+    }
+
+    if (checkOut <= checkIn) {
       alert(
         language === "vi"
           ? "Ngày trả phòng phải sau ngày nhận phòng."
@@ -918,34 +685,54 @@ export default function HotelDetailPage() {
       return;
     }
 
-    document
-      .getElementById(
-        "rooms-section"
-      )
-      ?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+    if (!hotel?.slug) {
+      return;
+    }
+
+    const params =
+      new URLSearchParams();
+
+    params.set(
+      "hotel",
+      hotel.slug
+    );
+
+    params.set(
+      "checkIn",
+      checkIn
+    );
+
+    params.set(
+      "checkOut",
+      checkOut
+    );
+
+    params.set(
+      "adults",
+      String(adults)
+    );
+
+    params.set(
+      "children",
+      String(children)
+    );
+
+    router.push(
+      `/tim-phong?${params.toString()}`
+    );
   }
 
   function handleBookRoom(
     room: Room
   ) {
-    const roomName =
-      language === "vi"
-        ? room.name_vi
-        : room.name_en;
-
-    const section =
-      document.getElementById(
-        "booking-search"
+    if (!room.slug) {
+      alert(
+        language === "vi"
+          ? "Phòng này chưa có slug để mở trang chi tiết."
+          : "This room does not have a slug for its detail page."
       );
 
-    if (section) {
-      section.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+      return;
     }
 
     sessionStorage.setItem(
@@ -955,9 +742,12 @@ export default function HotelDetailPage() {
           hotel?.id ?? null,
         hotel_slug:
           hotel?.slug ?? null,
-        room_id: room.id,
+        room_id:
+          room.id,
         room_name:
-          roomName ?? "",
+          language === "vi"
+            ? room.name_vi ?? ""
+            : room.name_en ?? "",
         check_in:
           checkIn,
         check_out:
@@ -965,6 +755,10 @@ export default function HotelDetailPage() {
         adults,
         children,
       })
+    );
+
+    router.push(
+      `/khach-san/${slug}/phong/${room.slug}`
     );
   }
 
@@ -978,29 +772,19 @@ export default function HotelDetailPage() {
       ? hotel?.address_vi
       : hotel?.address_en;
 
-  /*
-   * MAP
-   * hotels.map_url phải chứa
-   * URL Google Maps Embed trực tiếp.
-   *
-   * Ví dụ:
-   * https://www.google.com/maps/embed?pb=...
-   *
-   * Không cần bóc <iframe>,
-   * không cần xử lý maps.app.goo.gl.
-   */
   const mapEmbedUrl =
     hotel?.map_url?.trim() ||
     null;
 
-  /*
-   * LINK ĐÁNH GIÁ GOOGLE
-   * Lấy trực tiếp từ hotels.google_business_url
-   * trong Supabase.
-   */
   const googleReviewUrl =
     hotel?.google_business_url?.trim() ||
     null;
+
+  const priceUnit =
+    getBusinessModelUnit(
+      hotel?.business_model,
+      language
+    );
 
   if (loading) {
     return (
@@ -1010,9 +794,8 @@ export default function HotelDetailPage() {
             href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-950"
           >
-            <ArrowLeft
-              size={18}
-            />
+            <ArrowLeft size={18} />
+
             {language === "vi"
               ? "Quay về trang chủ"
               : "Back to home"}
@@ -1038,9 +821,8 @@ export default function HotelDetailPage() {
             href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-950"
           >
-            <ArrowLeft
-              size={18}
-            />
+            <ArrowLeft size={18} />
+
             {language === "vi"
               ? "Quay về trang chủ"
               : "Back to home"}
@@ -1048,8 +830,7 @@ export default function HotelDetailPage() {
 
           <div className="mt-12 rounded-2xl border border-red-100 bg-red-50 p-8 text-center text-red-700">
             {error ||
-              (language ===
-              "vi"
+              (language === "vi"
                 ? "Không tìm thấy khách sạn."
                 : "Hotel not found.")}
           </div>
@@ -1061,15 +842,15 @@ export default function HotelDetailPage() {
   return (
     <main className="min-h-screen bg-white text-slate-900">
       <div className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
+
         {/* BACK */}
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition hover:text-slate-950"
           >
-            <ArrowLeft
-              size={18}
-            />
+            <ArrowLeft size={18} />
+
             {language === "vi"
               ? "Quay về trang chủ"
               : "Back to home"}
@@ -1106,14 +887,12 @@ export default function HotelDetailPage() {
           </div>
         </div>
 
-        {/* HOTEL NAME / GOOGLE
-            70:30 CHỈ Ở ĐÂY */}
+        {/* HOTEL NAME / GOOGLE */}
         <section className="grid grid-cols-1 gap-6 border-b border-slate-200 pb-7 md:grid-cols-[7fr_3fr]">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
               {hotelName ||
-                (language ===
-                "vi"
+                (language === "vi"
                   ? "Khách sạn"
                   : "Hotel")}
             </h1>
@@ -1124,6 +903,7 @@ export default function HotelDetailPage() {
                   size={18}
                   className="mt-0.5 shrink-0"
                 />
+
                 <span>
                   {hotelAddress}
                 </span>
@@ -1134,9 +914,7 @@ export default function HotelDetailPage() {
           <div className="flex items-center justify-start md:justify-end">
             {googleReviewUrl ? (
               <a
-                href={
-                  googleReviewUrl
-                }
+                href={googleReviewUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center gap-3"
@@ -1144,8 +922,7 @@ export default function HotelDetailPage() {
                 <GoogleIcon />
 
                 <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-950">
-                  {language ===
-                  "vi"
+                  {language === "vi"
                     ? "Xem đánh giá Google >>"
                     : "View Google reviews >>"}
                 </span>
@@ -1155,8 +932,7 @@ export default function HotelDetailPage() {
                 <GoogleIcon />
 
                 <span className="text-sm text-slate-400">
-                  {language ===
-                  "vi"
+                  {language === "vi"
                     ? "Đánh giá Google"
                     : "Google reviews"}
                 </span>
@@ -1171,6 +947,7 @@ export default function HotelDetailPage() {
           className="mt-8 scroll-mt-6"
         >
           <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+
             {/* ROOM LIST */}
             <div>
               <div className="mb-5 flex items-center justify-between">
@@ -1182,242 +959,189 @@ export default function HotelDetailPage() {
 
                 <span className="text-sm text-slate-500">
                   {rooms.length}{" "}
-                  {language ===
-                  "vi"
+                  {language === "vi"
                     ? "loại phòng"
-                    : rooms.length ===
-                      1
+                    : rooms.length === 1
                     ? "room type"
                     : "room types"}
                 </span>
               </div>
 
-              {rooms.length ===
-              0 ? (
+              {rooms.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
-                  {language ===
-                  "vi"
+                  {language === "vi"
                     ? "Hiện chưa có phòng đang hoạt động."
                     : "There are no active rooms at the moment."}
                 </div>
               ) : (
                 <div className="space-y-5">
-                  {rooms.map(
-                    (room) => {
-                      const image =
-                        getRoomImage(
-                          room
-                        );
+                  {rooms.map((room) => {
+                    const image =
+                      getRoomImage(room);
 
-                      const roomName =
-                        language ===
-                        "vi"
-                          ? room.name_vi
-                          : room.name_en;
+                    const roomName =
+                      language === "vi"
+                        ? room.name_vi
+                        : room.name_en;
 
-                      const description =
-                        language ===
-                        "vi"
-                          ? room.description_vi
-                          : room.description_en;
+                    const description =
+                      language === "vi"
+                        ? room.description_vi
+                        : room.description_en;
 
-                      const bed =
-                        getRoomBed(
-                          room,
-                          language
-                        );
+                    const bed =
+                      getRoomBed(
+                        room,
+                        language
+                      );
 
-                      const size =
-                        getRoomSize(
-                          room
-                        );
+                    const size =
+                      getRoomSize(room);
 
-                      const guests =
-                        getRoomGuests(
-                          room
-                        );
+                    const guests =
+                      getRoomGuests(room);
 
-                      const amenities =
-                        parseAmenities(
-                          language ===
-                            "vi"
-                            ? room.amenities_vi
-                            : room.amenities_en,
-                          language
-                        );
+                    const amenities =
+                      parseAmenities(
+                        language === "vi"
+                          ? room.amenities_vi
+                          : room.amenities_en,
+                        language
+                      );
 
-                      const price =
-                        getRoomPrice(
-                          room
-                        );
+                    const price =
+                      getRoomPrice(room);
 
-                      const priceUnit =
-                        getPriceUnit(
-                          room,
-                          language
-                        );
+                    return (
+                      <article
+                        key={room.id}
+                        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
 
-                      return (
-                        <article
-                          key={
-                            room.id
-                          }
-                          className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-                        >
-                          <div className="grid grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
-                            {/* IMAGE */}
-                            <div className="relative min-h-[220px] bg-slate-100">
-                              {image ? (
-                                <img
-                                  src={
-                                    image
-                                  }
-                                  alt={
-                                    roomName ??
-                                    "Room"
-                                  }
-                                  className="absolute inset-0 h-full w-full object-cover"
-                                />
-                              ) : (
-                                <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
-                                  {language ===
-                                  "vi"
-                                    ? "Chưa có hình ảnh"
-                                    : "No image"}
+                          {/* IMAGE */}
+                          <div className="relative min-h-[220px] bg-slate-100">
+                            {image ? (
+                              <img
+                                src={image}
+                                alt={
+                                  roomName ??
+                                  "Room"
+                                }
+                                className="absolute inset-0 h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
+                                {language === "vi"
+                                  ? "Chưa có hình ảnh"
+                                  : "No image"}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* ROOM INFO */}
+                          <div className="p-5 sm:p-6">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                              <div>
+                                <h3 className="text-xl font-bold text-slate-950">
+                                  {roomName ||
+                                    (language === "vi"
+                                      ? "Phòng"
+                                      : "Room")}
+                                </h3>
+
+                                {description && (
+                                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                                    {description}
+                                  </p>
+                                )}
+                              </div>
+
+                              {price != null && (
+                                <div className="shrink-0 text-left sm:text-right">
+                                  <div className="text-lg font-bold text-slate-950">
+                                    {formatPrice(
+                                      price
+                                    )}
+                                  </div>
+
+                                  <div className="text-xs text-slate-500">
+                                    / {priceUnit}
+                                  </div>
                                 </div>
                               )}
                             </div>
 
-                            {/* ROOM INFO */}
-                            <div className="p-5 sm:p-6">
-                              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                <div>
-                                  <h3 className="text-xl font-bold text-slate-950">
-                                    {roomName ||
-                                      (language ===
-                                      "vi"
-                                        ? "Phòng"
-                                        : "Room")}
-                                  </h3>
+                            <div className="mt-5 grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-3">
+                              {size && (
+                                <div className="flex items-center gap-2">
+                                  <Maximize2 size={17} />
 
-                                  {description && (
-                                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                                      {
-                                        description
-                                      }
-                                    </p>
-                                  )}
-                                </div>
-
-                                {price !=
-                                  null && (
-                                  <div className="shrink-0 text-left sm:text-right">
-                                    <div className="text-lg font-bold text-slate-950">
-                                      {formatPrice(
-                                        price
-                                      )}
-                                    </div>
-
-                                    <div className="text-xs text-slate-500">
-                                      /{" "}
-                                      {
-                                        priceUnit
-                                      }
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="mt-5 grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-3">
-                                {size && (
-                                  <div className="flex items-center gap-2">
-                                    <Maximize2
-                                      size={
-                                        17
-                                      }
-                                    />
-                                    <span>
-                                      {
-                                        size
-                                      }{" "}
-                                      m²
-                                    </span>
-                                  </div>
-                                )}
-
-                                {guests !=
-                                  null && (
-                                  <div className="flex items-center gap-2">
-                                    <Users
-                                      size={
-                                        17
-                                      }
-                                    />
-                                    <span>
-                                      {language ===
-                                      "vi"
-                                        ? `Tối đa ${guests} khách`
-                                        : `Up to ${guests} guests`}
-                                    </span>
-                                  </div>
-                                )}
-
-                                {bed && (
-                                  <div className="flex items-center gap-2">
-                                    <BedDouble
-                                      size={
-                                        17
-                                      }
-                                    />
-                                    <span>
-                                      {
-                                        bed
-                                      }
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {amenities.length >
-                                0 && (
-                                <div className="mt-5 border-t border-slate-100 pt-4">
-                                  <div className="mb-2 text-sm font-semibold text-slate-900">
-                                    {language ===
-                                    "vi"
-                                      ? "Tiện nghi phòng"
-                                      : "Room amenities"}
-                                  </div>
-
-                                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    {amenities.map(
-                                      (
-                                        amenity,
-                                        index
-                                      ) => (
-                                        <div
-                                          key={`${room.id}-${index}`}
-                                          className="flex items-start gap-2 text-sm text-slate-600"
-                                        >
-                                          <Check
-                                            size={
-                                              16
-                                            }
-                                            className="mt-0.5 shrink-0 text-emerald-600"
-                                          />
-                                          <span>
-                                            {
-                                              amenity
-                                            }
-                                          </span>
-                                        </div>
-                                      )
-                                    )}
-                                  </div>
+                                  <span>
+                                    {size} m²
+                                  </span>
                                 </div>
                               )}
 
-                              {/* BOOK ROOM */}
-                              <div className="mt-6 border-t border-slate-100 pt-5">
+                              {guests != null && (
+                                <div className="flex items-center gap-2">
+                                  <Users size={17} />
+
+                                  <span>
+                                    {language === "vi"
+                                      ? `Tối đa ${guests} khách`
+                                      : `Up to ${guests} guests`}
+                                  </span>
+                                </div>
+                              )}
+
+                              {bed && (
+                                <div className="flex items-center gap-2">
+                                  <BedDouble size={17} />
+
+                                  <span>
+                                    {bed}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {amenities.length > 0 && (
+                              <div className="mt-5 border-t border-slate-100 pt-4">
+                                <div className="mb-2 text-sm font-semibold text-slate-900">
+                                  {language === "vi"
+                                    ? "Tiện nghi phòng"
+                                    : "Room amenities"}
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                  {amenities.map(
+                                    (
+                                      amenity,
+                                      index
+                                    ) => (
+                                      <div
+                                        key={`${room.id}-${index}`}
+                                        className="flex items-start gap-2 text-sm text-slate-600"
+                                      >
+                                        <Check
+                                          size={16}
+                                          className="mt-0.5 shrink-0 text-emerald-600"
+                                        />
+
+                                        <span>
+                                          {amenity}
+                                        </span>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* BOOK ROOM */}
+                            <div className="mt-6 border-t border-slate-100 pt-5">
+                              {room.slug ? (
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -1427,30 +1151,35 @@ export default function HotelDetailPage() {
                                   }
                                   className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-sky-500 px-5 text-sm font-bold text-white transition hover:bg-sky-600"
                                 >
-                                  <Search
-                                    size={
-                                      17
-                                    }
-                                  />
+                                  <Search size={17} />
 
-                                  {language ===
-                                  "vi"
+                                  {language === "vi"
                                     ? "Đặt phòng"
                                     : "Book this room"}
 
-                                  <ChevronRight
-                                    size={
-                                      17
-                                    }
-                                  />
+                                  <ChevronRight size={17} />
                                 </button>
-                              </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled
+                                  className="inline-flex h-11 cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-slate-300 px-5 text-sm font-bold text-white"
+                                >
+                                  <Search size={17} />
+
+                                  {language === "vi"
+                                    ? "Chưa có thông tin phòng"
+                                    : "Room unavailable"}
+
+                                  <ChevronRight size={17} />
+                                </button>
+                              )}
                             </div>
                           </div>
-                        </article>
-                      );
-                    }
-                  )}
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1462,34 +1191,28 @@ export default function HotelDetailPage() {
             >
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-5 flex items-center gap-2">
-                  <Search
-                    size={19}
-                  />
+                  <Search size={19} />
 
                   <h2 className="text-lg font-bold text-slate-950">
-                    {language ===
-                    "vi"
+                    {language === "vi"
                       ? "TÌM PHÒNG"
                       : "FIND ROOMS"}
                   </h2>
                 </div>
 
                 <div className="space-y-4">
+
                   {/* HOTEL */}
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                      {language ===
-                      "vi"
+                      {language === "vi"
                         ? "Khách sạn"
                         : "Hotel"}
                     </label>
 
                     <input
                       type="text"
-                      value={
-                        hotelName ??
-                        ""
-                      }
+                      value={hotelName ?? ""}
                       readOnly
                       className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none"
                     />
@@ -1498,8 +1221,7 @@ export default function HotelDetailPage() {
                   {/* CHECK IN */}
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                      {language ===
-                      "vi"
+                      {language === "vi"
                         ? "Nhận phòng"
                         : "Check-in"}
                     </label>
@@ -1519,41 +1241,27 @@ export default function HotelDetailPage() {
                               checkIn,
                               language
                             )
-                          : language ===
-                            "vi"
+                          : language === "vi"
                           ? "Chọn ngày"
                           : "Select date"}
                       </span>
 
                       <input
-                        ref={
-                          checkInRef
-                        }
+                        ref={checkInRef}
                         type="date"
-                        value={
-                          checkIn
-                        }
-                        onChange={(
-                          event
-                        ) => {
+                        value={checkIn}
+                        onChange={(event) => {
                           const value =
-                            event
-                              .target
-                              .value;
+                            event.target.value;
 
-                          setCheckIn(
-                            value
-                          );
+                          setCheckIn(value);
 
                           if (
                             checkOut &&
                             value &&
-                            checkOut <=
-                              value
+                            checkOut <= value
                           ) {
-                            setCheckOut(
-                              ""
-                            );
+                            setCheckOut("");
                           }
                         }}
                         className="pointer-events-none absolute h-0 w-0 opacity-0"
@@ -1570,8 +1278,7 @@ export default function HotelDetailPage() {
                   {/* CHECK OUT */}
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                      {language ===
-                      "vi"
+                      {language === "vi"
                         ? "Trả phòng"
                         : "Check-out"}
                     </label>
@@ -1591,31 +1298,22 @@ export default function HotelDetailPage() {
                               checkOut,
                               language
                             )
-                          : language ===
-                            "vi"
+                          : language === "vi"
                           ? "Chọn ngày"
                           : "Select date"}
                       </span>
 
                       <input
-                        ref={
-                          checkOutRef
-                        }
+                        ref={checkOutRef}
                         type="date"
-                        value={
-                          checkOut
-                        }
+                        value={checkOut}
                         min={
                           checkIn ||
                           undefined
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(event) =>
                           setCheckOut(
-                            event
-                              .target
-                              .value
+                            event.target.value
                           )
                         }
                         className="pointer-events-none absolute h-0 w-0 opacity-0"
@@ -1632,8 +1330,7 @@ export default function HotelDetailPage() {
                   {/* ADULTS */}
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                      {language ===
-                      "vi"
+                      {language === "vi"
                         ? "Người lớn"
                         : "Adults"}
                     </label>
@@ -1645,18 +1342,13 @@ export default function HotelDetailPage() {
                           setAdults(
                             Math.max(
                               1,
-                              adults -
-                                1
+                              adults - 1
                             )
                           )
                         }
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
                       >
-                        <Minus
-                          size={
-                            16
-                          }
-                        />
+                        <Minus size={16} />
                       </button>
 
                       <span className="text-sm font-semibold">
@@ -1667,17 +1359,12 @@ export default function HotelDetailPage() {
                         type="button"
                         onClick={() =>
                           setAdults(
-                            adults +
-                              1
+                            adults + 1
                           )
                         }
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
                       >
-                        <Plus
-                          size={
-                            16
-                          }
-                        />
+                        <Plus size={16} />
                       </button>
                     </div>
                   </div>
@@ -1685,8 +1372,7 @@ export default function HotelDetailPage() {
                   {/* CHILDREN */}
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                      {language ===
-                      "vi"
+                      {language === "vi"
                         ? "Trẻ em"
                         : "Children"}
                     </label>
@@ -1698,18 +1384,13 @@ export default function HotelDetailPage() {
                           setChildren(
                             Math.max(
                               0,
-                              children -
-                                1
+                              children - 1
                             )
                           )
                         }
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
                       >
-                        <Minus
-                          size={
-                            16
-                          }
-                        />
+                        <Minus size={16} />
                       </button>
 
                       <span className="text-sm font-semibold">
@@ -1720,17 +1401,12 @@ export default function HotelDetailPage() {
                         type="button"
                         onClick={() =>
                           setChildren(
-                            children +
-                              1
+                            children + 1
                           )
                         }
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
                       >
-                        <Plus
-                          size={
-                            16
-                          }
-                        />
+                        <Plus size={16} />
                       </button>
                     </div>
                   </div>
@@ -1738,19 +1414,12 @@ export default function HotelDetailPage() {
                   {/* SEARCH */}
                   <button
                     type="button"
-                    onClick={
-                      handleSearch
-                    }
+                    onClick={handleSearch}
                     className="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 text-sm font-bold text-white transition hover:bg-sky-600"
                   >
-                    <Search
-                      size={
-                        18
-                      }
-                    />
+                    <Search size={18} />
 
-                    {language ===
-                    "vi"
+                    {language === "vi"
                       ? "Tìm phòng"
                       : "Find rooms"}
                   </button>
@@ -1764,74 +1433,58 @@ export default function HotelDetailPage() {
         <section className="mt-12 border-t border-slate-200 pt-10">
           <div className="mb-5">
             <h2 className="text-xl font-bold uppercase tracking-wide text-slate-950">
-              {language ===
-              "vi"
+              {language === "vi"
                 ? "Đặt phòng trực tuyến"
                 : "Booking online - OTAs"}
             </h2>
 
             <p className="mt-2 text-sm text-slate-500">
-              {language ===
-              "vi"
+              {language === "vi"
                 ? "Đặt phòng qua các nền tảng đang bán phòng của khách sạn."
                 : "Book through the platforms currently selling rooms at this hotel."}
             </p>
           </div>
 
-          {otas.length ===
-          0 ? (
+          {otas.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
-              {language ===
-              "vi"
+              {language === "vi"
                 ? "Hiện chưa có OTA nào được kết nối."
                 : "No OTA channels are currently connected."}
             </div>
           ) : (
             <div className="flex flex-wrap gap-3">
-              {otas.map(
-                (ota) => (
-                  <a
-                    key={
-                      ota.id
-                    }
-                    href={
-                      ota.listing_url
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex min-h-[58px] items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-                  >
-                    {ota.logo ? (
-                      <img
-                        src={
-                          ota.logo
-                        }
-                        alt={
-                          ota.name
-                        }
-                        className="h-8 w-8 object-contain"
-                      />
-                    ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500">
-                        {ota.name
-                          .charAt(
-                            0
-                          )
-                          .toUpperCase()}
-                      </div>
-                    )}
-
-                    <span className="text-sm font-semibold text-slate-900 group-hover:text-sky-600">
-                      {ota.name}
-                    </span>
-
-                    <ChevronRight
-                      size={16}
-                      className="ml-auto shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-sky-500"
+              {otas.map((ota) => (
+                <a
+                  key={ota.id}
+                  href={ota.listing_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex min-h-[58px] items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                >
+                  {ota.logo ? (
+                    <img
+                      src={ota.logo}
+                      alt={ota.name}
+                      className="h-8 w-8 object-contain"
                     />
-                  </a>
-                )
-              )}
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500">
+                      {ota.name
+                        .charAt(0)
+                        .toUpperCase()}
+                    </div>
+                  )}
+
+                  <span className="text-sm font-semibold text-slate-900 group-hover:text-sky-600">
+                    {ota.name}
+                  </span>
+
+                  <ChevronRight
+                    size={16}
+                    className="ml-auto shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-sky-500"
+                  />
+                </a>
+              ))}
             </div>
           )}
         </section>
@@ -1839,8 +1492,7 @@ export default function HotelDetailPage() {
         {/* MAP */}
         <section className="mt-12 border-t border-slate-200 pt-10">
           <h2 className="mb-5 text-xl font-bold uppercase tracking-wide text-slate-950">
-            {language ===
-            "vi"
+            {language === "vi"
               ? "BẢN ĐỒ"
               : "MAP"}
           </h2>
@@ -1850,8 +1502,7 @@ export default function HotelDetailPage() {
               <iframe
                 src={mapEmbedUrl}
                 title={
-                  language ===
-                  "vi"
+                  language === "vi"
                     ? "Bản đồ vị trí khách sạn"
                     : "Hotel location map"
                 }
@@ -1863,8 +1514,7 @@ export default function HotelDetailPage() {
             </div>
           ) : (
             <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
-              {language ===
-              "vi"
+              {language === "vi"
                 ? "Chưa có link nhúng bản đồ trong hệ thống."
                 : "No embedded map link is available."}
             </div>
@@ -1876,15 +1526,11 @@ export default function HotelDetailPage() {
       <footer className="border-t border-slate-200 bg-slate-50">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-slate-500 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
           <div>
-            ©{" "}
-            {new Date().getFullYear()}{" "}
-            Huyen&apos;s Hotels &
-            Stays
+            © {new Date().getFullYear()} Huyen&apos;s Hotels & Stays
           </div>
 
           <div>
-            {language ===
-            "vi"
+            {language === "vi"
               ? "Thoải mái theo cách của bạn."
               : "Comfort, your way."}
           </div>
