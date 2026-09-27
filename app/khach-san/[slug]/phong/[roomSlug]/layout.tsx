@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 
@@ -19,6 +20,10 @@ type RoomSEO = {
   description_en: string | null;
   image: string | null;
   base_price: number | null;
+  size: number | null;
+  max_guests: number | null;
+  beds_vi: string | null;
+  beds_en: string | null;
   status: string | null;
 };
 
@@ -62,6 +67,15 @@ function cleanText(
     .trim();
 }
 
+function normalizeLocationText(
+  value: string
+): string {
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/\s*,\s*/g, ", ")
+    .trim();
+}
+
 function createRoomDescription(
   room: RoomSEO,
   hotel: HotelSEO
@@ -85,18 +99,44 @@ function createRoomDescription(
   let result = roomDescription;
 
   if (!result) {
+    const details: string[] = [];
+
+    if (room.size !== null) {
+      details.push(`${room.size} m²`);
+    }
+
+    if (room.max_guests !== null) {
+      details.push(
+        `tối đa ${room.max_guests} khách`
+      );
+    }
+
+    if (room.beds_vi) {
+      details.push(room.beds_vi);
+    }
+
+    const roomDetails =
+      details.length > 0
+        ? ` ${details.join(", ")}.`
+        : "";
+
     result =
-      `${roomName} tại ${hotelName}${
-        address ? `, ${address}` : ""
-      }. Đặt phòng trực tiếp tại Huyen's Hotels & Stays.`;
+      `${roomName} tại ${hotelName}.${roomDetails} Đặt phòng trực tiếp tại Huyen's Hotels & Stays.`;
   } else {
-    if (!result.includes(hotelName)) {
+    if (
+      hotelName &&
+      !result
+        .toLowerCase()
+        .includes(hotelName.toLowerCase())
+    ) {
       result = `${result} ${hotelName}.`;
     }
 
     if (
       address &&
-      !result.includes(address)
+      !result
+        .toLowerCase()
+        .includes(address.toLowerCase())
     ) {
       result = `${result} ${address}.`;
     }
@@ -110,18 +150,289 @@ function createRoomDescription(
   return result;
 }
 
+function createRoomKeywords(
+  room: RoomSEO,
+  hotel: HotelSEO
+): string[] {
+  const keywords = new Set<string>();
+
+  const roomNameVi =
+    cleanText(room.name_vi);
+
+  const roomNameEn =
+    cleanText(room.name_en);
+
+  const hotelNameVi =
+    cleanText(hotel.name_vi);
+
+  const hotelNameEn =
+    cleanText(hotel.name_en);
+
+  const address =
+    normalizeLocationText(
+      cleanText(hotel.address_vi)
+    );
+
+  if (roomNameVi) {
+    keywords.add(roomNameVi);
+    keywords.add(`phòng ${roomNameVi}`);
+  }
+
+  if (roomNameEn) {
+    keywords.add(roomNameEn);
+    keywords.add(`room ${roomNameEn}`);
+  }
+
+  if (hotelNameVi) {
+    keywords.add(hotelNameVi);
+  }
+
+  if (hotelNameEn) {
+    keywords.add(hotelNameEn);
+  }
+
+  if (address) {
+    keywords.add(address);
+    keywords.add(
+      `phòng khách sạn ${address}`
+    );
+    keywords.add(
+      `hotel room ${address}`
+    );
+  }
+
+  const lowerAddress =
+    address.toLowerCase();
+
+  if (
+    lowerAddress.includes("quận 1") ||
+    lowerAddress.includes("quan 1") ||
+    lowerAddress.includes("q.1") ||
+    lowerAddress.includes("q1")
+  ) {
+    keywords.add(
+      "phòng khách sạn Quận 1"
+    );
+    keywords.add(
+      "hotel room Quận 1"
+    );
+    keywords.add(
+      "phòng nghỉ Quận 1"
+    );
+    keywords.add(
+      "khách sạn Quận 1"
+    );
+  }
+
+  if (
+    lowerAddress.includes("bến thành") ||
+    lowerAddress.includes("ben thanh")
+  ) {
+    keywords.add(
+      "phòng khách sạn Bến Thành"
+    );
+    keywords.add(
+      "hotel room Bến Thành"
+    );
+    keywords.add(
+      "phòng nghỉ Bến Thành"
+    );
+  }
+
+  if (
+    lowerAddress.includes("phạm ngũ lão") ||
+    lowerAddress.includes("pham ngu lao")
+  ) {
+    keywords.add(
+      "phòng khách sạn Phạm Ngũ Lão"
+    );
+    keywords.add(
+      "hotel room Phạm Ngũ Lão"
+    );
+  }
+
+  if (
+    lowerAddress.includes("đỗ quang đẩu") ||
+    lowerAddress.includes("do quang dau")
+  ) {
+    keywords.add(
+      "phòng khách sạn Đỗ Quang Đẩu"
+    );
+    keywords.add(
+      "guesthouse room Đỗ Quang Đẩu"
+    );
+  }
+
+  if (
+    lowerAddress.includes("cô bắc") ||
+    lowerAddress.includes("co bac")
+  ) {
+    keywords.add(
+      "phòng khách sạn Cô Bắc"
+    );
+    keywords.add(
+      "hotel room Cô Bắc"
+    );
+  }
+
+  keywords.add(
+    "phòng khách sạn TP.HCM"
+  );
+  keywords.add(
+    "phòng nghỉ TP.HCM"
+  );
+  keywords.add(
+    "hotel room Ho Chi Minh"
+  );
+  keywords.add(
+    "Huyen's Hotels & Stays"
+  );
+
+  return Array.from(keywords);
+}
+
+async function getRoomSEOData(
+  slug: string,
+  roomSlug: string
+) {
+  if (!supabaseUrl || !supabaseKey) {
+    return null;
+  }
+
+  const supabase = createClient(
+    supabaseUrl,
+    supabaseKey
+  );
+
+  const {
+    data: hotel,
+    error: hotelError,
+  } = await supabase
+    .from("hotels")
+    .select(
+      "id, slug, name_vi, name_en, address_vi, address_en, image, status"
+    )
+    .eq("slug", slug)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (hotelError || !hotel) {
+    return null;
+  }
+
+  const {
+    data: room,
+    error: roomError,
+  } = await supabase
+    .from("rooms")
+    .select(
+      "id, hotel_id, slug, name_vi, name_en, description_vi, description_en, image, base_price, size, max_guests, beds_vi, beds_en, status"
+    )
+    .eq("hotel_id", hotel.id)
+    .eq("slug", roomSlug)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (roomError || !room) {
+    return null;
+  }
+
+  const { data: media } =
+    await supabase
+      .from("media")
+      .select(
+        "public_url, alt_vi, alt_en, is_cover, sort_order"
+      )
+      .eq("entity_type", "room")
+      .eq("entity_id", room.id)
+      .eq("status", "active")
+      .order("is_cover", {
+        ascending: false,
+      })
+      .order("sort_order", {
+        ascending: true,
+      });
+
+  return {
+    hotel: hotel as HotelSEO,
+    room: room as RoomSEO,
+    media: (media ?? []) as MediaSEO[],
+  };
+}
+
+function createBreadcrumbStructuredData(
+  hotel: HotelSEO,
+  room: RoomSEO,
+  siteBaseUrl: string
+) {
+  const hotelName =
+    cleanText(hotel.name_vi) ||
+    cleanText(hotel.name_en) ||
+    "Khách sạn";
+
+  const roomName =
+    cleanText(room.name_vi) ||
+    cleanText(room.name_en) ||
+    "Phòng nghỉ";
+
+  const hotelUrl =
+    `${siteBaseUrl}/khach-san/${hotel.slug}`;
+
+  const roomUrl =
+    `${hotelUrl}/phong/${room.slug}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "@id": `${roomUrl}#breadcrumb`,
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Trang chủ",
+        item: siteBaseUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Khách sạn",
+        item: `${siteBaseUrl}/phong`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: hotelName,
+        item: hotelUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: roomName,
+        item: roomUrl,
+      },
+    ],
+  };
+}
+
 export async function generateMetadata({
   params,
 }: LayoutProps): Promise<Metadata> {
-  const { slug, roomSlug } = await params;
+  const { slug, roomSlug } =
+    await params;
 
   const siteBaseUrl =
-    siteUrl.replace(/\/$/, "");
+    siteUrl.replace(/\/+$/, "");
 
   const canonicalUrl =
     `${siteBaseUrl}/khach-san/${slug}/phong/${roomSlug}`;
 
-  if (!supabaseUrl || !supabaseKey) {
+  const data =
+    await getRoomSEOData(
+      slug,
+      roomSlug
+    );
+
+  if (!data) {
     return {
       title:
         "Phòng nghỉ | Huyen's Hotels & Stays",
@@ -132,146 +443,89 @@ export async function generateMetadata({
       alternates: {
         canonical: canonicalUrl,
       },
-    };
-  }
-
-  const supabase = createClient(
-    supabaseUrl,
-    supabaseKey
-  );
-
-  const { data: hotel } = await supabase
-    .from("hotels")
-    .select(
-      "id, slug, name_vi, name_en, address_vi, address_en, image, status"
-    )
-    .eq("slug", slug)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (!hotel) {
-    return {
-      title:
-        "Không tìm thấy khách sạn | Huyen's Hotels & Stays",
 
       robots: {
         index: false,
         follow: true,
       },
-
-      alternates: {
-        canonical: canonicalUrl,
-      },
     };
   }
 
-  const hotelData =
-    hotel as unknown as HotelSEO;
-
-  const { data: room } = await supabase
-    .from("rooms")
-    .select(
-      "id, hotel_id, slug, name_vi, name_en, description_vi, description_en, image, base_price, status"
-    )
-    .eq("hotel_id", hotelData.id)
-    .eq("slug", roomSlug)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (!room) {
-    return {
-      title:
-        "Không tìm thấy phòng | Huyen's Hotels & Stays",
-
-      robots: {
-        index: false,
-        follow: true,
-      },
-
-      alternates: {
-        canonical: canonicalUrl,
-      },
-    };
-  }
-
-  const roomData =
-    room as unknown as RoomSEO;
-
-  const { data: media } = await supabase
-    .from("media")
-    .select(
-      "public_url, alt_vi, alt_en, is_cover, sort_order"
-    )
-    .eq("entity_type", "room")
-    .eq("entity_id", roomData.id)
-    .eq("status", "active")
-    .order("is_cover", {
-      ascending: false,
-    })
-    .order("sort_order", {
-      ascending: true,
-    });
+  const {
+    hotel,
+    room,
+    media,
+  } = data;
 
   const roomNameVi =
-    cleanText(roomData.name_vi) ||
-    cleanText(roomData.name_en) ||
+    cleanText(room.name_vi) ||
+    cleanText(room.name_en) ||
     "Phòng nghỉ";
 
   const roomNameEn =
-    cleanText(roomData.name_en) ||
+    cleanText(room.name_en) ||
     roomNameVi;
 
   const hotelNameVi =
-    cleanText(hotelData.name_vi) ||
-    cleanText(hotelData.name_en) ||
+    cleanText(hotel.name_vi) ||
+    cleanText(hotel.name_en) ||
     "Khách sạn";
+
+  const hotelNameEn =
+    cleanText(hotel.name_en) ||
+    hotelNameVi;
 
   const description =
     createRoomDescription(
-      roomData,
-      hotelData
+      room,
+      hotel
     );
 
-  const title =
-    `${roomNameVi} tại ${hotelNameVi} | Huyen's Hotels & Stays`;
+  const address =
+    cleanText(hotel.address_vi);
+
+  let title = address
+    ? `${roomNameVi} tại ${hotelNameVi} | ${address}`
+    : `${roomNameVi} tại ${hotelNameVi} | Huyen's Hotels & Stays`;
+
+  if (title.length > 65) {
+    title =
+      `${roomNameVi} tại ${hotelNameVi} | Huyen's Hotels & Stays`;
+  }
+
+  if (title.length > 65) {
+    title =
+      `${roomNameVi} | ${hotelNameVi}`;
+  }
 
   const englishTitle =
-    `${roomNameEn} at ${
-      cleanText(hotelData.name_en) ||
-      hotelNameVi
-    } | Huyen's Hotels & Stays`;
+    `${roomNameEn} at ${hotelNameEn} | Huyen's Hotels & Stays`;
+
+  const keywords =
+    createRoomKeywords(
+      room,
+      hotel
+    );
 
   const coverMedia =
-    (media as unknown as MediaSEO[] | null)?.[0];
+    media?.[0];
 
   const imageUrl =
     coverMedia?.public_url ||
-    roomData.image ||
-    hotelData.image ||
+    room.image ||
+    hotel.image ||
     undefined;
 
   const imageAlt =
     cleanText(
       coverMedia?.alt_vi
     ) ||
-    roomNameVi;
+    `${roomNameVi} - ${hotelNameVi}`;
 
   return {
     title,
-
     description,
-
-    keywords: [
-      roomNameVi,
-      roomNameEn,
-      `${roomNameVi} ${hotelNameVi}`,
-      `${roomNameVi} Quận 1`,
-      `${roomNameVi} TP.HCM`,
-      "phòng khách sạn Quận 1",
-      "phòng khách sạn TP.HCM",
-      "khách sạn Quận 1",
-      "Huyen's Hotels & Stays",
-    ],
+    keywords,
 
     alternates: {
       canonical: canonicalUrl,
@@ -294,7 +548,8 @@ export async function generateMetadata({
       type: "website",
       locale: "vi_VN",
       url: canonicalUrl,
-      siteName: "Huyen's Hotels & Stays",
+      siteName:
+        "Huyen's Hotels & Stays",
       title,
       description,
 
@@ -328,250 +583,200 @@ export async function generateMetadata({
   };
 }
 
-function RoomStructuredData({
-  room,
-  hotel,
-  imageUrl,
-  canonicalUrl,
-}: {
-  room: RoomSEO;
-  hotel: HotelSEO;
-  imageUrl?: string;
-  canonicalUrl: string;
-}) {
-  const roomName =
-    cleanText(room.name_vi) ||
-    cleanText(room.name_en) ||
-    "Phòng nghỉ";
-
-  const roomDescription =
-    cleanText(room.description_vi) ||
-    cleanText(room.description_en) ||
-    `${roomName} tại ${
-      cleanText(hotel.name_vi) ||
-      cleanText(hotel.name_en) ||
-      "Huyen's Hotels & Stays"
-    }.`;
-
-  const hotelName =
-    cleanText(hotel.name_vi) ||
-    cleanText(hotel.name_en) ||
-    "Khách sạn";
-
-  const hotelUrl =
-    `${siteUrl.replace(/\/$/, "")}/khach-san/${hotel.slug}`;
-
-  const roomSchema: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "HotelRoom",
-
-    "@id": `${canonicalUrl}#room`,
-
-    name: roomName,
-
-    url: canonicalUrl,
-
-    description: roomDescription,
-
-    containedInPlace: {
-      "@type": "Hotel",
-      "@id": `${hotelUrl}#hotel`,
-      name: hotelName,
-      url: hotelUrl,
-    },
-
-    publisher: {
-      "@type": "Organization",
-      name: "Huyen's Hotels & Stays",
-      url: siteUrl,
-    },
-  };
-
-  if (imageUrl) {
-    roomSchema.image = [imageUrl];
-  }
-
-  if (
-    room.base_price !== null &&
-    Number.isFinite(Number(room.base_price)) &&
-    Number(room.base_price) > 0
-  ) {
-    roomSchema.offers = {
-      "@type": "Offer",
-      url: canonicalUrl,
-      priceCurrency: "VND",
-      price: Number(room.base_price),
-      availability:
-        "https://schema.org/InStock",
-      seller: {
-        "@type": "Organization",
-        name: "Huyen's Hotels & Stays",
-        url: siteUrl,
-      },
-    };
-  }
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Trang chủ",
-        item: siteUrl,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: hotelName,
-        item: hotelUrl,
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: roomName,
-        item: canonicalUrl,
-      },
-    ],
-  };
-
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html:
-            JSON.stringify(roomSchema),
-        }}
-      />
-
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html:
-            JSON.stringify(
-              breadcrumbSchema
-            ),
-        }}
-      />
-    </>
-  );
-}
-
 export default async function RoomSlugLayout({
   children,
   params,
 }: LayoutProps) {
-  const { slug, roomSlug } = await params;
+  const { slug, roomSlug } =
+    await params;
 
-  let structuredDataRoom:
-    RoomSEO | null = null;
-
-  let structuredDataHotel:
-    HotelSEO | null = null;
-
-  let structuredDataImage:
-    string | undefined;
-
-  if (
-    supabaseUrl &&
-    supabaseKey
-  ) {
-    const supabase = createClient(
-      supabaseUrl,
-      supabaseKey
+  const data =
+    await getRoomSEOData(
+      slug,
+      roomSlug
     );
 
-    const { data: hotel } =
-      await supabase
-        .from("hotels")
-        .select(
-          "id, slug, name_vi, name_en, address_vi, address_en, image, status"
+  let structuredData:
+    | Record<string, unknown>
+    | null = null;
+
+  let breadcrumbData:
+    | Record<string, unknown>
+    | null = null;
+
+  if (data) {
+    const {
+      hotel,
+      room,
+      media,
+    } = data;
+
+    const siteBaseUrl =
+      siteUrl.replace(/\/+$/, "");
+
+    const roomUrl =
+      `${siteBaseUrl}/khach-san/${slug}/phong/${roomSlug}`;
+
+    const hotelUrl =
+      `${siteBaseUrl}/khach-san/${slug}`;
+
+    const roomName =
+      cleanText(room.name_vi) ||
+      cleanText(room.name_en) ||
+      "Phòng nghỉ";
+
+    const hotelName =
+      cleanText(hotel.name_vi) ||
+      cleanText(hotel.name_en) ||
+      "Khách sạn";
+
+    const roomDescription =
+      createRoomDescription(
+        room,
+        hotel
+      );
+
+    const roomImages =
+      media
+        .filter(
+          (item) =>
+            Boolean(item.public_url)
         )
-        .eq("slug", slug)
-        .eq("status", "active")
-        .maybeSingle();
+        .map(
+          (item) =>
+            item.public_url as string
+        );
 
-    if (hotel) {
-      structuredDataHotel =
-        hotel as unknown as HotelSEO;
-
-      const { data: room } =
-        await supabase
-          .from("rooms")
-          .select(
-            "id, hotel_id, slug, name_vi, name_en, description_vi, description_en, image, base_price, status"
-          )
-          .eq(
-            "hotel_id",
-            structuredDataHotel.id
-          )
-          .eq("slug", roomSlug)
-          .eq("status", "active")
-          .maybeSingle();
-
-      if (room) {
-        structuredDataRoom =
-          room as unknown as RoomSEO;
-
-        const { data: media } =
-          await supabase
-            .from("media")
-            .select(
-              "public_url, alt_vi, alt_en, is_cover, sort_order"
-            )
-            .eq(
-              "entity_type",
-              "room"
-            )
-            .eq(
-              "entity_id",
-              structuredDataRoom.id
-            )
-            .eq(
-              "status",
-              "active"
-            )
-            .order("is_cover", {
-              ascending: false,
-            })
-            .order("sort_order", {
-              ascending: true,
-            });
-
-        const mediaData =
-          media as unknown as
-            | MediaSEO[]
-            | null;
-
-        const coverMedia =
-          mediaData?.[0];
-
-        structuredDataImage =
-          coverMedia?.public_url ||
-          structuredDataRoom.image ||
-          structuredDataHotel.image ||
-          undefined;
-      }
+    if (
+      roomImages.length === 0 &&
+      room.image
+    ) {
+      roomImages.push(room.image);
     }
-  }
 
-  const canonicalUrl =
-    `${siteUrl.replace(/\/$/, "")}/khach-san/${slug}/phong/${roomSlug}`;
+    if (
+      roomImages.length === 0 &&
+      hotel.image
+    ) {
+      roomImages.push(hotel.image);
+    }
+
+    structuredData = {
+      "@context":
+        "https://schema.org",
+      "@type": "HotelRoom",
+      "@id": `${roomUrl}#room`,
+      name: roomName,
+      url: roomUrl,
+      description: roomDescription,
+
+      containedInPlace: {
+        "@type": "Hotel",
+        "@id": `${hotelUrl}#hotel`,
+        name: hotelName,
+        url: hotelUrl,
+      },
+    };
+
+    if (roomImages.length > 0) {
+      structuredData.image =
+        roomImages;
+    }
+
+    if (hotel.address_vi) {
+      structuredData.address = {
+        "@type": "PostalAddress",
+        streetAddress:
+          cleanText(
+            hotel.address_vi
+          ),
+        addressLocality:
+          "Ho Chi Minh City",
+        addressCountry: "VN",
+      };
+    }
+
+    if (room.size !== null) {
+      structuredData.floorSize = {
+        "@type":
+          "QuantitativeValue",
+        value: room.size,
+        unitCode: "MTK",
+      };
+    }
+
+    if (room.max_guests !== null) {
+      structuredData.occupancy = {
+        "@type":
+          "QuantitativeValue",
+        maxValue:
+          room.max_guests,
+      };
+    }
+
+    if (
+      room.beds_vi ||
+      room.beds_en
+    ) {
+      structuredData.bed =
+        cleanText(
+          room.beds_vi ||
+            room.beds_en
+        );
+    }
+
+    if (
+      room.base_price !== null
+    ) {
+      structuredData.offers = {
+        "@type": "Offer",
+        priceCurrency: "VND",
+        price: room.base_price,
+        availability:
+          "https://schema.org/InStock",
+        url: roomUrl,
+      };
+    }
+
+    breadcrumbData =
+      createBreadcrumbStructuredData(
+        hotel,
+        room,
+        siteBaseUrl
+      );
+  }
 
   return (
     <>
-      {structuredDataRoom &&
-        structuredDataHotel && (
-          <RoomStructuredData
-            room={structuredDataRoom}
-            hotel={structuredDataHotel}
-            imageUrl={structuredDataImage}
-            canonicalUrl={canonicalUrl}
-          />
-        )}
+      {structuredData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html:
+              JSON.stringify(
+                structuredData
+              ).replace(
+                /</g,
+                "\\u003c"
+              ),
+          }}
+        />
+      )}
+
+      {breadcrumbData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html:
+              JSON.stringify(
+                breadcrumbData
+              ).replace(
+                /</g,
+                "\\u003c"
+              ),
+          }}
+        />
+      )}
 
       {children}
     </>

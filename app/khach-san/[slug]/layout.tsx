@@ -18,15 +18,17 @@ type HotelSEO = {
   description_en: string | null;
   image: string | null;
   status: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  map_url: string | null;
-  google_business_url: string | null;
 };
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
   "https://huyenstays.vercel.app";
+
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+const supabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 function cleanText(
   value: string | null | undefined
@@ -39,14 +41,25 @@ function cleanText(
     .trim();
 }
 
+function normalizeLocationText(
+  value: string
+): string {
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/\s*,\s*/g, ", ")
+    .trim();
+}
+
 function createDescription(
   hotel: HotelSEO
 ): string {
-  const description =
-    cleanText(hotel.description_vi);
+  const description = cleanText(
+    hotel.description_vi
+  );
 
-  const address =
-    cleanText(hotel.address_vi);
+  const address = cleanText(
+    hotel.address_vi
+  );
 
   const name =
     cleanText(hotel.name_vi) ||
@@ -59,10 +72,12 @@ function createDescription(
     result =
       `${name} tại ${
         address || "TP. Hồ Chí Minh"
-      }. Đặt phòng trực tiếp tại Huyen's Hotels & Stays.`;
+      }. Khám phá phòng nghỉ tiện nghi và đặt phòng trực tiếp tại Huyen's Hotels & Stays.`;
   } else if (
     address &&
-    !result.includes(address)
+    !result
+      .toLowerCase()
+      .includes(address.toLowerCase())
   ) {
     result = `${result} ${address}.`;
   }
@@ -75,125 +90,268 @@ function createDescription(
   return result;
 }
 
+function createLocationKeywords(
+  address: string
+): string[] {
+  const normalized =
+    normalizeLocationText(address);
+
+  if (!normalized) {
+    return [
+      "khách sạn TP.HCM",
+      "khách sạn Hồ Chí Minh",
+      "hotel Ho Chi Minh",
+      "guesthouse TP.HCM",
+      "homestay TP.HCM",
+    ];
+  }
+
+  const keywords = new Set<string>();
+
+  keywords.add(normalized);
+  keywords.add(`khách sạn ${normalized}`);
+  keywords.add(`hotel ${normalized}`);
+
+  const lower =
+    normalized.toLowerCase();
+
+  if (
+    lower.includes("quận 1") ||
+    lower.includes("quan 1") ||
+    lower.includes("q.1") ||
+    lower.includes("q1")
+  ) {
+    keywords.add("khách sạn Quận 1");
+    keywords.add("hotel Quận 1");
+    keywords.add("khách sạn trung tâm Quận 1");
+    keywords.add("khách sạn TP.HCM");
+  }
+
+  if (
+    lower.includes("bến thành") ||
+    lower.includes("ben thanh")
+  ) {
+    keywords.add("khách sạn Bến Thành");
+    keywords.add("hotel Bến Thành");
+    keywords.add("guesthouse Bến Thành");
+  }
+
+  if (
+    lower.includes("phạm ngũ lão") ||
+    lower.includes("pham ngu lao")
+  ) {
+    keywords.add("khách sạn Phạm Ngũ Lão");
+    keywords.add("guesthouse Phạm Ngũ Lão");
+    keywords.add("hotel Phạm Ngũ Lão");
+  }
+
+  if (
+    lower.includes("đỗ quang đẩu") ||
+    lower.includes("do quang dau")
+  ) {
+    keywords.add("khách sạn Đỗ Quang Đẩu");
+    keywords.add("guesthouse Đỗ Quang Đẩu");
+  }
+
+  if (
+    lower.includes("cô bắc") ||
+    lower.includes("co bac")
+  ) {
+    keywords.add("khách sạn Cô Bắc");
+    keywords.add("hotel Cô Bắc");
+  }
+
+  keywords.add("khách sạn TP.HCM");
+  keywords.add("khách sạn Hồ Chí Minh");
+  keywords.add("guesthouse TP.HCM");
+  keywords.add("homestay TP.HCM");
+
+  return Array.from(keywords);
+}
+
+function createBreadcrumbStructuredData(
+  hotel: HotelSEO,
+  cleanSiteUrl: string
+) {
+  const hotelName =
+    cleanText(hotel.name_vi) ||
+    cleanText(hotel.name_en) ||
+    "Khách sạn";
+
+  const hotelUrl =
+    `${cleanSiteUrl}/khach-san/${hotel.slug}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "@id": `${hotelUrl}#breadcrumb`,
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Trang chủ",
+        item: cleanSiteUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Khách sạn",
+        item: `${cleanSiteUrl}/phong`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: hotelName,
+        item: hotelUrl,
+      },
+    ],
+  };
+}
+
+async function getHotel(
+  slug: string
+): Promise<HotelSEO | null> {
+  if (!supabaseUrl || !supabaseKey) {
+    return null;
+  }
+
+  const supabase = createClient(
+    supabaseUrl,
+    supabaseKey
+  );
+
+  const { data: hotel } =
+    await supabase
+      .from("hotels")
+      .select(
+        "slug, name_vi, name_en, address_vi, address_en, description_vi, description_en, image, status"
+      )
+      .eq("slug", slug)
+      .eq("status", "active")
+      .maybeSingle();
+
+  return hotel
+    ? (hotel as HotelSEO)
+    : null;
+}
+
 export async function generateMetadata({
   params,
 }: LayoutProps): Promise<Metadata> {
   const { slug } = await params;
 
+  const cleanSiteUrl =
+    siteUrl.replace(/\/+$/, "");
+
   const canonicalUrl =
-    `${siteUrl.replace(/\/$/, "")}/khach-san/${slug}`;
+    `${cleanSiteUrl}/khach-san/${slug}`;
 
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+  if (!supabaseUrl || !supabaseKey) {
     return {
-      title:
-        "Khách sạn | Huyen's Hotels & Stays",
-
+      title: "Khách sạn",
       description:
-        "Khách sạn và nơi lưu trú tại TP. Hồ Chí Minh. Đặt phòng trực tiếp tại Huyen's Hotels & Stays.",
-
+        "Khách sạn, guesthouse và homestay tại TP. Hồ Chí Minh. Đặt phòng trực tiếp tại Huyen's Hotels & Stays.",
       alternates: {
         canonical: canonicalUrl,
       },
-    };
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  );
-
-  const { data: hotel } = await supabase
-    .from("hotels")
-    .select(
-      [
-        "slug",
-        "name_vi",
-        "name_en",
-        "address_vi",
-        "address_en",
-        "description_vi",
-        "description_en",
-        "image",
-        "status",
-        "latitude",
-        "longitude",
-        "map_url",
-        "google_business_url",
-      ].join(", ")
-    )
-    .eq("slug", slug)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (!hotel) {
-    return {
-      title:
-        "Không tìm thấy khách sạn | Huyen's Hotels & Stays",
-
-      description:
-        "Không tìm thấy thông tin cơ sở lưu trú này.",
-
       robots: {
         index: false,
         follow: true,
       },
+    };
+  }
 
+  const hotel =
+    await getHotel(slug);
+
+  if (!hotel) {
+    return {
+      title: "Không tìm thấy khách sạn",
+      description:
+        "Không tìm thấy thông tin cơ sở lưu trú này.",
       alternates: {
         canonical: canonicalUrl,
+      },
+      robots: {
+        index: false,
+        follow: true,
       },
     };
   }
 
-  const hotelData =
-    hotel as unknown as HotelSEO;
-
   const nameVi =
-    cleanText(hotelData.name_vi) ||
-    cleanText(hotelData.name_en) ||
+    cleanText(hotel.name_vi) ||
+    cleanText(hotel.name_en) ||
     "Khách sạn";
 
   const nameEn =
-    cleanText(hotelData.name_en) ||
+    cleanText(hotel.name_en) ||
     nameVi;
 
-  const addressVi =
-    cleanText(hotelData.address_vi);
+  const address =
+    cleanText(hotel.address_vi);
 
   const description =
-    createDescription(hotelData);
+    createDescription(hotel);
 
-  const title =
-    `${nameVi} | Huyen's Hotels & Stays`;
+  /*
+   * Root layout đã có:
+   *
+   * title: {
+   *   template: "%s | Huyen's Hotels & Stays"
+   * }
+   *
+   * Vì vậy ở đây chỉ trả về title gốc,
+   * không tự thêm tên thương hiệu.
+   */
+  const titleLocation =
+    address
+      ? ` | ${address}`
+      : " | TP.HCM";
+
+  let title =
+    `${nameVi}${titleLocation}`;
+
+  /*
+   * Giữ title gốc đủ ngắn để sau khi
+   * Root Layout thêm thương hiệu vẫn hợp lý.
+   */
+  if (
+    `${title} | Huyen's Hotels & Stays`.length >
+    65
+  ) {
+    title = nameVi;
+  }
 
   const englishTitle =
     `${nameEn} | Huyen's Hotels & Stays`;
 
-  const images = hotelData.image
+  const keywords = [
+    nameVi,
+    nameEn,
+    address,
+    ...createLocationKeywords(address),
+    "Huyen's Hotels & Stays",
+  ].filter(Boolean);
+
+  const uniqueKeywords =
+    Array.from(new Set(keywords));
+
+  const images = hotel.image
     ? [
         {
-          url: hotelData.image,
-          alt: nameVi,
+          url: hotel.image,
+          alt:
+            `${nameVi} - Huyen's Hotels & Stays`,
         },
       ]
     : undefined;
 
   return {
     title,
-
     description,
 
-    keywords: [
-      nameVi,
-      nameEn,
-      `${nameVi} Quận 1`,
-      `${nameVi} TP.HCM`,
-      `${nameVi} Hồ Chí Minh`,
-      "khách sạn Quận 1",
-      "khách sạn TP.HCM",
-      "khách sạn Hồ Chí Minh",
-      "Huyen's Hotels & Stays",
-    ],
+    keywords: uniqueKeywords,
 
     alternates: {
       canonical: canonicalUrl,
@@ -216,153 +374,28 @@ export async function generateMetadata({
       type: "website",
       locale: "vi_VN",
       url: canonicalUrl,
-      siteName: "Huyen's Hotels & Stays",
-      title,
+      siteName:
+        "Huyen's Hotels & Stays",
+      title:
+        `${nameVi} | Huyen's Hotels & Stays`,
       description,
       images,
     },
 
     twitter: {
-      card: hotelData.image
+      card: hotel.image
         ? "summary_large_image"
         : "summary",
 
       title: englishTitle,
+
       description,
 
-      images: hotelData.image
-        ? [hotelData.image]
+      images: hotel.image
+        ? [hotel.image]
         : undefined,
     },
-
-    other: {
-      "hotel-name": nameVi,
-      "hotel-address": addressVi,
-    },
   };
-}
-
-function HotelStructuredData({
-  hotel,
-  canonicalUrl,
-}: {
-  hotel: HotelSEO;
-  canonicalUrl: string;
-}) {
-  const name =
-    cleanText(hotel.name_vi) ||
-    cleanText(hotel.name_en) ||
-    "Khách sạn";
-
-  const description =
-    cleanText(hotel.description_vi) ||
-    cleanText(hotel.description_en) ||
-    `${name} tại TP. Hồ Chí Minh.`;
-
-  const address =
-    cleanText(hotel.address_vi) ||
-    cleanText(hotel.address_en);
-
-  const hotelSchema: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "Hotel",
-
-    "@id": `${canonicalUrl}#hotel`,
-
-    name,
-
-    url: canonicalUrl,
-
-    description,
-
-    brand: {
-      "@type": "Brand",
-      name: "Huyen's Hotels & Stays",
-    },
-
-    publisher: {
-      "@type": "Organization",
-      name: "Huyen's Hotels & Stays",
-      url: siteUrl,
-    },
-
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: address,
-      addressLocality: "Ho Chi Minh City",
-      addressRegion: "Ho Chi Minh City",
-      addressCountry: "VN",
-    },
-  };
-
-  if (hotel.image) {
-    hotelSchema.image = [hotel.image];
-  }
-
-  if (
-    hotel.latitude !== null &&
-    hotel.longitude !== null &&
-    Number.isFinite(Number(hotel.latitude)) &&
-    Number.isFinite(Number(hotel.longitude))
-  ) {
-    hotelSchema.geo = {
-      "@type": "GeoCoordinates",
-      latitude: Number(hotel.latitude),
-      longitude: Number(hotel.longitude),
-    };
-  }
-
-  if (hotel.map_url) {
-    hotelSchema.hasMap = hotel.map_url;
-  }
-
-  if (hotel.google_business_url) {
-    hotelSchema.sameAs = [
-      hotel.google_business_url,
-    ];
-  }
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Trang chủ",
-        item: siteUrl,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name,
-        item: canonicalUrl,
-      },
-    ],
-  };
-
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            hotelSchema
-          ),
-        }}
-      />
-
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            breadcrumbSchema
-          ),
-        }}
-      />
-    </>
-  );
 }
 
 export default async function HotelSlugLayout({
@@ -371,56 +404,34 @@ export default async function HotelSlugLayout({
 }: LayoutProps) {
   const { slug } = await params;
 
-  let structuredDataHotel: HotelSEO | null =
-    null;
+  const cleanSiteUrl =
+    siteUrl.replace(/\/+$/, "");
 
-  if (
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  ) {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-    );
+  const hotel =
+    await getHotel(slug);
 
-    const { data: hotel } = await supabase
-      .from("hotels")
-      .select(
-        [
-          "slug",
-          "name_vi",
-          "name_en",
-          "address_vi",
-          "address_en",
-          "description_vi",
-          "description_en",
-          "image",
-          "status",
-          "latitude",
-          "longitude",
-          "map_url",
-          "google_business_url",
-        ].join(", ")
-      )
-      .eq("slug", slug)
-      .eq("status", "active")
-      .maybeSingle();
-
-    if (hotel) {
-      structuredDataHotel =
-        hotel as unknown as HotelSEO;
-    }
-  }
-
-  const canonicalUrl =
-    `${siteUrl.replace(/\/$/, "")}/khach-san/${slug}`;
+  const breadcrumbData =
+    hotel
+      ? createBreadcrumbStructuredData(
+          hotel,
+          cleanSiteUrl
+        )
+      : null;
 
   return (
     <>
-      {structuredDataHotel && (
-        <HotelStructuredData
-          hotel={structuredDataHotel}
-          canonicalUrl={canonicalUrl}
+      {breadcrumbData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html:
+              JSON.stringify(
+                breadcrumbData
+              ).replace(
+                /</g,
+                "\\u003c"
+              ),
+          }}
         />
       )}
 

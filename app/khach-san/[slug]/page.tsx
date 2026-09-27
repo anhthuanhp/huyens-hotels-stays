@@ -209,12 +209,6 @@ function getRoomPrice(room: Room): number | null {
   return Number.isFinite(numberValue) ? numberValue : null;
 }
 
-/**
- * Đơn vị giá lấy đúng theo business_model
- * được quy định tại admin/khach-san:
- * daily -> ngày
- * monthly -> tháng
- */
 function getBusinessModelUnit(
   businessModel: "daily" | "monthly" | null | undefined,
   language: Language
@@ -293,6 +287,193 @@ function formatDate(
       year: "numeric",
     }
   ).format(date);
+}
+
+/**
+ * Tạo dữ liệu JSON-LD cho trang chi tiết khách sạn.
+ *
+ * Dữ liệu lấy trực tiếp từ hotel + rooms đã tải từ Supabase.
+ * Không ảnh hưởng tới giao diện.
+ */
+function createHotelStructuredData(
+  hotel: Hotel,
+  rooms: Room[],
+  language: Language,
+  slug: string
+) {
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://huyenstays.vercel.app";
+
+  const cleanSiteUrl =
+    siteUrl.replace(/\/+$/, "");
+
+  const hotelName =
+    language === "vi"
+      ? hotel.name_vi || hotel.name_en || "Khách sạn"
+      : hotel.name_en || hotel.name_vi || "Hotel";
+
+  const description =
+    language === "vi"
+      ? hotel.description_vi ||
+        hotel.description_en ||
+        ""
+      : hotel.description_en ||
+        hotel.description_vi ||
+        "";
+
+  const address =
+    language === "vi"
+      ? hotel.address_vi ||
+        hotel.address_en ||
+        ""
+      : hotel.address_en ||
+        hotel.address_vi ||
+        "";
+
+  const hotelUrl =
+    `${cleanSiteUrl}/khach-san/${slug}`;
+
+  const structuredData: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Hotel",
+    "@id": `${hotelUrl}#hotel`,
+    name: hotelName,
+    url: hotelUrl,
+  };
+
+  if (description.trim()) {
+    structuredData.description =
+      description.trim();
+  }
+
+  if (hotel.image) {
+    structuredData.image = [hotel.image];
+  }
+
+  if (address.trim()) {
+    structuredData.address = {
+      "@type": "PostalAddress",
+      streetAddress: address.trim(),
+      addressLocality: "Ho Chi Minh City",
+      addressCountry: "VN",
+    };
+  }
+
+  if (
+    typeof hotel.latitude === "number" &&
+    typeof hotel.longitude === "number"
+  ) {
+    structuredData.geo = {
+      "@type": "GeoCoordinates",
+      latitude: hotel.latitude,
+      longitude: hotel.longitude,
+    };
+  }
+
+  if (hotel.google_business_url?.trim()) {
+    structuredData.sameAs = [
+      hotel.google_business_url.trim(),
+    ];
+  }
+
+  const hotelRooms = rooms
+    .map((room) => {
+      const roomName =
+        language === "vi"
+          ? room.name_vi || room.name_en || "Phòng"
+          : room.name_en || room.name_vi || "Room";
+
+      const roomDescription =
+        language === "vi"
+          ? room.description_vi ||
+            room.description_en ||
+            ""
+          : room.description_en ||
+            room.description_vi ||
+            "";
+
+      const roomUrl = room.slug
+        ? `${hotelUrl}/phong/${room.slug}`
+        : undefined;
+
+      const roomData: Record<string, unknown> = {
+        "@type": "HotelRoom",
+        name: roomName,
+        containedInPlace: {
+          "@id": `${hotelUrl}#hotel`,
+        },
+      };
+
+      if (roomDescription.trim()) {
+        roomData.description =
+          roomDescription.trim();
+      }
+
+      if (roomUrl) {
+        roomData.url = roomUrl;
+      }
+
+      const roomImage =
+        room.image ||
+        null;
+
+      if (roomImage) {
+        roomData.image = [roomImage];
+      }
+
+      const size =
+        getRoomSize(room);
+
+      if (size) {
+        roomData.floorSize = {
+          "@type": "QuantitativeValue",
+          value: Number(size),
+          unitCode: "MTK",
+        };
+      }
+
+      const guests =
+        getRoomGuests(room);
+
+      if (guests != null) {
+        roomData.occupancy = {
+          "@type": "QuantitativeValue",
+          maxValue: guests,
+        };
+      }
+
+      const bed =
+        getRoomBed(room, language);
+
+      if (bed) {
+        roomData.bed = bed;
+      }
+
+      const price =
+        getRoomPrice(room);
+
+      if (price != null) {
+        roomData.offers = {
+          "@type": "Offer",
+          priceCurrency: "VND",
+          price,
+          availability:
+            "https://schema.org/InStock",
+          url: roomUrl || hotelUrl,
+        };
+      }
+
+      return roomData;
+    })
+    .filter(Boolean);
+
+  if (hotelRooms.length > 0) {
+    structuredData.containsPlace =
+      hotelRooms;
+  }
+
+  return structuredData;
 }
 
 export default function HotelDetailPage() {
@@ -791,6 +972,20 @@ export default function HotelDetailPage() {
       language
     );
 
+  /*
+   * JSON-LD được tạo sau khi hotel + rooms
+   * đã được tải từ Supabase.
+   */
+  const hotelStructuredData =
+    hotel
+      ? createHotelStructuredData(
+          hotel,
+          rooms,
+          language,
+          slug
+        )
+      : null;
+
   if (loading) {
     return (
       <main className="min-h-screen bg-white">
@@ -823,708 +1018,724 @@ export default function HotelDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
-      <div className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
+    <>
+      {hotelStructuredData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              hotelStructuredData
+            ).replace(
+              /</g,
+              "\\u003c"
+            ),
+          }}
+        />
+      )}
 
-        {/* BACK + LANGUAGE */}
-        <div className="mb-6 flex items-center justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition hover:text-slate-950"
-          >
-            <ArrowLeft size={18} />
+      <main className="min-h-screen bg-white text-slate-900">
+        <div className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
 
-            {language === "vi"
-              ? "Quay về trang chủ"
-              : "Back to home"}
-          </Link>
-
-          <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1">
-            <button
-              type="button"
-              onClick={() =>
-                setLanguage("vi")
-              }
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                language === "vi"
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-500"
-              }`}
+          {/* BACK + LANGUAGE */}
+          <div className="mb-6 flex items-center justify-between">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition hover:text-slate-950"
             >
-              VI
-            </button>
+              <ArrowLeft size={18} />
 
-            <button
-              type="button"
-              onClick={() =>
-                setLanguage("en")
-              }
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                language === "en"
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-500"
-              }`}
-            >
-              EN
-            </button>
-          </div>
-        </div>
+              {language === "vi"
+                ? "Quay về trang chủ"
+                : "Back to home"}
+            </Link>
 
-        {/* HOTEL NAME / GOOGLE */}
-        <section className="grid grid-cols-1 gap-6 border-b border-slate-200 pb-7 md:grid-cols-[7fr_3fr]">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              {hotelName ||
-                (language === "vi"
-                  ? "Khách sạn"
-                  : "Hotel")}
-            </h1>
-
-            {hotelAddress && (
-              <div className="mt-3 flex items-start gap-2 text-sm text-slate-600">
-                <MapPin
-                  size={18}
-                  className="mt-0.5 shrink-0"
-                />
-
-                <span>
-                  {hotelAddress}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-start md:justify-end">
-            {googleReviewUrl ? (
-              <a
-                href={googleReviewUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-3"
+            <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setLanguage("vi")
+                }
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  language === "vi"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-500"
+                }`}
               >
-                <GoogleIcon />
+                VI
+              </button>
 
-                <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-950">
-                  {language === "vi"
-                    ? "Xem đánh giá Google >>"
-                    : "View Google reviews >>"}
-                </span>
-              </a>
-            ) : (
-              <div className="flex items-center gap-3">
-                <GoogleIcon />
-
-                <span className="text-sm text-slate-400">
-                  {language === "vi"
-                    ? "Đánh giá Google"
-                    : "Google reviews"}
-                </span>
-              </div>
-            )}
+              <button
+                type="button"
+                onClick={() =>
+                  setLanguage("en")
+                }
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  language === "en"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-500"
+                }`}
+              >
+                EN
+              </button>
+            </div>
           </div>
-        </section>
 
-        {/* ROOMS + SEARCH */}
-        <section
-          id="rooms-section"
-          className="mt-8 scroll-mt-6"
-        >
-          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
-
-            {/* ROOM LIST */}
+          {/* HOTEL NAME / GOOGLE */}
+          <section className="grid grid-cols-1 gap-6 border-b border-slate-200 pb-7 md:grid-cols-[7fr_3fr]">
             <div>
-              <div className="mb-5 flex items-center justify-between">
-                <h2 className="text-xl font-bold uppercase tracking-wide text-slate-950">
-                  {language === "vi"
-                    ? "DANH SÁCH PHÒNG"
-                    : "ROOMS"}
-                </h2>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+                {hotelName ||
+                  (language === "vi"
+                    ? "Khách sạn"
+                    : "Hotel")}
+              </h1>
 
-                <span className="text-sm text-slate-500">
-                  {rooms.length}{" "}
-                  {language === "vi"
-                    ? "loại phòng"
-                    : rooms.length === 1
-                      ? "room type"
-                      : "room types"}
-                </span>
-              </div>
+              {hotelAddress && (
+                <div className="mt-3 flex items-start gap-2 text-sm text-slate-600">
+                  <MapPin
+                    size={18}
+                    className="mt-0.5 shrink-0"
+                  />
 
-              {rooms.length === 0 ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
-                  {language === "vi"
-                    ? "Hiện chưa có phòng đang hoạt động."
-                    : "There are no active rooms at the moment."}
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  {rooms.map((room) => {
-                    const image =
-                      getRoomImage(room);
-
-                    const roomName =
-                      language === "vi"
-                        ? room.name_vi
-                        : room.name_en;
-
-                    const description =
-                      language === "vi"
-                        ? room.description_vi
-                        : room.description_en;
-
-                    const bed =
-                      getRoomBed(
-                        room,
-                        language
-                      );
-
-                    const size =
-                      getRoomSize(room);
-
-                    const guests =
-                      getRoomGuests(room);
-
-                    const amenities =
-                      parseAmenities(
-                        language === "vi"
-                          ? room.amenities_vi
-                          : room.amenities_en,
-                        language
-                      );
-
-                    const price =
-                      getRoomPrice(room);
-
-                    return (
-                      <article
-                        key={room.id}
-                        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
-
-                          {/* IMAGE */}
-                          <div className="relative min-h-[220px] bg-slate-100">
-                            {image ? (
-                              <Image
-                                src={image}
-                                alt={
-                                  roomName ??
-                                  "Room"
-                                }
-                                fill
-                                unoptimized
-                                sizes="(max-width: 768px) 100vw, 280px"
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
-                                {language === "vi"
-                                  ? "Chưa có hình ảnh"
-                                  : "No image"}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* ROOM INFO */}
-                          <div className="p-5 sm:p-6">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                              <div>
-                                <h3 className="text-xl font-bold text-slate-950">
-                                  {roomName ||
-                                    (language === "vi"
-                                      ? "Phòng"
-                                      : "Room")}
-                                </h3>
-
-                                {description && (
-                                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                                    {description}
-                                  </p>
-                                )}
-                              </div>
-
-                              {price != null && (
-                                <div className="shrink-0 text-left sm:text-right">
-                                  <div className="text-lg font-bold text-slate-950">
-                                    {formatPrice(
-                                      price
-                                    )}
-                                  </div>
-
-                                  <div className="text-xs text-slate-500">
-                                    / {priceUnit}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="mt-5 grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-3">
-                              {size && (
-                                <div className="flex items-center gap-2">
-                                  <Maximize2 size={17} />
-
-                                  <span>
-                                    {size} m²
-                                  </span>
-                                </div>
-                              )}
-
-                              {guests != null && (
-                                <div className="flex items-center gap-2">
-                                  <Users size={17} />
-
-                                  <span>
-                                    {language === "vi"
-                                      ? `Tối đa ${guests} khách`
-                                      : `Up to ${guests} guests`}
-                                  </span>
-                                </div>
-                              )}
-
-                              {bed && (
-                                <div className="flex items-center gap-2">
-                                  <BedDouble size={17} />
-
-                                  <span>
-                                    {bed}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            {amenities.length > 0 && (
-                              <div className="mt-5 border-t border-slate-100 pt-4">
-                                <div className="mb-2 text-sm font-semibold text-slate-900">
-                                  {language === "vi"
-                                    ? "Tiện nghi phòng"
-                                    : "Room amenities"}
-                                </div>
-
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                  {amenities.map(
-                                    (
-                                      amenity,
-                                      index
-                                    ) => (
-                                      <div
-                                        key={`${room.id}-${index}`}
-                                        className="flex items-start gap-2 text-sm text-slate-600"
-                                      >
-                                        <Check
-                                          size={16}
-                                          className="mt-0.5 shrink-0 text-emerald-600"
-                                        />
-
-                                        <span>
-                                          {amenity}
-                                        </span>
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* BOOK ROOM */}
-                            <div className="mt-6 border-t border-slate-100 pt-5">
-                              {room.slug ? (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleBookRoom(
-                                      room
-                                    )
-                                  }
-                                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-sky-500 px-5 text-sm font-bold text-white transition hover:bg-sky-600"
-                                >
-                                  <Search size={17} />
-
-                                  {language === "vi"
-                                    ? "Đặt phòng"
-                                    : "Book this room"}
-
-                                  <ChevronRight size={17} />
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  disabled
-                                  className="inline-flex h-11 cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-slate-300 px-5 text-sm font-bold text-white"
-                                >
-                                  <Search size={17} />
-
-                                  {language === "vi"
-                                    ? "Chưa có thông tin phòng"
-                                    : "Room unavailable"}
-
-                                  <ChevronRight size={17} />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
+                  <span>
+                    {hotelAddress}
+                  </span>
                 </div>
               )}
             </div>
 
-            {/* SEARCH */}
-            <aside
-              id="booking-search"
-              className="lg:sticky lg:top-6"
-            >
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="mb-5 flex items-center gap-2">
-                  <Search size={19} />
-
-                  <h2 className="text-lg font-bold text-slate-950">
-                    {language === "vi"
-                      ? "TÌM PHÒNG"
-                      : "FIND ROOMS"}
-                  </h2>
-                </div>
-
-                <div className="space-y-4">
-
-                  {/* HOTEL */}
-                  <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                      {language === "vi"
-                        ? "Khách sạn"
-                        : "Hotel"}
-                    </label>
-
-                    <input
-                      type="text"
-                      value={hotelName ?? ""}
-                      readOnly
-                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none"
-                    />
-                  </div>
-
-                  {/* CHECK IN */}
-                  <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                      {language === "vi"
-                        ? "Nhận phòng"
-                        : "Check-in"}
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openDatePicker(
-                          checkInRef
-                        )
-                      }
-                      className="relative flex h-11 w-full cursor-pointer items-center rounded-xl border border-slate-200 bg-white px-3 text-left text-sm text-slate-700"
-                    >
-                      <span>
-                        {checkIn
-                          ? formatDate(
-                              checkIn,
-                              language
-                            )
-                          : language === "vi"
-                            ? "Chọn ngày"
-                            : "Select date"}
-                      </span>
-
-                      <input
-                        ref={checkInRef}
-                        type="date"
-                        value={checkIn}
-                        onChange={(event) => {
-                          const value =
-                            event.target.value;
-
-                          setCheckIn(value);
-
-                          if (
-                            checkOut &&
-                            value &&
-                            checkOut <= value
-                          ) {
-                            setCheckOut("");
-                          }
-                        }}
-                        className="pointer-events-none absolute h-0 w-0 opacity-0"
-                        tabIndex={-1}
-                        aria-hidden="true"
-                      />
-
-                      <span className="ml-auto text-slate-400">
-                        📅
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* CHECK OUT */}
-                  <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                      {language === "vi"
-                        ? "Trả phòng"
-                        : "Check-out"}
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openDatePicker(
-                          checkOutRef
-                        )
-                      }
-                      className="relative flex h-11 w-full cursor-pointer items-center rounded-xl border border-slate-200 bg-white px-3 text-left text-sm text-slate-700"
-                    >
-                      <span>
-                        {checkOut
-                          ? formatDate(
-                              checkOut,
-                              language
-                            )
-                          : language === "vi"
-                            ? "Chọn ngày"
-                            : "Select date"}
-                      </span>
-
-                      <input
-                        ref={checkOutRef}
-                        type="date"
-                        value={checkOut}
-                        min={
-                          checkIn ||
-                          undefined
-                        }
-                        onChange={(event) =>
-                          setCheckOut(
-                            event.target.value
-                          )
-                        }
-                        className="pointer-events-none absolute h-0 w-0 opacity-0"
-                        tabIndex={-1}
-                        aria-hidden="true"
-                      />
-
-                      <span className="ml-auto text-slate-400">
-                        📅
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* ADULTS */}
-                  <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                      {language === "vi"
-                        ? "Người lớn"
-                        : "Adults"}
-                    </label>
-
-                    <div className="flex h-11 items-center justify-between rounded-xl border border-slate-200 px-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setAdults(
-                            Math.max(
-                              1,
-                              adults - 1
-                            )
-                          )
-                        }
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
-                      >
-                        <Minus size={16} />
-                      </button>
-
-                      <span className="text-sm font-semibold">
-                        {adults}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setAdults(
-                            adults + 1
-                          )
-                        }
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* CHILDREN */}
-                  <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                      {language === "vi"
-                        ? "Trẻ em"
-                        : "Children"}
-                    </label>
-
-                    <div className="flex h-11 items-center justify-between rounded-xl border border-slate-200 px-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setChildren(
-                            Math.max(
-                              0,
-                              children - 1
-                            )
-                          )
-                        }
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
-                      >
-                        <Minus size={16} />
-                      </button>
-
-                      <span className="text-sm font-semibold">
-                        {children}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setChildren(
-                            children + 1
-                          )
-                        }
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* SEARCH */}
-                  <button
-                    type="button"
-                    onClick={handleSearch}
-                    className="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 text-sm font-bold text-white transition hover:bg-sky-600"
-                  >
-                    <Search size={18} />
-
-                    {language === "vi"
-                      ? "Tìm phòng"
-                      : "Find rooms"}
-                  </button>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        {/* OTA */}
-        <section className="mt-12 border-t border-slate-200 pt-10">
-          <div className="mb-5">
-            <h2 className="text-xl font-bold uppercase tracking-wide text-slate-950">
-              {language === "vi"
-                ? "Đặt phòng trực tuyến"
-                : "Booking online - OTAs"}
-            </h2>
-
-            <p className="mt-2 text-sm text-slate-500">
-              {language === "vi"
-                ? "Đặt phòng qua các nền tảng đang bán phòng của khách sạn."
-                : "Book through the platforms currently selling rooms at this hotel."}
-            </p>
-          </div>
-
-          {otas.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
-              {language === "vi"
-                ? "Hiện chưa có OTA nào được kết nối."
-                : "No OTA channels are currently connected."}
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-3">
-              {otas.map((ota) => (
+            <div className="flex items-center justify-start md:justify-end">
+              {googleReviewUrl ? (
                 <a
-                  key={ota.id}
-                  href={ota.listing_url}
+                  href={googleReviewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex min-h-[58px] items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                  className="group flex items-center gap-3"
                 >
-                  {ota.logo ? (
-                    <Image
-                      src={ota.logo}
-                      alt={ota.name}
-                      width={32}
-                      height={32}
-                      unoptimized
-                      className="h-8 w-8 object-contain"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500">
-                      {ota.name
-                        .charAt(0)
-                        .toUpperCase()}
-                    </div>
-                  )}
+                  <GoogleIcon />
 
-                  <span className="text-sm font-semibold text-slate-900 group-hover:text-sky-600">
-                    {ota.name}
+                  <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-950">
+                    {language === "vi"
+                      ? "Xem đánh giá Google >>"
+                      : "View Google reviews >>"}
                   </span>
-
-                  <ChevronRight
-                    size={16}
-                    className="ml-auto shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-sky-500"
-                  />
                 </a>
-              ))}
-            </div>
-          )}
-        </section>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <GoogleIcon />
 
-        {/* MAP */}
-        <section className="mt-12 border-t border-slate-200 pt-10">
-          <h2 className="mb-5 text-xl font-bold uppercase tracking-wide text-slate-950">
-            {language === "vi"
-              ? "BẢN ĐỒ"
-              : "MAP"}
-          </h2>
-
-          {mapEmbedUrl ? (
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-              <iframe
-                src={mapEmbedUrl}
-                title={
-                  language === "vi"
-                    ? "Bản đồ vị trí khách sạn"
-                    : "Hotel location map"
-                }
-                className="h-[420px] w-full border-0"
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-              />
+                  <span className="text-sm text-slate-400">
+                    {language === "vi"
+                      ? "Đánh giá Google"
+                      : "Google reviews"}
+                  </span>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
+          </section>
+
+          {/* ROOMS + SEARCH */}
+          <section
+            id="rooms-section"
+            className="mt-8 scroll-mt-6"
+          >
+            <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+
+              {/* ROOM LIST */}
+              <div>
+                <div className="mb-5 flex items-center justify-between">
+                  <h2 className="text-xl font-bold uppercase tracking-wide text-slate-950">
+                    {language === "vi"
+                      ? "DANH SÁCH PHÒNG"
+                      : "ROOMS"}
+                  </h2>
+
+                  <span className="text-sm text-slate-500">
+                    {rooms.length}{" "}
+                    {language === "vi"
+                      ? "loại phòng"
+                      : rooms.length === 1
+                        ? "room type"
+                        : "room types"}
+                  </span>
+                </div>
+
+                {rooms.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
+                    {language === "vi"
+                      ? "Hiện chưa có phòng đang hoạt động."
+                      : "There are no active rooms at the moment."}
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    {rooms.map((room) => {
+                      const image =
+                        getRoomImage(room);
+
+                      const roomName =
+                        language === "vi"
+                          ? room.name_vi
+                          : room.name_en;
+
+                      const description =
+                        language === "vi"
+                          ? room.description_vi
+                          : room.description_en;
+
+                      const bed =
+                        getRoomBed(
+                          room,
+                          language
+                        );
+
+                      const size =
+                        getRoomSize(room);
+
+                      const guests =
+                        getRoomGuests(room);
+
+                      const amenities =
+                        parseAmenities(
+                          language === "vi"
+                            ? room.amenities_vi
+                            : room.amenities_en,
+                          language
+                        );
+
+                      const price =
+                        getRoomPrice(room);
+
+                      return (
+                        <article
+                          key={room.id}
+                          className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
+
+                            {/* IMAGE */}
+                            <div className="relative min-h-[220px] bg-slate-100">
+                              {image ? (
+                                <Image
+                                  src={image}
+                                  alt={
+                                    roomName ??
+                                    "Room"
+                                  }
+                                  fill
+                                  unoptimized
+                                  sizes="(max-width: 768px) 100vw, 280px"
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
+                                  {language === "vi"
+                                    ? "Chưa có hình ảnh"
+                                    : "No image"}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* ROOM INFO */}
+                            <div className="p-5 sm:p-6">
+                              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                  <h3 className="text-xl font-bold text-slate-950">
+                                    {roomName ||
+                                      (language === "vi"
+                                        ? "Phòng"
+                                        : "Room")}
+                                  </h3>
+
+                                  {description && (
+                                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                                      {description}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {price != null && (
+                                  <div className="shrink-0 text-left sm:text-right">
+                                    <div className="text-lg font-bold text-slate-950">
+                                      {formatPrice(
+                                        price
+                                      )}
+                                    </div>
+
+                                    <div className="text-xs text-slate-500">
+                                      / {priceUnit}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="mt-5 grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-3">
+                                {size && (
+                                  <div className="flex items-center gap-2">
+                                    <Maximize2 size={17} />
+
+                                    <span>
+                                      {size} m²
+                                    </span>
+                                  </div>
+                                )}
+
+                                {guests != null && (
+                                  <div className="flex items-center gap-2">
+                                    <Users size={17} />
+
+                                    <span>
+                                      {language === "vi"
+                                        ? `Tối đa ${guests} khách`
+                                        : `Up to ${guests} guests`}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {bed && (
+                                  <div className="flex items-center gap-2">
+                                    <BedDouble size={17} />
+
+                                    <span>
+                                      {bed}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {amenities.length > 0 && (
+                                <div className="mt-5 border-t border-slate-100 pt-4">
+                                  <div className="mb-2 text-sm font-semibold text-slate-900">
+                                    {language === "vi"
+                                      ? "Tiện nghi phòng"
+                                      : "Room amenities"}
+                                  </div>
+
+                                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    {amenities.map(
+                                      (
+                                        amenity,
+                                        index
+                                      ) => (
+                                        <div
+                                          key={`${room.id}-${index}`}
+                                          className="flex items-start gap-2 text-sm text-slate-600"
+                                        >
+                                          <Check
+                                            size={16}
+                                            className="mt-0.5 shrink-0 text-emerald-600"
+                                          />
+
+                                          <span>
+                                            {amenity}
+                                          </span>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* BOOK ROOM */}
+                              <div className="mt-6 border-t border-slate-100 pt-5">
+                                {room.slug ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleBookRoom(
+                                        room
+                                      )
+                                    }
+                                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-sky-500 px-5 text-sm font-bold text-white transition hover:bg-sky-600"
+                                  >
+                                    <Search size={17} />
+
+                                    {language === "vi"
+                                      ? "Đặt phòng"
+                                      : "Book this room"}
+
+                                    <ChevronRight size={17} />
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    disabled
+                                    className="inline-flex h-11 cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-slate-300 px-5 text-sm font-bold text-white"
+                                  >
+                                    <Search size={17} />
+
+                                    {language === "vi"
+                                      ? "Chưa có thông tin phòng"
+                                      : "Room unavailable"}
+
+                                    <ChevronRight size={17} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* SEARCH */}
+              <aside
+                id="booking-search"
+                className="lg:sticky lg:top-6"
+              >
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="mb-5 flex items-center gap-2">
+                    <Search size={19} />
+
+                    <h2 className="text-lg font-bold text-slate-950">
+                      {language === "vi"
+                        ? "TÌM PHÒNG"
+                        : "FIND ROOMS"}
+                    </h2>
+                  </div>
+
+                  <div className="space-y-4">
+
+                    {/* HOTEL */}
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold text-slate-800">
+                        {language === "vi"
+                          ? "Khách sạn"
+                          : "Hotel"}
+                      </label>
+
+                      <input
+                        type="text"
+                        value={hotelName ?? ""}
+                        readOnly
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none"
+                      />
+                    </div>
+
+                    {/* CHECK IN */}
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold text-slate-800">
+                        {language === "vi"
+                          ? "Nhận phòng"
+                          : "Check-in"}
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openDatePicker(
+                            checkInRef
+                          )
+                        }
+                        className="relative flex h-11 w-full cursor-pointer items-center rounded-xl border border-slate-200 bg-white px-3 text-left text-sm text-slate-700"
+                      >
+                        <span>
+                          {checkIn
+                            ? formatDate(
+                                checkIn,
+                                language
+                              )
+                            : language === "vi"
+                              ? "Chọn ngày"
+                              : "Select date"}
+                        </span>
+
+                        <input
+                          ref={checkInRef}
+                          type="date"
+                          value={checkIn}
+                          onChange={(event) => {
+                            const value =
+                              event.target.value;
+
+                            setCheckIn(value);
+
+                            if (
+                              checkOut &&
+                              value &&
+                              checkOut <= value
+                            ) {
+                              setCheckOut("");
+                            }
+                          }}
+                          className="pointer-events-none absolute h-0 w-0 opacity-0"
+                          tabIndex={-1}
+                          aria-hidden="true"
+                        />
+
+                        <span className="ml-auto text-slate-400">
+                          📅
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* CHECK OUT */}
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold text-slate-800">
+                        {language === "vi"
+                          ? "Trả phòng"
+                          : "Check-out"}
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openDatePicker(
+                            checkOutRef
+                          )
+                        }
+                        className="relative flex h-11 w-full cursor-pointer items-center rounded-xl border border-slate-200 bg-white px-3 text-left text-sm text-slate-700"
+                      >
+                        <span>
+                          {checkOut
+                            ? formatDate(
+                                checkOut,
+                                language
+                              )
+                            : language === "vi"
+                              ? "Chọn ngày"
+                              : "Select date"}
+                        </span>
+
+                        <input
+                          ref={checkOutRef}
+                          type="date"
+                          value={checkOut}
+                          min={
+                            checkIn ||
+                            undefined
+                          }
+                          onChange={(event) =>
+                            setCheckOut(
+                              event.target.value
+                            )
+                          }
+                          className="pointer-events-none absolute h-0 w-0 opacity-0"
+                          tabIndex={-1}
+                          aria-hidden="true"
+                        />
+
+                        <span className="ml-auto text-slate-400">
+                          📅
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* ADULTS */}
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold text-slate-800">
+                        {language === "vi"
+                          ? "Người lớn"
+                          : "Adults"}
+                      </label>
+
+                      <div className="flex h-11 items-center justify-between rounded-xl border border-slate-200 px-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAdults(
+                              Math.max(
+                                1,
+                                adults - 1
+                              )
+                            )
+                          }
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
+                        >
+                          <Minus size={16} />
+                        </button>
+
+                        <span className="text-sm font-semibold">
+                          {adults}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAdults(
+                              adults + 1
+                            )
+                          }
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* CHILDREN */}
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold text-slate-800">
+                        {language === "vi"
+                          ? "Trẻ em"
+                          : "Children"}
+                      </label>
+
+                      <div className="flex h-11 items-center justify-between rounded-xl border border-slate-200 px-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setChildren(
+                              Math.max(
+                                0,
+                                children - 1
+                              )
+                            )
+                          }
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
+                        >
+                          <Minus size={16} />
+                        </button>
+
+                        <span className="text-sm font-semibold">
+                          {children}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setChildren(
+                              children + 1
+                            )
+                          }
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* SEARCH */}
+                    <button
+                      type="button"
+                      onClick={handleSearch}
+                      className="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 text-sm font-bold text-white transition hover:bg-sky-600"
+                    >
+                      <Search size={18} />
+
+                      {language === "vi"
+                        ? "Tìm phòng"
+                        : "Find rooms"}
+                    </button>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          {/* OTA */}
+          <section className="mt-12 border-t border-slate-200 pt-10">
+            <div className="mb-5">
+              <h2 className="text-xl font-bold uppercase tracking-wide text-slate-950">
+                {language === "vi"
+                  ? "Đặt phòng trực tuyến"
+                  : "Booking online - OTAs"}
+              </h2>
+
+              <p className="mt-2 text-sm text-slate-500">
+                {language === "vi"
+                  ? "Đặt phòng qua các nền tảng đang bán phòng của khách sạn."
+                  : "Book through the platforms currently selling rooms at this hotel."}
+              </p>
+            </div>
+
+            {otas.length === 0 ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                {language === "vi"
+                  ? "Hiện chưa có OTA nào được kết nối."
+                  : "No OTA channels are currently connected."}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-3">
+                {otas.map((ota) => (
+                  <a
+                    key={ota.id}
+                    href={ota.listing_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex min-h-[58px] items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                  >
+                    {ota.logo ? (
+                      <Image
+                        src={ota.logo}
+                        alt={ota.name}
+                        width={32}
+                        height={32}
+                        unoptimized
+                        className="h-8 w-8 object-contain"
+                      />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500">
+                        {ota.name
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+                    )}
+
+                    <span className="text-sm font-semibold text-slate-900 group-hover:text-sky-600">
+                      {ota.name}
+                    </span>
+
+                    <ChevronRight
+                      size={16}
+                      className="ml-auto shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-sky-500"
+                    />
+                  </a>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* MAP */}
+          <section className="mt-12 border-t border-slate-200 pt-10">
+            <h2 className="mb-5 text-xl font-bold uppercase tracking-wide text-slate-950">
               {language === "vi"
-                ? "Chưa có link nhúng bản đồ trong hệ thống."
-                : "No embedded map link is available."}
-            </div>
-          )}
-        </section>
-      </div>
+                ? "BẢN ĐỒ"
+                : "MAP"}
+            </h2>
 
-      {/* FOOTER */}
-      <footer className="border-t border-slate-200 bg-slate-50">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-slate-500 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
-          <div>
-            © {new Date().getFullYear()} Huyen&apos;s Hotels & Stays
-          </div>
-
-          <div>
-            {language === "vi"
-              ? "Thoải mái theo cách của bạn."
-              : "Comfort, your way."}
-          </div>
+            {mapEmbedUrl ? (
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+                <iframe
+                  src={mapEmbedUrl}
+                  title={
+                    language === "vi"
+                      ? "Bản đồ vị trí khách sạn"
+                      : "Hotel location map"
+                  }
+                  className="h-[420px] w-full border-0"
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              </div>
+            ) : (
+              <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
+                {language === "vi"
+                  ? "Chưa có link nhúng bản đồ trong hệ thống."
+                  : "No embedded map link is available."}
+              </div>
+            )}
+          </section>
         </div>
-      </footer>
-    </main>
+
+        {/* FOOTER */}
+        <footer className="border-t border-slate-200 bg-slate-50">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-slate-500 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
+            <div>
+              © {new Date().getFullYear()} Huyen&apos;s Hotels & Stays
+            </div>
+
+            <div>
+              {language === "vi"
+                ? "Thoải mái theo cách của bạn."
+                : "Comfort, your way."}
+            </div>
+          </div>
+        </footer>
+      </main>
+    </>
   );
 }

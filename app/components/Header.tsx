@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -136,7 +137,7 @@ export default function Header() {
             href="/phong"
             className="text-sm font-medium text-white transition hover:text-sky-300"
           >
-            {isVi ? "Phòng" : "Rooms"}
+            {isVi ? "Phòng & Giá" : "Rooms & Rates"}
           </Link>
 
           <Link
@@ -337,7 +338,7 @@ export default function Header() {
               onClick={closeMobileMenu}
               className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
             >
-              {isVi ? "Phòng" : "Rooms"}
+              {isVi ? "Phòng & Giá" : "Rooms & Rates"}
             </Link>
 
             <Link

@@ -21,48 +21,78 @@ type LayoutProps = {
   children: React.ReactNode;
 };
 
-const siteUrl = "https://huyenstays.vercel.app";
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://huyenstays.vercel.app";
+
+const siteName = "Huyen's Hotels & Stays";
+
+const defaultTitle =
+  "Huyen's Hotels & Stays | Khách sạn & lưu trú tại TP.HCM";
+
+const defaultDescription =
+  "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại TP.HCM. Không gian lưu trú tiện nghi, vị trí thuận tiện và đặt phòng trực tiếp.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
   title: {
-    default: "Huyen's Hotels & Stays | Khách sạn & Lưu trú tại Quận 1, TP.HCM",
+    default: defaultTitle,
     template: "%s | Huyen's Hotels & Stays",
   },
 
-  description:
-    "Khách sạn, guesthouse và homestay tại trung tâm Quận 1, TP.HCM. Không gian sạch sẽ, tiện nghi, riêng tư. Đặt phòng trực tiếp tại Huyen's Hotels & Stays.",
+  description: defaultDescription,
 
-  keywords: [
-    "khách sạn Quận 1",
-    "khách sạn Quận 1 TP.HCM",
-    "khách sạn trung tâm TP.HCM",
-    "homestay TP.HCM",
-    "homestay Quận 1",
-    "guesthouse Quận 1",
-    "lưu trú Quận 1",
-    "chỗ ở Quận 1",
-    "khách sạn Hồ Chí Minh",
-    "Huyen's Hotels & Stays",
-  ],
+  applicationName: siteName,
 
   authors: [
     {
-      name: "Huyen's Hotels & Stays",
+      name: siteName,
     },
   ],
 
-  creator: "Huyen's Hotels & Stays",
-  publisher: "Huyen's Hotels & Stays",
+  creator: siteName,
+  publisher: siteName,
+
+  formatDetection: {
+    telephone: true,
+    address: true,
+    email: true,
+  },
 
   alternates: {
-    canonical: "/",
+    canonical: siteUrl,
+  },
+
+  openGraph: {
+    type: "website",
+    siteName,
+    locale: "vi_VN",
+    title: defaultTitle,
+    description: defaultDescription,
+    url: siteUrl,
+    images: [
+      {
+        url: "/hero/hero-1.webp",
+        width: 1600,
+        height: 900,
+        alt:
+          "Huyen's Hotels & Stays - Khách sạn, guesthouse và homestay tại TP.HCM",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: defaultTitle,
+    description: defaultDescription,
+    images: ["/hero/hero-1.webp"],
   },
 
   robots: {
     index: true,
     follow: true,
+
     googleBot: {
       index: true,
       follow: true,
@@ -71,25 +101,6 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-
-  openGraph: {
-    type: "website",
-    locale: "vi_VN",
-    url: siteUrl,
-    siteName: "Huyen's Hotels & Stays",
-    title: "Huyen's Hotels & Stays | Khách sạn & Lưu trú tại Quận 1, TP.HCM",
-    description:
-      "Khách sạn, guesthouse và homestay tại trung tâm Quận 1, TP.HCM. Không gian sạch sẽ, tiện nghi, riêng tư. Đặt phòng trực tiếp.",
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    title: "Huyen's Hotels & Stays | Khách sạn & Lưu trú tại Quận 1, TP.HCM",
-    description:
-      "Khách sạn, guesthouse và homestay tại trung tâm Quận 1, TP.HCM. Đặt phòng trực tiếp tại Huyen's Hotels & Stays.",
-  },
-
-  category: "travel",
 };
 
 export default function RootLayout({
@@ -105,7 +116,9 @@ export default function RootLayout({
 
         <ConditionalHeader />
 
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">
+          {children}
+        </main>
 
         <ContactFloat />
       </body>

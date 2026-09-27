@@ -1,3 +1,4 @@
+
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 
@@ -5,7 +6,7 @@ const baseUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
   "https://huyenstays.vercel.app";
 
-const siteUrl = baseUrl.replace(/\/$/, "");
+const siteUrl = baseUrl.replace(/\/+$/, "");
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createClient(
@@ -124,11 +125,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blogUrls: MetadataRoute.Sitemap =
     activeBlogPosts.map((post) => ({
       url: `${siteUrl}/blog/${post.slug}`,
+
       lastModified: post.updated_at
         ? new Date(post.updated_at)
         : post.date
           ? new Date(post.date)
           : undefined,
+
       changeFrequency: "monthly" as const,
       priority: 0.7,
     }));

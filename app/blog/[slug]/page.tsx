@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
@@ -38,12 +39,13 @@ function getSupabaseServerClient() {
 async function getPost(
   slug: string
 ): Promise<BlogPost | null> {
-  const supabase = getSupabaseServerClient();
+  const supabase =
+    getSupabaseServerClient();
 
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select(
-      `
+  const { data, error } =
+    await supabase
+      .from("blog_posts")
+      .select(`
         id,
         slug,
         title_vi,
@@ -60,11 +62,10 @@ async function getPost(
         featured,
         status,
         updated_at
-      `
-    )
-    .eq("slug", slug)
-    .eq("status", "active")
-    .maybeSingle();
+      `)
+      .eq("slug", slug)
+      .eq("status", "active")
+      .maybeSingle();
 
   if (error) {
     console.error(
@@ -78,16 +79,71 @@ async function getPost(
   return data as BlogPost | null;
 }
 
+function getImageUrl(
+  image: string | null,
+  siteUrl: string
+) {
+  if (!image) {
+    return undefined;
+  }
+
+  if (image.startsWith("http")) {
+    return image;
+  }
+
+  return `${siteUrl}${
+    image.startsWith("/")
+      ? image
+      : `/${image}`
+  }`;
+}
+
+function createBreadcrumbStructuredData(
+  post: BlogPost,
+  siteUrl: string
+) {
+  const canonicalUrl =
+    `${siteUrl}/blog/${post.slug}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "@id": `${canonicalUrl}#breadcrumb`,
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Trang chủ",
+        item: siteUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blog",
+        item: `${siteUrl}/blog`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: post.title_vi,
+        item: canonicalUrl,
+      },
+    ],
+  };
+}
+
 export async function generateMetadata({
   params,
 }: Props): Promise<Metadata> {
   const { slug } = await params;
+
   const post = await getPost(slug);
 
   if (!post) {
     return {
       title:
         "Article not found | Huyen's Hotels & Stays",
+
       robots: {
         index: false,
         follow: true,
@@ -99,44 +155,52 @@ export async function generateMetadata({
     process.env.NEXT_PUBLIC_SITE_URL ||
     "https://huyenstays.vercel.app";
 
-  const cleanSiteUrl = siteUrl.replace(/\/$/, "");
+  const cleanSiteUrl =
+    siteUrl.replace(/\/+$/, "");
 
-  const titleVi = post.title_vi;
-  const titleEn = post.title_en;
+  const canonicalUrl =
+    `${cleanSiteUrl}/blog/${post.slug}`;
+
+  const titleVi =
+    post.title_vi;
+
+  const titleEn =
+    post.title_en;
 
   const descriptionVi =
     post.excerpt_vi ||
     "Khám phá những câu chuyện, kinh nghiệm du lịch và trải nghiệm tại TP. Hồ Chí Minh.";
 
-  const imageUrl = post.image
-    ? post.image.startsWith("http")
-      ? post.image
-      : `${cleanSiteUrl}${
-          post.image.startsWith("/")
-            ? post.image
-            : `/${post.image}`
-        }`
-    : undefined;
+  const imageUrl =
+    getImageUrl(
+      post.image,
+      cleanSiteUrl
+    );
 
   return {
-    title: `${titleVi} | Huyen's Hotels & Stays`,
+    title:
+      `${titleVi} | Huyen's Hotels & Stays`,
 
-    description: descriptionVi,
+    description:
+      descriptionVi,
 
     alternates: {
-      canonical: `${cleanSiteUrl}/blog/${post.slug}`,
+      canonical: canonicalUrl,
     },
 
     openGraph: {
       type: "article",
-      url: `${cleanSiteUrl}/blog/${post.slug}`,
+      url: canonicalUrl,
       title: titleVi,
       description: descriptionVi,
-      siteName: "Huyen's Hotels & Stays",
+      siteName:
+        "Huyen's Hotels & Stays",
       locale: "vi_VN",
       publishedTime: post.date,
       modifiedTime: post.updated_at,
-      section: post.category_vi || "Du lịch",
+      section:
+        post.category_vi ||
+        "Du lịch",
 
       ...(imageUrl
         ? {
@@ -156,8 +220,8 @@ export async function generateMetadata({
         : "summary",
 
       title: titleVi,
-
-      description: descriptionVi,
+      description:
+        descriptionVi,
 
       ...(imageUrl
         ? {
@@ -169,21 +233,26 @@ export async function generateMetadata({
     keywords: [
       titleVi,
       titleEn,
+      post.category_vi || "",
+      post.category_en || "",
       "du lịch TP.HCM",
       "Ho Chi Minh City travel",
       "Huyen's Hotels & Stays",
-    ],
+    ].filter(Boolean),
 
     robots: {
       index: true,
       follow: true,
-    },
 
-    other: {
-      "article:published_time": post.date,
-      "article:modified_time": post.updated_at,
-      "article:section":
-        post.category_vi || "Du lịch",
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview":
+          "large",
+        "max-snippet": -1,
+        "max-video-preview":
+          -1,
+      },
     },
   };
 }
@@ -193,11 +262,146 @@ export default async function BlogDetailPage({
 }: Props) {
   const { slug } = await params;
 
-  const post = await getPost(slug);
+  const post =
+    await getPost(slug);
 
   if (!post) {
     notFound();
   }
 
-  return <BlogDetailClient post={post} />;
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://huyenstays.vercel.app";
+
+  const cleanSiteUrl =
+    siteUrl.replace(/\/+$/, "");
+
+  const canonicalUrl =
+    `${cleanSiteUrl}/blog/${post.slug}`;
+
+  const imageUrl =
+    getImageUrl(
+      post.image,
+      cleanSiteUrl
+    );
+
+  const articleStructuredData = {
+    "@context":
+      "https://schema.org",
+
+    "@type": "Article",
+
+    "@id":
+      `${canonicalUrl}#article`,
+
+    headline:
+      post.title_vi,
+
+    description:
+      post.excerpt_vi ||
+      "Khám phá những câu chuyện, kinh nghiệm du lịch và trải nghiệm tại TP. Hồ Chí Minh.",
+
+    url:
+      canonicalUrl,
+
+    datePublished:
+      post.date,
+
+    dateModified:
+      post.updated_at,
+
+    author: {
+      "@type":
+        "Organization",
+
+      name:
+        "Huyen's Hotels & Stays",
+
+      url:
+        cleanSiteUrl,
+    },
+
+    publisher: {
+      "@type":
+        "Organization",
+
+      name:
+        "Huyen's Hotels & Stays",
+
+      url:
+        cleanSiteUrl,
+
+      logo: {
+        "@type":
+          "ImageObject",
+
+        url:
+          `${cleanSiteUrl}/hero/hero-1.webp`,
+      },
+    },
+
+    ...(imageUrl
+      ? {
+          image: [imageUrl],
+        }
+      : {}),
+
+    ...(post.category_vi
+      ? {
+          articleSection:
+            post.category_vi,
+        }
+      : {}),
+
+    inLanguage:
+      "vi-VN",
+
+    mainEntityOfPage: {
+      "@type":
+        "WebPage",
+
+      "@id":
+        canonicalUrl,
+    },
+  };
+
+  const breadcrumbStructuredData =
+    createBreadcrumbStructuredData(
+      post,
+      cleanSiteUrl
+    );
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              articleStructuredData
+            ).replace(
+              /</g,
+              "\\u003c"
+            ),
+        }}
+      />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              breadcrumbStructuredData
+            ).replace(
+              /</g,
+              "\\u003c"
+            ),
+        }}
+      />
+
+      <BlogDetailClient
+        post={post}
+      />
+    </>
+  );
 }

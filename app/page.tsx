@@ -1,10 +1,7 @@
 
 import type { Metadata } from "next";
-
 import Link from "next/link";
-
 import { createClient } from "@supabase/supabase-js";
-
 import HomeClient from "./HomeClient";
 
 // =========================================================
@@ -13,6 +10,22 @@ import HomeClient from "./HomeClient";
 
 export const revalidate = 60;
 export const dynamic = "force-static";
+
+// =========================================================
+// SEO
+// =========================================================
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://huyenstays.vercel.app";
+
+const SITE_NAME = "Huyen's Hotels & Stays";
+
+const SEO_TITLE =
+  "Khách sạn, Guesthouse & Homestay TP.HCM | Huyen's Hotels & Stays";
+
+const SEO_DESCRIPTION =
+  "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại TP.HCM. Khám phá phòng nghỉ tiện nghi, vị trí thuận tiện và đặt phòng trực tiếp.";
 
 // =========================================================
 // TYPES
@@ -206,11 +219,8 @@ async function getHomepageData() {
     } else if (mediaData) {
       for (const item of mediaData as HotelMedia[]) {
         if (
-          Number.isFinite(
-            item.entity_id
-          ) &&
-          typeof item.public_url ===
-            "string" &&
+          Number.isFinite(item.entity_id) &&
+          typeof item.public_url === "string" &&
           item.public_url.trim()
         ) {
           hotelCovers[item.entity_id] =
@@ -232,21 +242,11 @@ async function getHomepageData() {
 // =========================================================
 
 export async function generateMetadata(): Promise<Metadata> {
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://huyenstays.vercel.app";
-
   const canonicalUrl =
-    siteUrl.replace(/\/$/, "");
-
-  const title =
-    "Huyen's Hotels & Stays | Khách sạn, guesthouse & homestay Quận 1 TP.HCM";
-
-  const description =
-    "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại Quận 1, TP.HCM. Khám phá phòng nghỉ, xem tiện nghi và đặt phòng trực tiếp.";
+    SITE_URL.replace(/\/+$/, "");
 
   // -------------------------------------------------------
-  // HERO IMAGE FOR SEO / OG
+  // HERO IMAGE FOR OPEN GRAPH / SOCIAL SHARING
   // -------------------------------------------------------
 
   let heroImageUrl =
@@ -284,21 +284,25 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   return {
-    title,
-    description,
+    metadataBase: new URL(canonicalUrl),
+
+    title: SEO_TITLE,
+
+    description: SEO_DESCRIPTION,
 
     keywords: [
-      "khách sạn Quận 1",
-      "khách sạn trung tâm Quận 1",
       "khách sạn TP.HCM",
       "khách sạn Hồ Chí Minh",
+      "khách sạn trung tâm TP.HCM",
+      "guesthouse TP.HCM",
+      "homestay TP.HCM",
+      "khách sạn Quận 1",
       "guesthouse Quận 1",
       "homestay Quận 1",
-      "homestay TP.HCM",
-      "nhà nghỉ Quận 1",
-      "đặt phòng Quận 1",
+      "nhà nghỉ TP.HCM",
       "đặt phòng khách sạn TP.HCM",
-      "phòng khách sạn Quận 1",
+      "đặt phòng Quận 1",
+      "phòng khách sạn TP.HCM",
       "Huyen's Hotels & Stays",
     ],
 
@@ -309,6 +313,7 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: {
       index: true,
       follow: true,
+
       googleBot: {
         index: true,
         follow: true,
@@ -322,24 +327,25 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       locale: "vi_VN",
       url: canonicalUrl,
-      siteName: "Huyen's Hotels & Stays",
-      title,
-      description,
+      siteName: SITE_NAME,
+      title: SEO_TITLE,
+      description: SEO_DESCRIPTION,
 
       images: [
         {
           url: heroImageUrl,
           width: 1600,
           height: 900,
-          alt: "Huyen's Hotels & Stays - Khách sạn, guesthouse và homestay Quận 1 TP.HCM",
+          alt:
+            "Huyen's Hotels & Stays - Khách sạn, guesthouse và homestay tại TP.HCM",
         },
       ],
     },
 
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
+      title: SEO_TITLE,
+      description: SEO_DESCRIPTION,
       images: [heroImageUrl],
     },
   };
@@ -392,12 +398,8 @@ export default async function HomePage() {
     hotelCovers,
   } = data;
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://huyenstays.vercel.app";
-
   const canonicalUrl =
-    siteUrl.replace(/\/$/, "");
+    SITE_URL.replace(/\/+$/, "");
 
   // =======================================================
   // STRUCTURED DATA
@@ -405,69 +407,106 @@ export default async function HomePage() {
 
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "ItemList",
 
-    name:
-      "Khách sạn và nơi lưu trú tại Quận 1, TP.HCM",
+    "@graph": [
+      // ---------------------------------------------------
+      // ORGANIZATION
+      // ---------------------------------------------------
 
-    itemListElement: hotels.map(
-      (hotel, index) => {
-        const hotelUrl =
-          `${canonicalUrl}/khach-san/${hotel.slug}`;
+      {
+        "@type": "Organization",
+        "@id": `${canonicalUrl}/#organization`,
+        name: SITE_NAME,
+        url: canonicalUrl,
+        description: SEO_DESCRIPTION,
+      },
 
-        const item: Record<
-          string,
-          unknown
-        > = {
-          "@type": "ListItem",
+      // ---------------------------------------------------
+      // WEBSITE
+      // ---------------------------------------------------
 
-          position: index + 1,
+      {
+        "@type": "WebSite",
+        "@id": `${canonicalUrl}/#website`,
+        url: canonicalUrl,
+        name: SITE_NAME,
+        description: SEO_DESCRIPTION,
+        publisher: {
+          "@id": `${canonicalUrl}/#organization`,
+        },
+        inLanguage: "vi-VN",
+      },
 
-          item: {
-            "@type": "Hotel",
+      // ---------------------------------------------------
+      // HOTEL LIST
+      // ---------------------------------------------------
 
-            name: hotel.name_vi,
+      {
+        "@type": "ItemList",
+        "@id": `${canonicalUrl}/#hotel-list`,
+        name:
+          "Khách sạn và nơi lưu trú tại TP.HCM",
 
-            description:
-              hotel.description_vi ||
-              undefined,
+        itemListElement: hotels.map(
+          (hotel, index) => {
+            const hotelUrl =
+              `${canonicalUrl}/khach-san/${hotel.slug}`;
 
-            url: hotelUrl,
+            const item: Record<
+              string,
+              unknown
+            > = {
+              "@type": "ListItem",
 
-            address: {
-              "@type":
-                "PostalAddress",
+              position: index + 1,
 
-              streetAddress:
-                hotel.address_vi ||
-                undefined,
+              item: {
+                "@type": "Hotel",
 
-              addressLocality:
-                "Hồ Chí Minh",
+                name: hotel.name_vi,
 
-              addressRegion:
-                "TP.HCM",
+                description:
+                  hotel.description_vi ||
+                  undefined,
 
-              addressCountry:
-                "VN",
-            },
-          },
-        };
+                url: hotelUrl,
 
-        const cover =
-          hotelCovers[hotel.id];
+                address: {
+                  "@type":
+                    "PostalAddress",
 
-        if (cover) {
-          (
-            item.item as {
-              image?: string;
+                  streetAddress:
+                    hotel.address_vi ||
+                    undefined,
+
+                  addressLocality:
+                    "Hồ Chí Minh",
+
+                  addressRegion:
+                    "TP.HCM",
+
+                  addressCountry:
+                    "VN",
+                },
+              },
+            };
+
+            const cover =
+              hotelCovers[hotel.id];
+
+            if (cover) {
+              (
+                item.item as {
+                  image?: string;
+                }
+              ).image = cover;
             }
-          ).image = cover;
-        }
 
-        return item;
-      }
-    ),
+            return item;
+          }
+        ),
+      },
+    ],
   };
 
   return (

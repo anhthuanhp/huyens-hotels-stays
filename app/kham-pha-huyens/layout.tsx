@@ -10,22 +10,28 @@ const siteUrl =
   "https://huyenstays.vercel.app";
 
 const canonicalUrl =
-  `${siteUrl.replace(/\/+$/, "")}/chinh-sach-hoan-huy`;
+  `${siteUrl.replace(/\/+$/, "")}/kham-pha-huyens`;
 
 export const metadata: Metadata = {
   title:
-    "Chính sách hoàn & hủy phòng | Huyen's Hotels & Stays",
+    "Về Huyen's Hotels & Stays | Khách sạn, Guesthouse & Homestay TP.HCM",
 
   description:
-    "Chính sách hoàn và hủy phòng của Huyen's Hotels & Stays, bao gồm các quy định cần biết khi thay đổi hoặc hủy đặt phòng.",
+    "Tìm hiểu về Huyen's Hotels & Stays, hệ thống khách sạn, guesthouse và homestay tại TP.HCM với những không gian lưu trú riêng biệt, tiện nghi và thuận tiện cho mỗi hành trình.",
 
   keywords: [
-    "chính sách hoàn hủy phòng",
-    "chính sách hủy phòng khách sạn",
-    "chính sách hoàn tiền đặt phòng",
-    "quy định hủy phòng",
-    "hủy đặt phòng khách sạn",
     "Huyen's Hotels & Stays",
+    "Huyen's Hotels",
+    "Huyen's Stays",
+    "khách sạn TP.HCM",
+    "khách sạn Hồ Chí Minh",
+    "guesthouse TP.HCM",
+    "homestay TP.HCM",
+    "hệ thống khách sạn TP.HCM",
+    "hệ thống lưu trú TP.HCM",
+    "khách sạn Quận 1",
+    "guesthouse Quận 1",
+    "homestay Quận 1",
   ],
 
   alternates: {
@@ -52,10 +58,10 @@ export const metadata: Metadata = {
     siteName: "Huyen's Hotels & Stays",
 
     title:
-      "Chính sách hoàn & hủy phòng | Huyen's Hotels & Stays",
+      "Về Huyen's Hotels & Stays | Khách sạn, Guesthouse & Homestay TP.HCM",
 
     description:
-      "Tìm hiểu các quy định về hoàn tiền, thay đổi và hủy đặt phòng tại Huyen's Hotels & Stays.",
+      "Tìm hiểu về Huyen's Hotels & Stays và hệ thống khách sạn, guesthouse, homestay tại TP.HCM.",
 
     images: [
       {
@@ -71,10 +77,10 @@ export const metadata: Metadata = {
     card: "summary_large_image",
 
     title:
-      "Chính sách hoàn & hủy phòng | Huyen's Hotels & Stays",
+      "Về Huyen's Hotels & Stays | Khách sạn, Guesthouse & Homestay TP.HCM",
 
     description:
-      "Các quy định về hoàn tiền, thay đổi và hủy đặt phòng tại Huyen's Hotels & Stays.",
+      "Tìm hiểu về Huyen's Hotels & Stays và hệ thống lưu trú tại TP.HCM.",
 
     images: [
       `${siteUrl.replace(/\/+$/, "")}/hero/hero-1.webp`,
@@ -82,7 +88,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function CancellationPolicyLayout({
+export default function KhamPhaHuyensLayout({
   children,
 }: LayoutProps) {
   return children;
