@@ -1,4 +1,3 @@
-
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 
@@ -56,6 +55,9 @@ const supabaseUrl =
 const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
+const brandName =
+  "Huyen's Hotels & Stays";
+
 function cleanText(
   value: string | null | undefined
 ): string {
@@ -91,7 +93,7 @@ function createRoomDescription(
   const hotelName =
     cleanText(hotel.name_vi) ||
     cleanText(hotel.name_en) ||
-    "Huyen's Hotels & Stays";
+    brandName;
 
   const address =
     cleanText(hotel.address_vi);
@@ -121,7 +123,7 @@ function createRoomDescription(
         : "";
 
     result =
-      `${roomName} tại ${hotelName}.${roomDetails} Đặt phòng trực tiếp tại Huyen's Hotels & Stays.`;
+      `${roomName} tại ${hotelName}.${roomDetails} Đặt phòng trực tiếp tại ${brandName}.`;
   } else {
     if (
       hotelName &&
@@ -297,9 +299,7 @@ function createRoomKeywords(
     "hotel room Ho Chi Minh"
   );
 
-  keywords.add(
-    "Huyen's Hotels & Stays"
-  );
+  keywords.add(brandName);
 
   return Array.from(keywords);
 }
@@ -447,12 +447,16 @@ export async function generateMetadata({
 
   if (!data) {
     return {
-      title: "Phòng nghỉ",
+      title:
+        `Phòng nghỉ | ${brandName}`,
+
       description:
         "Thông tin phòng nghỉ tại Huyen's Hotels & Stays.",
+
       alternates: {
         canonical: canonicalUrl,
       },
+
       robots: {
         index: false,
         follow: true,
@@ -490,38 +494,32 @@ export async function generateMetadata({
       hotel
     );
 
-  const address =
-    cleanText(hotel.address_vi);
+  /*
+   * Title room được tạo hoàn chỉnh tại đây.
+   *
+   * Không phụ thuộc vào title.template
+   * của root layout.
+   *
+   * Mục tiêu:
+   * Phòng Standard Double |
+   * Khách sạn Anh Kim |
+   * Huyen's Hotels & Stays
+   */
+
+  const fullTitle =
+    `${roomNameVi} | ${hotelNameVi} | ${brandName}`;
 
   /*
-   * Root layout đã có:
-   *
-   * title.template =
-   * "%s | Huyen's Hotels & Stays"
-   *
-   * Vì vậy title ở đây KHÔNG được tự thêm brand.
+   * Nếu title quá dài, bỏ phần thương hiệu
+   * khỏi title cuối cùng để tránh title quá dài.
    */
-  let title = address
-    ? `${roomNameVi} tại ${hotelNameVi} | ${address}`
-    : `${roomNameVi} tại ${hotelNameVi}`;
-
-  const finalTitleLength =
-    `${title} | Huyen's Hotels & Stays`.length;
-
-  if (finalTitleLength > 65) {
-    title =
-      `${roomNameVi} tại ${hotelNameVi}`;
-  }
-
-  if (
-    `${title} | Huyen's Hotels & Stays`.length >
-    65
-  ) {
-    title = roomNameVi;
-  }
+  const title =
+    fullTitle.length <= 65
+      ? fullTitle
+      : `${roomNameVi} | ${hotelNameVi}`;
 
   const englishTitle =
-    `${roomNameEn} at ${hotelNameEn}`;
+    `${roomNameEn} at ${hotelNameEn} | ${brandName}`;
 
   const keywords =
     createRoomKeywords(
@@ -546,7 +544,9 @@ export async function generateMetadata({
 
   return {
     title,
+
     description,
+
     keywords,
 
     alternates: {
@@ -570,10 +570,10 @@ export async function generateMetadata({
       type: "website",
       locale: "vi_VN",
       url: canonicalUrl,
-      siteName:
-        "Huyen's Hotels & Stays",
-      title:
-        `${title} | Huyen's Hotels & Stays`,
+      siteName: brandName,
+
+      title: fullTitle,
+
       description,
 
       images: imageUrl
@@ -591,8 +591,7 @@ export async function generateMetadata({
         ? "summary_large_image"
         : "summary",
 
-      title:
-        `${englishTitle} | Huyen's Hotels & Stays`,
+      title: englishTitle,
 
       description,
 
@@ -689,11 +688,17 @@ export default async function RoomSlugLayout({
     structuredData = {
       "@context":
         "https://schema.org",
+
       "@type": "HotelRoom",
+
       "@id": `${roomUrl}#room`,
+
       name: roomName,
+
       url: roomUrl,
-      description: roomDescription,
+
+      description:
+        roomDescription,
 
       containedInPlace: {
         "@type": "Hotel",
@@ -710,13 +715,17 @@ export default async function RoomSlugLayout({
 
     if (hotel.address_vi) {
       structuredData.address = {
-        "@type": "PostalAddress",
+        "@type":
+          "PostalAddress",
+
         streetAddress:
           cleanText(
             hotel.address_vi
           ),
+
         addressLocality:
           "Ho Chi Minh City",
+
         addressCountry: "VN",
       };
     }
@@ -725,7 +734,9 @@ export default async function RoomSlugLayout({
       structuredData.floorSize = {
         "@type":
           "QuantitativeValue",
+
         value: room.size,
+
         unitCode: "MTK",
       };
     }
@@ -734,6 +745,7 @@ export default async function RoomSlugLayout({
       structuredData.occupancy = {
         "@type":
           "QuantitativeValue",
+
         maxValue:
           room.max_guests,
       };
@@ -755,10 +767,14 @@ export default async function RoomSlugLayout({
     ) {
       structuredData.offers = {
         "@type": "Offer",
+
         priceCurrency: "VND",
+
         price: room.base_price,
+
         availability:
           "https://schema.org/InStock",
+
         url: roomUrl,
       };
     }
