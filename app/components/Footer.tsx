@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   Phone,
   MessageCircle,
@@ -10,17 +11,54 @@ import {
 
 type Language = "vi" | "en";
 
-type FooterProps = {
-  language: Language;
-};
+declare global {
+  interface WindowEventMap {
+    "language-change": CustomEvent<Language>;
+  }
+}
 
-export default function Footer({
-  language,
-}: FooterProps) {
+export default function Footer() {
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") {
+      return "vi";
+    }
+
+    const savedLanguage = localStorage.getItem("huyen-language");
+
+    return savedLanguage === "vi" || savedLanguage === "en"
+      ? savedLanguage
+      : "vi";
+  });
+
+  useEffect(() => {
+    const handleLanguageChange = (
+      event: CustomEvent<Language>
+    ) => {
+      if (
+        event.detail === "vi" ||
+        event.detail === "en"
+      ) {
+        setLanguage(event.detail);
+      }
+    };
+
+    window.addEventListener(
+      "language-change",
+      handleLanguageChange
+    );
+
+    return () => {
+      window.removeEventListener(
+        "language-change",
+        handleLanguageChange
+      );
+    };
+  }, []);
+
   const isVi = language === "vi";
 
   return (
-    <footer className="border-t border-sky-800 bg-sky-800 px-6 py-12 text-white">
+    <footer className="border-t border-sky-700 bg-sky-900 px-6 py-12 text-white">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* THÔNG TIN HUYEN'S */}
@@ -33,7 +71,7 @@ export default function Footer({
                     'Arial, "Helvetica Neue", "Segoe UI", sans-serif',
                 }}
               >
-                Huyen's Hotels & Stays
+                Huyen&apos;s Hotels &amp; Stays
               </div>
             </Link>
 
@@ -118,7 +156,6 @@ export default function Footer({
                   className="h-4 w-4 shrink-0 text-white"
                   strokeWidth={1.8}
                 />
-
                 <span>
                   <span className="font-medium">
                     Hotline:
@@ -132,7 +169,6 @@ export default function Footer({
                   className="h-4 w-4 shrink-0 text-white"
                   strokeWidth={1.8}
                 />
-
                 <span>
                   <span className="font-medium">
                     WhatsApp:
@@ -146,7 +182,6 @@ export default function Footer({
                   className="h-4 w-4 shrink-0 text-white"
                   strokeWidth={1.8}
                 />
-
                 <span>
                   <span className="font-medium">
                     Zalo:
@@ -160,7 +195,6 @@ export default function Footer({
                   className="h-4 w-4 shrink-0 text-white"
                   strokeWidth={1.8}
                 />
-
                 <span className="break-all">
                   <span className="font-medium">
                     Email:
@@ -181,28 +215,36 @@ export default function Footer({
 
             <div className="mt-4 space-y-3 text-sm text-white/75">
               <a
-                href="#"
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block transition hover:text-white"
               >
                 Facebook
               </a>
 
               <a
-                href="#"
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block transition hover:text-white"
               >
                 Instagram
               </a>
 
               <a
-                href="#"
+                href="https://tiktok.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block transition hover:text-white"
               >
                 TikTok
               </a>
 
               <a
-                href="#"
+                href="https://maps.google.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block transition hover:text-white"
               >
                 Google Maps
@@ -221,7 +263,9 @@ export default function Footer({
                 : "All rights reserved."}
             </p>
 
-            <p>Huyen's Hotels & Stays</p>
+            <p>
+              Huyen&apos;s Hotels &amp; Stays
+            </p>
           </div>
         </div>
       </div>

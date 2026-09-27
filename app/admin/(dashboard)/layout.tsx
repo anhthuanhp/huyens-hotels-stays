@@ -60,7 +60,7 @@ const menuItems = [
     label: "Hình ảnh hoạt động",
   },
   {
-    href: "/admin/blog",
+    href: "/admin/viet-blog",
     label: "Viết Blog",
   },
 ];

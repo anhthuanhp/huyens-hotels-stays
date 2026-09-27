@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -50,18 +51,23 @@ type RoomWithHotel = {
 };
 
 export default function RoomsPage() {
-  const [language, setLanguage] = useState<Language>("vi");
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") {
+      return "vi";
+    }
+
+    const savedLanguage = localStorage.getItem("huyen-language");
+
+    return savedLanguage === "vi" || savedLanguage === "en"
+      ? savedLanguage
+      : "vi";
+  });
+
   const [rooms, setRooms] = useState<RoomWithHotel[]>([]);
   const [roomCovers, setRoomCovers] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("huyen-language");
-
-    if (savedLanguage === "vi" || savedLanguage === "en") {
-      setLanguage(savedLanguage);
-    }
-
     const handleLanguageChange = (event: Event) => {
       const customEvent = event as CustomEvent<Language>;
 
@@ -90,13 +96,14 @@ export default function RoomsPage() {
       setLoading(true);
 
       try {
-        const { data: hotelData, error: hotelError } = await supabase
-          .from("hotels")
-          .select(
-            "id, slug, name_vi, name_en, address_vi, address_en, business_model, status"
-          )
-          .eq("status", "active")
-          .order("created_at", { ascending: true });
+        const { data: hotelData, error: hotelError } =
+          await supabase
+            .from("hotels")
+            .select(
+              "id, slug, name_vi, name_en, address_vi, address_en, business_model, status"
+            )
+            .eq("status", "active")
+            .order("created_at", { ascending: true });
 
         if (hotelError) {
           console.error("Load hotels error:", hotelError);
@@ -128,15 +135,16 @@ export default function RoomsPage() {
 
         const hotelIds = hotels.map((hotel) => hotel.id);
 
-        const { data: roomData, error: roomError } = await supabase
-          .from("rooms")
-          .select(
-            "id, hotel_id, slug, name_vi, name_en, description_vi, description_en, base_price, size, max_guests, beds_vi, beds_en, amenities, quantity, status"
-          )
-          .in("hotel_id", hotelIds)
-          .eq("status", "active")
-          .order("hotel_id", { ascending: true })
-          .order("id", { ascending: true });
+        const { data: roomData, error: roomError } =
+          await supabase
+            .from("rooms")
+            .select(
+              "id, hotel_id, slug, name_vi, name_en, description_vi, description_en, base_price, size, max_guests, beds_vi, beds_en, amenities, quantity, status"
+            )
+            .in("hotel_id", hotelIds)
+            .eq("status", "active")
+            .order("hotel_id", { ascending: true })
+            .order("id", { ascending: true });
 
         if (roomError) {
           console.error("Load rooms error:", roomError);
@@ -176,7 +184,7 @@ export default function RoomsPage() {
 
         const roomIds = activeRooms.map((room) => room.id);
 
-        let coverMap: Record<number, string> = {};
+        const coverMap: Record<number, string> = {};
 
         if (roomIds.length > 0) {
           const { data: mediaData, error: mediaError } =
@@ -422,11 +430,13 @@ export default function RoomsPage() {
                     className="group block"
                   >
                     <div className="relative h-[280px] overflow-hidden bg-slate-200">
-                      <img
+                      <Image
                         src={roomImage}
                         alt={roomName}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        fill
+                        unoptimized
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        className="object-cover transition duration-500 group-hover:scale-105"
                       />
 
                       <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-sm">

@@ -1,7 +1,8 @@
-
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Suspense,
   useEffect,
@@ -99,25 +100,37 @@ const formatPrice = (v: number) =>
   new Intl.NumberFormat("vi-VN").format(v);
 
 const formatDate = (v: string) =>
-  v && v.length === 10 ? v.split("-").reverse().join("/") : v;
+  v && v.length === 10
+    ? v.split("-").reverse().join("/")
+    : v;
 
-const calculateNights = (inDate: string, outDate: string) => {
+const calculateNights = (
+  inDate: string,
+  outDate: string
+) => {
   if (!inDate || !outDate) return 1;
 
   const d =
     new Date(outDate).getTime() -
     new Date(inDate).getTime();
 
-  return d > 0 ? Math.max(1, Math.ceil(d / 86400000)) : 1;
+  return d > 0
+    ? Math.max(1, Math.ceil(d / 86400000))
+    : 1;
 };
 
 function TimPhongContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const hotelSlug = searchParams.get("hotel") || "";
-  const checkIn = searchParams.get("checkIn") || "";
-  const checkOut = searchParams.get("checkOut") || "";
+  const hotelSlug =
+    searchParams.get("hotel") || "";
+
+  const checkIn =
+    searchParams.get("checkIn") || "";
+
+  const checkOut =
+    searchParams.get("checkOut") || "";
 
   const adults = Math.max(
     1,
@@ -134,33 +147,80 @@ function TimPhongContent() {
     Number(searchParams.get("rooms")) || 1
   );
 
-  const totalGuests = adults + children;
+  const totalGuests =
+    adults + children;
 
-  const [language, setLanguage] = useState<Language>("vi");
-  const [hotel, setHotel] = useState<Hotel | null>(null);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [roomMedia, setRoomMedia] = useState<Media[]>([]);
-  const [roomAmenities, setRoomAmenities] = useState<RoomAmenity[]>([]);
-  const [availabilityRooms, setAvailabilityRooms] = useState<
-    AvailabilityRoom[]
-  >([]);
+  const [language, setLanguage] =
+    useState<Language>(() => {
+      if (typeof window === "undefined") {
+        return "vi";
+      }
+
+      const saved =
+        window.localStorage.getItem(
+          "huyen-language"
+        );
+
+      return saved === "vi" ||
+        saved === "en"
+        ? saved
+        : "vi";
+    });
+
+  const [hotel, setHotel] =
+    useState<Hotel | null>(null);
+
+  const [rooms, setRooms] =
+    useState<Room[]>([]);
+
+  const [roomMedia, setRoomMedia] =
+    useState<Media[]>([]);
+
+  const [roomAmenities, setRoomAmenities] =
+    useState<RoomAmenity[]>([]);
+
+  const [availabilityRooms, setAvailabilityRooms] =
+    useState<AvailabilityRoom[]>([]);
+
   const [selectedRooms, setSelectedRooms] =
     useState<SelectedRoomMap>({});
-  const [loading, setLoading] = useState(true);
+
+  const [loading, setLoading] =
+    useState(true);
+
   const [loadingAvailability, setLoadingAvailability] =
     useState(true);
+
   const [availabilityError, setAvailabilityError] =
     useState("");
 
-  const [editCheckIn, setEditCheckIn] = useState(checkIn);
-  const [editCheckOut, setEditCheckOut] = useState(checkOut);
-  const [editAdults, setEditAdults] = useState(adults);
-  const [editChildren, setEditChildren] = useState(children);
-  const [editError, setEditError] = useState("");
+  const [editCheckIn, setEditCheckIn] =
+    useState(checkIn);
 
-  const checkInRef = useRef<HTMLInputElement>(null);
-  const checkOutRef = useRef<HTMLInputElement>(null);
+  const [editCheckOut, setEditCheckOut] =
+    useState(checkOut);
 
+  const [editAdults, setEditAdults] =
+    useState(adults);
+
+  const [editChildren, setEditChildren] =
+    useState(children);
+
+  const [editError, setEditError] =
+    useState("");
+
+  const checkInRef =
+    useRef<HTMLInputElement>(null);
+
+  const checkOutRef =
+    useRef<HTMLInputElement>(null);
+
+  /*
+    URL parameters are the source of truth for
+    the current search. These state updates are
+    intentional because the editable search form
+    must reset when the URL changes.
+  */
   useEffect(() => {
     setEditCheckIn(checkIn);
     setEditCheckOut(checkOut);
@@ -168,24 +228,28 @@ function TimPhongContent() {
     setEditChildren(children);
     setEditError("");
     setSelectedRooms({});
-  }, [checkIn, checkOut, adults, children]);
+  }, [
+    checkIn,
+    checkOut,
+    adults,
+    children,
+  ]);
 
   useEffect(() => {
-    const saved =
-      window.localStorage.getItem("huyen-language");
+    const handleLanguageChange =
+      () => {
+        const current =
+          window.localStorage.getItem(
+            "huyen-language"
+          );
 
-    if (saved === "vi" || saved === "en") {
-      setLanguage(saved);
-    }
-
-    const handleLanguageChange = () => {
-      const current =
-        window.localStorage.getItem("huyen-language");
-
-      if (current === "vi" || current === "en") {
-        setLanguage(current);
-      }
-    };
+        if (
+          current === "vi" ||
+          current === "en"
+        ) {
+          setLanguage(current);
+        }
+      };
 
     window.addEventListener(
       "language-change",
@@ -200,14 +264,41 @@ function TimPhongContent() {
     };
   }, []);
 
+  /*
+    KHÔNG tự động chuyển về "/" khi thiếu
+    hotel/checkIn/checkOut.
+
+    Nếu URL không đủ dữ liệu,
+    phía dưới sẽ hiển thị trang thông báo
+    thay vì tự redirect.
+  */
   useEffect(() => {
-    if (!hotelSlug || !checkIn || !checkOut) {
-      router.replace("/");
+    if (
+      !hotelSlug ||
+      !checkIn ||
+      !checkOut
+    ) {
+      setLoading(false);
+      setLoadingAvailability(false);
+      setHotel(null);
+      setRooms([]);
+      setAvailabilityRooms([]);
+      setAvailabilityError("");
     }
-  }, [hotelSlug, checkIn, checkOut, router]);
+  }, [
+    hotelSlug,
+    checkIn,
+    checkOut,
+  ]);
 
   useEffect(() => {
-    if (!hotelSlug || !checkIn || !checkOut) return;
+    if (
+      !hotelSlug ||
+      !checkIn ||
+      !checkOut
+    ) {
+      return;
+    }
 
     let cancelled = false;
 
@@ -215,78 +306,106 @@ function TimPhongContent() {
 
     (async () => {
       try {
-        const { data: hotelData, error: hotelError } =
-          await supabase
-            .from("hotels")
-            .select(
-              "id,slug,name_vi,name_en,status"
-            )
-            .eq("slug", hotelSlug)
-            .eq("status", "active")
-            .maybeSingle();
+        const {
+          data: hotelData,
+          error: hotelError,
+        } = await supabase
+          .from("hotels")
+          .select(
+            "id,slug,name_vi,name_en,status"
+          )
+          .eq("slug", hotelSlug)
+          .eq("status", "active")
+          .maybeSingle();
 
-        if (hotelError) throw hotelError;
+        if (hotelError) {
+          throw hotelError;
+        }
 
         if (!hotelData) {
-          setHotel(null);
-          setRooms([]);
+          if (!cancelled) {
+            setHotel(null);
+            setRooms([]);
+          }
+
           return;
         }
 
         const currentHotel =
           hotelData as unknown as Hotel;
 
-        setHotel(currentHotel);
+        if (!cancelled) {
+          setHotel(currentHotel);
+        }
 
-        const { data: roomData, error: roomError } =
-          await supabase
-            .from("rooms")
-            .select(
-              "id,hotel_id,slug,name_vi,name_en,description_vi,description_en,base_price,quantity,size,max_guests,beds_vi,beds_en,status"
-            )
-            .eq("hotel_id", currentHotel.id)
-            .eq("status", "active")
-            .order("id");
+        const {
+          data: roomData,
+          error: roomError,
+        } = await supabase
+          .from("rooms")
+          .select(
+            "id,hotel_id,slug,name_vi,name_en,description_vi,description_en,base_price,quantity,size,max_guests,beds_vi,beds_en,status"
+          )
+          .eq(
+            "hotel_id",
+            currentHotel.id
+          )
+          .eq("status", "active")
+          .order("id");
 
-        if (roomError) throw roomError;
+        if (roomError) {
+          throw roomError;
+        }
 
-        if (!roomData) return;
+        if (!roomData) {
+          if (!cancelled) {
+            setRooms([]);
+          }
+
+          return;
+        }
 
         const currentRooms =
           roomData as unknown as Room[];
 
-        setRooms(currentRooms);
+        if (!cancelled) {
+          setRooms(currentRooms);
+        }
 
-        if (!currentRooms.length) return;
+        if (!currentRooms.length) {
+          return;
+        }
 
         const ids = currentRooms.map(
           (room) => room.id
         );
 
-        const [mediaResult, amenitiesResult] =
-          await Promise.all([
-            supabase
-              .from("media")
-              .select(
-                "id,entity_id,public_url,alt_vi,alt_en,is_cover,sort_order,status"
-              )
-              .eq("entity_type", "room")
-              .in("entity_id", ids)
-              .eq("status", "active")
-              .order("is_cover", {
-                ascending: false,
-              })
-              .order("sort_order"),
+        const [
+          mediaResult,
+          amenitiesResult,
+        ] = await Promise.all([
+          supabase
+            .from("media")
+            .select(
+              "id,entity_id,public_url,alt_vi,alt_en,is_cover,sort_order,status"
+            )
+            .eq("entity_type", "room")
+            .in("entity_id", ids)
+            .eq("status", "active")
+            .order("is_cover", {
+              ascending: false,
+            })
+            .order("sort_order"),
 
-            supabase
-              .from("room_amenities")
-              .select(
-                "id,room_id,name_vi,name_en,icon,sort_order,status"
-              )
-              .in("room_id", ids)
-              .eq("status", "active")
-              .order("sort_order"),
-          ]);
+          supabase
+            .from("room_amenities")
+            .select(
+              "id,room_id,name_vi,name_en,icon,sort_order,status"
+            )
+            .in("room_id", ids)
+            .eq("status", "active")
+            .order("sort_order"),
+        ]);
 
         if (mediaResult.error) {
           throw mediaResult.error;
@@ -298,7 +417,8 @@ function TimPhongContent() {
 
         if (!cancelled) {
           setRoomMedia(
-            (mediaResult.data || []) as unknown as Media[]
+            (mediaResult.data ||
+              []) as unknown as Media[]
           );
 
           setRoomAmenities(
@@ -323,10 +443,20 @@ function TimPhongContent() {
     return () => {
       cancelled = true;
     };
-  }, [hotelSlug, checkIn, checkOut]);
+  }, [
+    hotelSlug,
+    checkIn,
+    checkOut,
+  ]);
 
   useEffect(() => {
-    if (!hotelSlug || !checkIn || !checkOut) return;
+    if (
+      !hotelSlug ||
+      !checkIn ||
+      !checkOut
+    ) {
+      return;
+    }
 
     let cancelled = false;
 
@@ -340,7 +470,8 @@ function TimPhongContent() {
           {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
+              "Content-Type":
+                "application/json",
             },
             body: JSON.stringify({
               hotelSlug,
@@ -351,7 +482,8 @@ function TimPhongContent() {
           }
         );
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
         if (!response.ok) {
           throw new Error(
@@ -363,12 +495,17 @@ function TimPhongContent() {
         if (!cancelled) {
           setAvailabilityRooms(
             (
-              Array.isArray(data?.rooms)
+              Array.isArray(
+                data?.rooms
+              )
                 ? data.rooms
                 : []
             ).filter(
-              (room: AvailabilityRoom) =>
-                room.hotelSlug === hotelSlug
+              (
+                room: AvailabilityRoom
+              ) =>
+                room.hotelSlug ===
+                hotelSlug
             )
           );
         }
@@ -383,7 +520,9 @@ function TimPhongContent() {
         }
       } finally {
         if (!cancelled) {
-          setLoadingAvailability(false);
+          setLoadingAvailability(
+            false
+          );
         }
       }
     })();
@@ -391,339 +530,462 @@ function TimPhongContent() {
     return () => {
       cancelled = true;
     };
-  }, [hotelSlug, checkIn, checkOut]);
+  }, [
+    hotelSlug,
+    checkIn,
+    checkOut,
+  ]);
 
   const roomCoverMap = useMemo(() => {
-    const map: Record<number, Media> = {};
+    const map: Record<
+      number,
+      Media
+    > = {};
 
     for (const media of roomMedia) {
-      if (media.entity_id === null) continue;
+      if (
+        media.entity_id === null
+      ) {
+        continue;
+      }
 
-      const current = map[media.entity_id];
+      const current =
+        map[media.entity_id];
 
       if (
         !current ||
-        (media.is_cover && !current.is_cover) ||
-        (
-          media.is_cover === current.is_cover &&
-          media.sort_order < current.sort_order
-        )
+        (media.is_cover &&
+          !current.is_cover) ||
+        (media.is_cover ===
+          current.is_cover &&
+          media.sort_order <
+            current.sort_order)
       ) {
-        map[media.entity_id] = media;
+        map[media.entity_id] =
+          media;
       }
     }
 
     return map;
   }, [roomMedia]);
 
-  const availableRooms = useMemo<DisplayRoom[]>(() => {
-    if (!hotel) return [];
+  const availableRooms =
+    useMemo<DisplayRoom[]>(() => {
+      if (!hotel) {
+        return [];
+      }
 
-    return rooms
-      .map((room) => {
-        const availability =
-          availabilityRooms.find(
-            (item) => item.roomId === room.id
-          );
+      return rooms
+        .map((room) => {
+          const availability =
+            availabilityRooms.find(
+              (item) =>
+                item.roomId ===
+                room.id
+            );
 
-        const cover = roomCoverMap[room.id];
+          const cover =
+            roomCoverMap[room.id];
 
-        const amenities =
-          roomAmenities.filter(
-            (item) => item.room_id === room.id
-          );
+          const amenities =
+            roomAmenities.filter(
+              (item) =>
+                item.room_id ===
+                room.id
+            );
 
-        const totalQuantity = Math.max(
-          Number(
-            availability?.totalQuantity ??
-              room.quantity ??
+          const totalQuantity =
+            Math.max(
+              Number(
+                availability?.totalQuantity ??
+                  room.quantity ??
+                  0
+              ) || 0,
               0
-          ) || 0,
-          0
-        );
+            );
 
-        const bookedQuantity = Math.max(
-          Number(
-            availability?.bookedQuantity ?? 0
-          ) || 0,
-          0
-        );
+          const bookedQuantity =
+            Math.max(
+              Number(
+                availability?.bookedQuantity ??
+                  0
+              ) || 0,
+              0
+            );
 
-        const availableQuantity = Math.max(
-          totalQuantity - bookedQuantity,
-          0
-        );
+          const availableQuantity =
+            Math.max(
+              totalQuantity -
+                bookedQuantity,
+              0
+            );
 
-        return {
-          ...room,
-          image:
-            cover?.public_url ||
-            fallbackRoomImage,
-          imageAlt:
-            (
-              language === "vi"
-                ? cover?.alt_vi
-                : cover?.alt_en
-            ) ||
-            room.name_vi ||
-            room.name_en,
-          amenitiesVi: amenities.map(
-            (item) => item.name_vi
-          ),
-          amenitiesEn: amenities.map(
-            (item) => item.name_en
-          ),
-          totalQuantity,
-          bookedQuantity,
-          availableQuantity,
-        };
-      })
-      .filter((room) => {
-        const maxGuests =
-          room.max_guests ??
-          MAX_GUESTS_FALLBACK;
+          return {
+            ...room,
+            image:
+              cover?.public_url ||
+              fallbackRoomImage,
+            imageAlt:
+              (
+                language === "vi"
+                  ? cover?.alt_vi
+                  : cover?.alt_en
+              ) ||
+              room.name_vi ||
+              room.name_en,
+            amenitiesVi:
+              amenities.map(
+                (item) =>
+                  item.name_vi
+              ),
+            amenitiesEn:
+              amenities.map(
+                (item) =>
+                  item.name_en
+              ),
+            totalQuantity,
+            bookedQuantity,
+            availableQuantity,
+          };
+        })
+        .filter((room) => {
+          const maxGuests =
+            room.max_guests ??
+            MAX_GUESTS_FALLBACK;
 
-        return (
-          room.status === "active" &&
-          room.hotel_id === hotel.id &&
-          maxGuests >= totalGuests &&
-          room.availableQuantity > 0
+          return (
+            room.status ===
+              "active" &&
+            room.hotel_id ===
+              hotel.id &&
+            maxGuests >=
+              totalGuests &&
+            room.availableQuantity >
+              0
+          );
+        })
+        .sort(
+          (a, b) =>
+            (Number(
+              a.base_price
+            ) || 0) -
+            (Number(
+              b.base_price
+            ) || 0)
         );
-      })
-      .sort(
-        (a, b) =>
-          (Number(a.base_price) || 0) -
-          (Number(b.base_price) || 0)
-      );
-  }, [
-    rooms,
-    hotel,
-    totalGuests,
-    availabilityRooms,
-    roomCoverMap,
-    roomAmenities,
-    language,
-  ]);
+    }, [
+      rooms,
+      hotel,
+      totalGuests,
+      availabilityRooms,
+      roomCoverMap,
+      roomAmenities,
+      language,
+    ]);
 
   const nights = useMemo(
-    () => calculateNights(checkIn, checkOut),
+    () =>
+      calculateNights(
+        checkIn,
+        checkOut
+      ),
     [checkIn, checkOut]
   );
 
-  const selectedRoomCount = useMemo(
-    () =>
-      Object.values(selectedRooms).reduce(
-        (sum, quantity) => sum + quantity,
-        0
-      ),
-    [selectedRooms]
-  );
-
-  const selectedTotal = useMemo(
-    () =>
-      availableRooms.reduce(
-        (sum, room) =>
-          sum +
-          (Number(room.base_price) || 0) *
-            (selectedRooms[room.slug] || 0) *
-            nights,
-        0
-      ),
-    [availableRooms, selectedRooms, nights]
-  );
-
-  const openDatePicker = useCallback(
-    (ref: RefObject<HTMLInputElement | null>) => {
-      ref.current?.focus();
-
-      try {
-        (ref.current as any)?.showPicker?.();
-      } catch {}
-    },
-    []
-  );
-
-  const applyBookingChanges = useCallback(() => {
-    setEditError("");
-
-    if (!editCheckIn || !editCheckOut) {
-      setEditError(
-        language === "vi"
-          ? "Chọn ngày vào và ngày ra"
-          : "Select check-in/out dates"
-      );
-      return;
-    }
-
-    if (editCheckOut <= editCheckIn) {
-      setEditError(
-        language === "vi"
-          ? "Ngày ra phải sau ngày vào"
-          : "Check-out must be after check-in"
-      );
-      return;
-    }
-
-    if (
-      calculateNights(
-        editCheckIn,
-        editCheckOut
-      ) < 1
-    ) {
-      setEditError(
-        language === "vi"
-          ? "Khoảng thời gian không hợp lệ"
-          : "Invalid date range"
-      );
-      return;
-    }
-
-    const params = new URLSearchParams(
-      searchParams.toString()
+  const selectedRoomCount =
+    useMemo(
+      () =>
+        Object.values(
+          selectedRooms
+        ).reduce(
+          (sum, quantity) =>
+            sum + quantity,
+          0
+        ),
+      [selectedRooms]
     );
 
-    params.set("hotel", hotelSlug);
-    params.set("checkIn", editCheckIn);
-    params.set("checkOut", editCheckOut);
-    params.set(
-      "adults",
-      String(Math.max(1, editAdults))
-    );
-    params.set(
-      "children",
-      String(Math.max(0, editChildren))
-    );
-    params.set(
-      "rooms",
-      String(requestedRooms)
+  const selectedTotal =
+    useMemo(
+      () =>
+        availableRooms.reduce(
+          (sum, room) =>
+            sum +
+            (Number(
+              room.base_price
+            ) || 0) *
+              (selectedRooms[
+                room.slug
+              ] || 0) *
+              nights,
+          0
+        ),
+      [
+        availableRooms,
+        selectedRooms,
+        nights,
+      ]
     );
 
-    router.replace(
-      `/tim-phong?${params.toString()}`
+  const openDatePicker =
+    useCallback(
+      (
+        ref: RefObject<
+          HTMLInputElement | null
+        >
+      ) => {
+        ref.current?.focus();
+
+        try {
+          (
+            ref.current as
+              | (HTMLInputElement & {
+                  showPicker?: () => void;
+                })
+              | null
+          )?.showPicker?.();
+        } catch {}
+      },
+      []
     );
-  }, [
-    editCheckIn,
-    editCheckOut,
-    editAdults,
-    editChildren,
-    hotelSlug,
-    searchParams,
-    requestedRooms,
-    router,
-    language,
-  ]);
 
-  const changeRoomQuantity = useCallback(
-    (
-      room: DisplayRoom,
-      delta: number
-    ) => {
-      setSelectedRooms((previous) => {
-        const current =
-          previous[room.slug] || 0;
+  const applyBookingChanges =
+    useCallback(() => {
+      setEditError("");
 
-        const next = Math.min(
-          Math.max(
-            current + delta,
-            0
-          ),
-          room.availableQuantity
+      if (
+        !editCheckIn ||
+        !editCheckOut
+      ) {
+        setEditError(
+          language === "vi"
+            ? "Chọn ngày vào và ngày ra"
+            : "Select check-in/out dates"
+        );
+        return;
+      }
+
+      if (
+        editCheckOut <=
+        editCheckIn
+      ) {
+        setEditError(
+          language === "vi"
+            ? "Ngày ra phải sau ngày vào"
+            : "Check-out must be after check-in"
+        );
+        return;
+      }
+
+      if (
+        calculateNights(
+          editCheckIn,
+          editCheckOut
+        ) < 1
+      ) {
+        setEditError(
+          language === "vi"
+            ? "Khoảng thời gian không hợp lệ"
+            : "Invalid date range"
+        );
+        return;
+      }
+
+      const params =
+        new URLSearchParams(
+          searchParams.toString()
         );
 
-        const result = {
-          ...previous,
-        };
+      params.set(
+        "hotel",
+        hotelSlug
+      );
 
-        if (next <= 0) {
-          delete result[room.slug];
-        } else {
-          result[room.slug] = next;
-        }
+      params.set(
+        "checkIn",
+        editCheckIn
+      );
 
-        return result;
-      });
-    },
-    []
-  );
+      params.set(
+        "checkOut",
+        editCheckOut
+      );
 
-  const continueBooking = useCallback(() => {
-    if (
-      selectedRoomCount <= 0 ||
-      !hotel
-    ) {
-      return;
-    }
+      params.set(
+        "adults",
+        String(
+          Math.max(
+            1,
+            editAdults
+          )
+        )
+      );
 
-    const selected: SelectedRoom[] =
-      Object.entries(selectedRooms)
-        .filter(([, quantity]) => quantity > 0)
-        .map(([slug, quantity]) => ({
-          hotelSlug: hotel.slug,
-          roomSlug: slug,
-          quantity,
-        }));
+      params.set(
+        "children",
+        String(
+          Math.max(
+            0,
+            editChildren
+          )
+        )
+      );
 
-    if (!selected.length) return;
+      params.set(
+        "rooms",
+        String(
+          requestedRooms
+        )
+      );
 
-    const params = new URLSearchParams();
+      router.replace(
+        `/tim-phong?${params.toString()}`
+      );
+    }, [
+      editCheckIn,
+      editCheckOut,
+      editAdults,
+      editChildren,
+      hotelSlug,
+      searchParams,
+      requestedRooms,
+      router,
+      language,
+    ]);
 
-    params.set(
-      "hotel",
-      hotel.slug
+  const changeRoomQuantity =
+    useCallback(
+      (
+        room: DisplayRoom,
+        delta: number
+      ) => {
+        setSelectedRooms(
+          (previous) => {
+            const current =
+              previous[
+                room.slug
+              ] || 0;
+
+            const next =
+              Math.min(
+                Math.max(
+                  current +
+                    delta,
+                  0
+                ),
+                room.availableQuantity
+              );
+
+            const result = {
+              ...previous,
+            };
+
+            if (next <= 0) {
+              delete result[
+                room.slug
+              ];
+            } else {
+              result[
+                room.slug
+              ] = next;
+            }
+
+            return result;
+          }
+        );
+      },
+      []
     );
 
-    params.set(
-      "rooms",
-      JSON.stringify(selected)
-    );
+  const continueBooking =
+    useCallback(() => {
+      if (
+        selectedRoomCount <= 0 ||
+        !hotel
+      ) {
+        return;
+      }
 
-    params.set(
-      "checkIn",
-      checkIn
-    );
+      const selected: SelectedRoom[] =
+        Object.entries(
+          selectedRooms
+        )
+          .filter(
+            ([, quantity]) =>
+              quantity > 0
+          )
+          .map(
+            ([slug, quantity]) => ({
+              hotelSlug:
+                hotel.slug,
+              roomSlug: slug,
+              quantity,
+            })
+          );
 
-    params.set(
-      "checkOut",
-      checkOut
-    );
+      if (!selected.length) {
+        return;
+      }
 
-    params.set(
-      "adults",
-      String(adults)
-    );
+      const params =
+        new URLSearchParams();
 
-    params.set(
-      "children",
-      String(children)
-    );
+      params.set(
+        "hotel",
+        hotel.slug
+      );
 
-    params.set(
-      "roomsCount",
-      String(requestedRooms)
-    );
+      params.set(
+        "rooms",
+        JSON.stringify(selected)
+      );
 
-    router.push(
-      `/dat-phong?${params.toString()}`
-    );
-  }, [
-    selectedRoomCount,
-    selectedRooms,
-    hotel,
-    checkIn,
-    checkOut,
-    adults,
-    children,
-    requestedRooms,
-    router,
-  ]);
+      params.set(
+        "checkIn",
+        checkIn
+      );
 
-  if (
-    !hotelSlug ||
-    !checkIn ||
-    !checkOut
-  ) {
-    return null;
-  }
+      params.set(
+        "checkOut",
+        checkOut
+      );
+
+      params.set(
+        "adults",
+        String(adults)
+      );
+
+      params.set(
+        "children",
+        String(children)
+      );
+
+      params.set(
+        "roomsCount",
+        String(requestedRooms)
+      );
+
+      router.push(
+        `/dat-phong?${params.toString()}`
+      );
+    }, [
+      selectedRoomCount,
+      selectedRooms,
+      hotel,
+      checkIn,
+      checkOut,
+      adults,
+      children,
+      requestedRooms,
+      router,
+    ]);
+
+  /*
+    Nếu URL /tim-phong bị mở trực tiếp mà thiếu
+    thông tin đặt phòng, KHÔNG redirect về Home.
+
+    Hiển thị trạng thái rõ ràng để người dùng.
+  */
 
   const hotelName = hotel
     ? language === "vi"
@@ -740,7 +1002,7 @@ function TimPhongContent() {
               href="/"
               className="text-xl font-bold tracking-tight text-slate-900"
             >
-              Huyen's Hotels & Stays
+              Huyen&apos;s Hotels & Stays
             </Link>
 
             {hotelName && (
@@ -752,7 +1014,9 @@ function TimPhongContent() {
 
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() =>
+              router.back()
+            }
             className="text-sm font-medium text-slate-700 hover:text-slate-950"
           >
             ←{" "}
@@ -788,7 +1052,7 @@ function TimPhongContent() {
 
             <p className="mt-1 text-sm text-neutral-500">
               {language === "vi"
-                ? "Điều chỉnh ngày ở, ngày đi và số khách."
+                ? "Điều chỉnh ngày vào, ngày đi và số khách."
                 : "Adjust dates and guests."}
             </p>
           </div>
@@ -809,7 +1073,7 @@ function TimPhongContent() {
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
                 {language === "vi"
-                  ? "Ngày ở"
+                  ? "Ngày vào"
                   : "Check-in"}
               </label>
 
@@ -817,15 +1081,24 @@ function TimPhongContent() {
                 role="button"
                 tabIndex={0}
                 onClick={() =>
-                  openDatePicker(checkInRef)
+                  openDatePicker(
+                    checkInRef
+                  )
                 }
-                onKeyDown={(event) => {
+                onKeyDown={(
+                  event
+                ) => {
                   if (
-                    event.key === "Enter" ||
-                    event.key === " "
+                    event.key ===
+                      "Enter" ||
+                    event.key ===
+                      " "
                   ) {
                     event.preventDefault();
-                    openDatePicker(checkInRef);
+
+                    openDatePicker(
+                      checkInRef
+                    );
                   }
                 }}
                 className="relative flex h-12 w-full cursor-pointer items-center rounded-xl border border-neutral-200 bg-white px-4 hover:border-slate-400 focus-within:border-slate-500"
@@ -833,10 +1106,15 @@ function TimPhongContent() {
                 <input
                   ref={checkInRef}
                   type="date"
-                  value={editCheckIn}
-                  onChange={(event) =>
+                  value={
+                    editCheckIn
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setEditCheckIn(
-                      event.target.value
+                      event.target
+                        .value
                     )
                   }
                   className="h-full w-full cursor-pointer border-0 bg-transparent p-0 text-sm font-medium text-slate-900 outline-none"
@@ -855,15 +1133,24 @@ function TimPhongContent() {
                 role="button"
                 tabIndex={0}
                 onClick={() =>
-                  openDatePicker(checkOutRef)
+                  openDatePicker(
+                    checkOutRef
+                  )
                 }
-                onKeyDown={(event) => {
+                onKeyDown={(
+                  event
+                ) => {
                   if (
-                    event.key === "Enter" ||
-                    event.key === " "
+                    event.key ===
+                      "Enter" ||
+                    event.key ===
+                      " "
                   ) {
                     event.preventDefault();
-                    openDatePicker(checkOutRef);
+
+                    openDatePicker(
+                      checkOutRef
+                    );
                   }
                 }}
                 className="relative flex h-12 w-full cursor-pointer items-center rounded-xl border border-neutral-200 bg-white px-4 hover:border-slate-400 focus-within:border-slate-500"
@@ -871,13 +1158,19 @@ function TimPhongContent() {
                 <input
                   ref={checkOutRef}
                   type="date"
-                  value={editCheckOut}
-                  min={
-                    editCheckIn || undefined
+                  value={
+                    editCheckOut
                   }
-                  onChange={(event) =>
+                  min={
+                    editCheckIn ||
+                    undefined
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setEditCheckOut(
-                      event.target.value
+                      event.target
+                        .value
                     )
                   }
                   className="h-full w-full cursor-pointer border-0 bg-transparent p-0 text-sm font-medium text-slate-900 outline-none"
@@ -895,7 +1188,8 @@ function TimPhongContent() {
               <div className="flex h-12 items-center gap-4 rounded-xl border border-neutral-200 bg-white px-3">
                 <div className="flex flex-1 items-center justify-between gap-2">
                   <span className="text-sm text-neutral-600">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? "Người lớn"
                       : "Adults"}
                   </span>
@@ -905,7 +1199,9 @@ function TimPhongContent() {
                       type="button"
                       onClick={() =>
                         setEditAdults(
-                          (value) =>
+                          (
+                            value
+                          ) =>
                             Math.max(
                               1,
                               value - 1
@@ -918,14 +1214,18 @@ function TimPhongContent() {
                     </button>
 
                     <span className="w-5 text-center text-sm font-semibold text-slate-900">
-                      {editAdults}
+                      {
+                        editAdults
+                      }
                     </span>
 
                     <button
                       type="button"
                       onClick={() =>
                         setEditAdults(
-                          (value) =>
+                          (
+                            value
+                          ) =>
                             value + 1
                         )
                       }
@@ -940,7 +1240,8 @@ function TimPhongContent() {
 
                 <div className="flex flex-1 items-center justify-between gap-2">
                   <span className="text-sm text-neutral-600">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? "Trẻ em"
                       : "Children"}
                   </span>
@@ -950,7 +1251,9 @@ function TimPhongContent() {
                       type="button"
                       onClick={() =>
                         setEditChildren(
-                          (value) =>
+                          (
+                            value
+                          ) =>
                             Math.max(
                               0,
                               value - 1
@@ -963,14 +1266,18 @@ function TimPhongContent() {
                     </button>
 
                     <span className="w-5 text-center text-sm font-semibold text-slate-900">
-                      {editChildren}
+                      {
+                        editChildren
+                      }
                     </span>
 
                     <button
                       type="button"
                       onClick={() =>
                         setEditChildren(
-                          (value) =>
+                          (
+                            value
+                          ) =>
                             value + 1
                         )
                       }
@@ -986,7 +1293,9 @@ function TimPhongContent() {
             <div className="flex items-end">
               <button
                 type="button"
-                onClick={applyBookingChanges}
+                onClick={
+                  applyBookingChanges
+                }
                 className="h-12 w-full rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 lg:min-w-[120px]"
               >
                 {language === "vi"
@@ -1007,40 +1316,49 @@ function TimPhongContent() {
 
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-500">
             <span>
-              {language === "vi"
-                ? "Ở:"
+              {language ===
+              "vi"
+                ? "Vào:"
                 : "Check-in:"}{" "}
               <strong className="text-slate-800">
-                {formatDate(checkIn)}
+                {formatDate(
+                  checkIn
+                )}
               </strong>
             </span>
 
             <span>
-              {language === "vi"
+              {language ===
+              "vi"
                 ? "Đi:"
                 : "Check-out:"}{" "}
               <strong className="text-slate-800">
-                {formatDate(checkOut)}
+                {formatDate(
+                  checkOut
+                )}
               </strong>
             </span>
 
             <span>
               {nights}{" "}
-              {language === "vi"
+              {language ===
+              "vi"
                 ? "đêm"
                 : "nights"}
             </span>
 
             <span>
               {totalGuests}{" "}
-              {language === "vi"
+              {language ===
+              "vi"
                 ? "khách"
                 : "guests"}
             </span>
 
             <span>
               {requestedRooms}{" "}
-              {language === "vi"
+              {language ===
+              "vi"
                 ? "phòng"
                 : "room(s)"}
             </span>
@@ -1049,23 +1367,27 @@ function TimPhongContent() {
 
         {loading && (
           <div className="space-y-5">
-            {[1, 2].map((item) => (
-              <div
-                key={item}
-                className="h-72 animate-pulse rounded-2xl bg-neutral-200"
-              />
-            ))}
+            {[1, 2].map(
+              (item) => (
+                <div
+                  key={item}
+                  className="h-72 animate-pulse rounded-2xl bg-neutral-200"
+                />
+              )
+            )}
           </div>
         )}
 
-        {!loading && loadingAvailability && (
-          <div className="mb-6 flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-600">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-neutral-300 border-t-slate-800" />
-            {language === "vi"
-              ? "Đang kiểm tra phòng trống..."
-              : "Checking availability..."}
-          </div>
-        )}
+        {!loading &&
+          loadingAvailability && (
+            <div className="mb-6 flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-600">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-neutral-300 border-t-slate-800" />
+
+              {language === "vi"
+                ? "Đang kiểm tra phòng trống..."
+                : "Checking availability..."}
+            </div>
+          )}
 
         {!loading &&
           !loadingAvailability &&
@@ -1074,14 +1396,17 @@ function TimPhongContent() {
               className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700"
               role="alert"
             >
-              {availabilityError}
+              {
+                availabilityError
+              }
             </div>
           )}
 
         {!loading &&
           !loadingAvailability &&
           !availabilityError &&
-          availableRooms.length === 0 && (
+          availableRooms.length ===
+            0 && (
             <div className="rounded-2xl border border-neutral-200 bg-white p-10 text-center shadow-sm">
               <h2 className="text-xl font-bold text-slate-900">
                 {language === "vi"
@@ -1099,216 +1424,273 @@ function TimPhongContent() {
 
         {!loading &&
           !loadingAvailability &&
-          availableRooms.length > 0 && (
+          !availabilityError &&
+          availableRooms.length >
+            0 && (
             <div className="space-y-6">
-              {availableRooms.map((room) => {
-                const quantity =
-                  selectedRooms[room.slug] || 0;
+              {availableRooms.map(
+                (room) => {
+                  const quantity =
+                    selectedRooms[
+                      room.slug
+                    ] || 0;
 
-                const roomName =
-                  language === "vi"
-                    ? room.name_vi
-                    : room.name_en;
+                  const roomName =
+                    language ===
+                    "vi"
+                      ? room.name_vi
+                      : room.name_en;
 
-                const description =
-                  language === "vi"
-                    ? room.description_vi
-                    : room.description_en;
+                  const description =
+                    language ===
+                    "vi"
+                      ? room.description_vi
+                      : room.description_en;
 
-                const beds =
-                  language === "vi"
-                    ? room.beds_vi
-                    : room.beds_en;
+                  const beds =
+                    language ===
+                    "vi"
+                      ? room.beds_vi
+                      : room.beds_en;
 
-                const amenities =
-                  language === "vi"
-                    ? room.amenitiesVi
-                    : room.amenitiesEn;
+                  const amenities =
+                    language ===
+                    "vi"
+                      ? room.amenitiesVi
+                      : room.amenitiesEn;
 
-                return (
-                  <article
-                    key={room.id}
-                    className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
-                  >
-                    <div className="grid lg:grid-cols-[360px_1fr]">
-                      <div className="relative h-64 bg-neutral-100 sm:h-80 lg:h-full lg:min-h-[360px]">
-                        <img
-                          src={room.image}
-                          alt={room.imageAlt}
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
+                  return (
+                    <article
+                      key={
+                        room.id
+                      }
+                      className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
+                    >
+                      <div className="grid lg:grid-cols-[360px_1fr]">
+                        <div className="relative h-64 bg-neutral-100 sm:h-80 lg:h-full lg:min-h-[360px]">
+                          <Image
+                            src={
+                              room.image
+                            }
+                            alt={
+                              room.imageAlt
+                            }
+                            fill
+                            unoptimized
+                            sizes="(max-width: 1024px) 100vw, 360px"
+                            className="object-cover"
+                          />
 
-                        {room.availableQuantity > 0 && (
-                          <div className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-slate-800">
-                            {language === "vi"
-                              ? `Còn ${room.availableQuantity} phòng`
-                              : `${room.availableQuantity} available`}
+                          {room.availableQuantity >
+                            0 && (
+                            <div className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-slate-800">
+                              {language ===
+                              "vi"
+                                ? `Còn ${room.availableQuantity} phòng`
+                                : `${room.availableQuantity} available`}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col p-5 sm:p-7">
+                          <div className="flex flex-col gap-5 sm:flex-row sm:justify-between">
+                            <div>
+                              <h2 className="text-2xl font-bold text-slate-900">
+                                {
+                                  roomName
+                                }
+                              </h2>
+
+                              {description && (
+                                <p className="mt-3 text-sm text-neutral-600">
+                                  {
+                                    description
+                                  }
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="shrink-0 text-left sm:text-right">
+                              <div className="text-xl font-bold text-slate-900">
+                                {formatPrice(
+                                  Number(
+                                    room.base_price
+                                  ) ||
+                                    0
+                                )}{" "}
+                                ₫
+                              </div>
+
+                              <div className="text-xs text-neutral-500">
+                                {language ===
+                                "vi"
+                                  ? "/đêm"
+                                  : "/night"}
+                              </div>
+                            </div>
                           </div>
-                        )}
-                      </div>
 
-                      <div className="flex flex-col p-5 sm:p-7">
-                        <div className="flex flex-col gap-5 sm:flex-row sm:justify-between">
-                          <div>
-                            <h2 className="text-2xl font-bold text-slate-900">
-                              {roomName}
-                            </h2>
+                          <div className="mt-6 flex flex-wrap gap-2">
+                            {room.size && (
+                              <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-xs">
+                                {
+                                  room.size
+                                }{" "}
+                                m²
+                              </span>
+                            )}
 
-                            {description && (
-                              <p className="mt-3 text-sm text-neutral-600">
-                                {description}
-                              </p>
+                            {room.max_guests && (
+                              <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-xs">
+                                {language ===
+                                "vi"
+                                  ? `Tối đa ${room.max_guests} khách`
+                                  : `Up to ${room.max_guests}`}
+                              </span>
+                            )}
+
+                            {beds && (
+                              <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-xs">
+                                {
+                                  beds
+                                }
+                              </span>
                             )}
                           </div>
 
-                          <div className="shrink-0 text-left sm:text-right">
-                            <div className="text-xl font-bold text-slate-900">
-                              {formatPrice(
-                                Number(
-                                  room.base_price
-                                ) || 0
-                              )}{" "}
-                              ₫
-                            </div>
+                          {amenities.length >
+                            0 && (
+                            <div className="mt-6">
+                              <h3 className="text-sm font-semibold text-slate-900">
+                                {language ===
+                                "vi"
+                                  ? "Tiện nghi"
+                                  : "Amenities"}
+                              </h3>
 
-                            <div className="text-xs text-neutral-500">
-                              {language === "vi"
-                                ? "/đêm"
-                                : "/night"}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-6 flex flex-wrap gap-2">
-                          {room.size && (
-                            <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-xs">
-                              {room.size} m²
-                            </span>
-                          )}
-
-                          {room.max_guests && (
-                            <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-xs">
-                              {language === "vi"
-                                ? `Tối đa ${room.max_guests} khách`
-                                : `Up to ${room.max_guests}`}
-                            </span>
-                          )}
-
-                          {beds && (
-                            <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-xs">
-                              {beds}
-                            </span>
-                          )}
-                        </div>
-
-                        {amenities.length > 0 && (
-                          <div className="mt-6">
-                            <h3 className="text-sm font-semibold text-slate-900">
-                              {language === "vi"
-                                ? "Tiện nghi"
-                                : "Amenities"}
-                            </h3>
-
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {amenities.map(
-                                (amenity, index) => (
-                                  <span
-                                    key={index}
-                                    className="rounded-lg border border-neutral-200 px-3 py-2 text-xs text-neutral-600"
-                                  >
-                                    {amenity}
-                                  </span>
-                                )
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="mt-auto flex flex-col gap-4 border-t border-neutral-100 pt-6 sm:flex-row sm:justify-between">
-                          <Link
-                            href={`/khach-san/${hotelSlug}/phong/${room.slug}`}
-                            className="text-sm font-semibold text-slate-800 hover:text-slate-950"
-                          >
-                            {language === "vi"
-                              ? "Xem chi tiết"
-                              : "View details"}{" "}
-                            →
-                          </Link>
-
-                          <div className="flex items-center gap-4">
-                            <span className="text-sm font-medium text-neutral-600">
-                              {language === "vi"
-                                ? "Số phòng"
-                                : "Rooms"}
-                            </span>
-
-                            <div className="flex items-center rounded-full border border-neutral-300">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  changeRoomQuantity(
-                                    room,
-                                    -1
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {amenities.map(
+                                  (
+                                    amenity,
+                                    index
+                                  ) => (
+                                    <span
+                                      key={
+                                        index
+                                      }
+                                      className="rounded-lg border border-neutral-200 px-3 py-2 text-xs text-neutral-600"
+                                    >
+                                      {
+                                        amenity
+                                      }
+                                    </span>
                                   )
-                                }
-                                disabled={
-                                  quantity <= 0
-                                }
-                                className="flex h-10 w-10 items-center justify-center rounded-l-full disabled:opacity-40"
-                              >
-                                −
-                              </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
 
-                              <span className="w-10 text-center text-sm font-bold">
-                                {quantity}
+                          <div className="mt-auto flex flex-col gap-4 border-t border-neutral-100 pt-6 sm:flex-row sm:justify-between">
+                            <Link
+                              href={`/khach-san/${hotelSlug}/phong/${room.slug}`}
+                              className="text-sm font-semibold text-slate-800 hover:text-slate-950"
+                            >
+                              {language ===
+                              "vi"
+                                ? "Xem chi tiết"
+                                : "View details"}{" "}
+                              →
+                            </Link>
+
+                            <div className="flex items-center gap-4">
+                              <span className="text-sm font-medium text-neutral-600">
+                                {language ===
+                                "vi"
+                                  ? "Số phòng"
+                                  : "Rooms"}
                               </span>
 
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  changeRoomQuantity(
-                                    room,
-                                    1
-                                  )
-                                }
-                                disabled={
-                                  quantity >=
-                                  room.availableQuantity
-                                }
-                                className="flex h-10 w-10 items-center justify-center rounded-r-full disabled:opacity-40"
-                              >
-                                +
-                              </button>
+                              <div className="flex items-center rounded-full border border-neutral-300">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    changeRoomQuantity(
+                                      room,
+                                      -1
+                                    )
+                                  }
+                                  disabled={
+                                    quantity <=
+                                    0
+                                  }
+                                  className="flex h-10 w-10 items-center justify-center rounded-l-full disabled:opacity-40"
+                                >
+                                  −
+                                </button>
+
+                                <span className="w-10 text-center text-sm font-bold">
+                                  {
+                                    quantity
+                                  }
+                                </span>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    changeRoomQuantity(
+                                      room,
+                                      1
+                                    )
+                                  }
+                                  disabled={
+                                    quantity >=
+                                    room.availableQuantity
+                                  }
+                                  className="flex h-10 w-10 items-center justify-center rounded-r-full disabled:opacity-40"
+                                >
+                                  +
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </article>
-                );
-              })}
+                    </article>
+                  );
+                }
+              )}
             </div>
           )}
       </div>
 
-      {selectedRoomCount > 0 && (
+      {selectedRoomCount >
+        0 && (
         <div className="sticky bottom-0 z-40 border-t border-neutral-200 bg-white/95 shadow-[0_-6px_20px_rgba(0,0,0,0.08)] backdrop-blur">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
             <div>
               <div className="text-sm font-medium text-neutral-500">
-                {selectedRoomCount}{" "}
-                {language === "vi"
+                {
+                  selectedRoomCount
+                }{" "}
+                {language ===
+                "vi"
                   ? "phòng đã chọn"
                   : "room(s) selected"}
               </div>
 
               <div className="mt-1 text-xl font-bold text-slate-900">
-                {formatPrice(selectedTotal)} ₫
+                {
+                  formatPrice(
+                    selectedTotal
+                  )
+                }{" "}
+                ₫
               </div>
 
               <div className="text-xs text-neutral-500">
                 {nights}{" "}
-                {language === "vi"
+                {language ===
+                "vi"
                   ? "đêm"
                   : "nights"}
               </div>
@@ -1316,10 +1698,13 @@ function TimPhongContent() {
 
             <button
               type="button"
-              onClick={continueBooking}
+              onClick={
+                continueBooking
+              }
               className="rounded-xl bg-slate-900 px-8 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
-              {language === "vi"
+              {language ===
+              "vi"
                 ? "Tiếp tục đặt phòng"
                 : "Continue booking"}{" "}
               →
@@ -1336,7 +1721,9 @@ function TimPhongLoading() {
     <main className="min-h-screen bg-neutral-50">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="h-8 w-64 animate-pulse rounded-lg bg-neutral-200" />
+
         <div className="mt-6 h-48 animate-pulse rounded-2xl bg-neutral-200" />
+
         <div className="mt-6 h-72 animate-pulse rounded-2xl bg-neutral-200" />
       </div>
     </main>
@@ -1345,9 +1732,12 @@ function TimPhongLoading() {
 
 export default function TimPhongPage() {
   return (
-    <Suspense fallback={<TimPhongLoading />}>
+    <Suspense
+      fallback={
+        <TimPhongLoading />
+      }
+    >
       <TimPhongContent />
     </Suspense>
   );
 }
-

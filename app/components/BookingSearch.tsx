@@ -24,7 +24,18 @@ declare global {
 export default function BookingSearch({ hotels }: BookingSearchProps) {
   const router = useRouter();
 
-  const [language, setLanguage] = useState<Language>("vi");
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") {
+      return "vi";
+    }
+
+    const saved = localStorage.getItem("huyen-language");
+
+    return saved === "vi" || saved === "en"
+      ? saved
+      : "vi";
+  });
+
   const [hotel, setHotel] = useState("");
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
@@ -37,12 +48,6 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
-    const saved = localStorage.getItem("huyen-language");
-
-    if (saved === "vi" || saved === "en") {
-      setLanguage(saved);
-    }
-
     const handler = (e: CustomEvent<Language>) => {
       if (e.detail === "vi" || e.detail === "en") {
         setLanguage(e.detail);
@@ -77,7 +82,11 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
 
   const handleSearch = useCallback(() => {
     if (!hotel) {
-      alert(isVi ? "Vui lòng chọn khách sạn" : "Please select a hotel");
+      alert(
+        isVi
+          ? "Vui lòng chọn khách sạn"
+          : "Please select a hotel"
+      );
       return;
     }
 
@@ -118,11 +127,17 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
     isVi,
   ]);
 
-  const increaseAdults = () => setAdults((v) => v + 1);
-  const decreaseAdults = () => setAdults((v) => Math.max(1, v - 1));
+  const increaseAdults = () =>
+    setAdults((v) => v + 1);
 
-  const increaseChildren = () => setChildren((v) => v + 1);
-  const decreaseChildren = () => setChildren((v) => Math.max(0, v - 1));
+  const decreaseAdults = () =>
+    setAdults((v) => Math.max(1, v - 1));
+
+  const increaseChildren = () =>
+    setChildren((v) => v + 1);
+
+  const decreaseChildren = () =>
+    setChildren((v) => Math.max(0, v - 1));
 
   return (
     <div className="w-full min-w-0">
@@ -140,7 +155,9 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
               className="h-9 w-full min-w-0 rounded-xl border border-neutral-400 bg-white px-3 text-sm text-neutral-900 shadow-sm outline-none transition hover:border-neutral-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 sm:px-4"
             >
               <option value="">
-                {isVi ? "Chọn khách sạn" : "Select hotel"}
+                {isVi
+                  ? "Chọn khách sạn"
+                  : "Select hotel"}
               </option>
 
               {hotels.map((item) => (
@@ -158,7 +175,9 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
             </label>
 
             <div
-              onClick={() => openDatePicker(checkInRef)}
+              onClick={() =>
+                openDatePicker(checkInRef)
+              }
               className="relative flex h-9 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-2 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-4"
             >
               <input
@@ -184,7 +203,9 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 </span>
               ) : (
                 <span className="relative z-0 block w-full truncate whitespace-nowrap text-xs text-neutral-400 sm:text-sm">
-                  {isVi ? "Chọn ngày" : "Select date"}
+                  {isVi
+                    ? "Chọn ngày"
+                    : "Select date"}
                 </span>
               )}
             </div>
@@ -197,7 +218,9 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
             </label>
 
             <div
-              onClick={() => openDatePicker(checkOutRef)}
+              onClick={() =>
+                openDatePicker(checkOutRef)
+              }
               className="relative flex h-9 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-2 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-4"
             >
               <input
@@ -223,7 +246,9 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 </span>
               ) : (
                 <span className="relative z-0 block w-full truncate whitespace-nowrap text-xs text-neutral-400 sm:text-sm">
-                  {isVi ? "Chọn ngày" : "Select date"}
+                  {isVi
+                    ? "Chọn ngày"
+                    : "Select date"}
                 </span>
               )}
             </div>
@@ -241,7 +266,9 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 onClick={decreaseAdults}
                 disabled={adults <= 1}
                 aria-label={
-                  isVi ? "Giảm số người lớn" : "Decrease adults"
+                  isVi
+                    ? "Giảm số người lớn"
+                    : "Decrease adults"
                 }
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
               >
@@ -256,7 +283,9 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 type="button"
                 onClick={increaseAdults}
                 aria-label={
-                  isVi ? "Tăng số người lớn" : "Increase adults"
+                  isVi
+                    ? "Tăng số người lớn"
+                    : "Increase adults"
                 }
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
               >
@@ -277,7 +306,9 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 onClick={decreaseChildren}
                 disabled={children <= 0}
                 aria-label={
-                  isVi ? "Giảm số trẻ em" : "Decrease children"
+                  isVi
+                    ? "Giảm số trẻ em"
+                    : "Decrease children"
                 }
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
               >
@@ -292,7 +323,9 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 type="button"
                 onClick={increaseChildren}
                 aria-label={
-                  isVi ? "Tăng số trẻ em" : "Increase children"
+                  isVi
+                    ? "Tăng số trẻ em"
+                    : "Increase children"
                 }
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
               >
@@ -308,7 +341,9 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
               onClick={handleSearch}
               className="h-9 w-full rounded-xl bg-sky-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.99]"
             >
-              {isVi ? "Tìm phòng" : "Search Rooms"}
+              {isVi
+                ? "Tìm phòng"
+                : "Search Rooms"}
             </button>
           </div>
         </div>

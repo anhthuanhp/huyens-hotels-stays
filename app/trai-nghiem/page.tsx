@@ -56,7 +56,16 @@ declare global {
 }
 
 export default function TraiNghiemPage() {
-  const [language, setLanguage] = useState<Language>("vi");
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") {
+      return "vi";
+    }
+
+    const saved = localStorage.getItem("huyen-language");
+
+    return saved === "vi" || saved === "en" ? saved : "vi";
+  });
+
   const [activities, setActivities] = useState<Activity[]>([]);
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [media, setMedia] = useState<Media[]>([]);
@@ -86,12 +95,6 @@ export default function TraiNghiemPage() {
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem("huyen-language");
-
-    if (saved === "vi" || saved === "en") {
-      setLanguage(saved);
-    }
-
     const handleChange = (e: CustomEvent<Language>) => {
       if (e.detail === "vi" || e.detail === "en") {
         setLanguage(e.detail);
@@ -167,7 +170,7 @@ export default function TraiNghiemPage() {
     }
 
     loadData();
-  }, []);
+  }, [isVi]);
 
   const getActivityMedia = (activityId: number) => {
     const items = media.filter(
@@ -286,7 +289,9 @@ export default function TraiNghiemPage() {
                       {/* Ảnh chính */}
                       <div className="relative aspect-[4/3] min-h-[280px] overflow-hidden bg-neutral-200 md:aspect-auto">
                         <Image
-                          src={cover?.public_url || FALLBACK_IMAGE}
+                          src={
+                            cover?.public_url || FALLBACK_IMAGE
+                          }
                           alt={
                             isVi
                               ? cover?.alt_vi || title
@@ -361,7 +366,7 @@ export default function TraiNghiemPage() {
         </div>
       </section>
 
-      <Footer language={language} />
+      <Footer />
     </main>
   );
 }

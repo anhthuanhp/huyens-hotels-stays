@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -130,12 +131,11 @@ const SLIDE_DURATION = 20;
 
 const heroFallbackTexts = [
   {
-    titleVi: "Thoải mái theo cách của bạn.",
-    titleEn: "Comfortable, your way.",
-    descriptionVi:
-      "Không gian lưu trú phù hợp cho mỗi hành trình.",
-    descriptionEn:
-      "A stay that fits every journey.",
+    titleVi: "Khách sạn, guesthouse & homestay Quận 1 TP.HCM",
+    titleEn:
+      "Hotels, Guesthouses & Homestays in District 1, Ho Chi Minh City",
+    descriptionVi: "Thoải mái theo cách của bạn.",
+    descriptionEn: "Comfortable, your way.",
   },
   {
     titleVi: "Một nơi để nghỉ ngơi thật trọn vẹn.",
@@ -168,8 +168,15 @@ export default function HomeClient({
   hotels,
   hotelCovers,
 }: HomeClientProps) {
-  const [language, setLanguage] = useState<Language>("vi");
-  const [heroImagesReady, setHeroImagesReady] = useState(false);
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") {
+      return "vi";
+    }
+
+    const saved = localStorage.getItem("huyen-language");
+
+    return saved === "vi" || saved === "en" ? saved : "vi";
+  });
 
   const isVi = language === "vi";
 
@@ -193,12 +200,6 @@ export default function HomeClient({
   );
 
   useEffect(() => {
-    const saved = localStorage.getItem("huyen-language");
-
-    if (saved === "vi" || saved === "en") {
-      setLanguage(saved);
-    }
-
     const handleLanguageChange = (e: CustomEvent<Language>) => {
       if (e.detail === "vi" || e.detail === "en") {
         setLanguage(e.detail);
@@ -208,56 +209,12 @@ export default function HomeClient({
     window.addEventListener("language-change", handleLanguageChange);
 
     return () => {
-      window.removeEventListener("language-change", handleLanguageChange);
+      window.removeEventListener(
+        "language-change",
+        handleLanguageChange
+      );
     };
   }, []);
-
-  useEffect(() => {
-    const imageUrls = heroSlides
-      .map((slide) => slide.image_url)
-      .filter((url): url is string => Boolean(url));
-
-    if (imageUrls.length === 0) {
-      setHeroImagesReady(true);
-      return;
-    }
-
-    let cancelled = false;
-    let loadedCount = 0;
-
-    const handleLoaded = () => {
-      if (!cancelled) {
-        loadedCount += 1;
-
-        if (loadedCount === imageUrls.length) {
-          setHeroImagesReady(true);
-        }
-      }
-    };
-
-    imageUrls.forEach((url) => {
-      const img = document.createElement("img");
-
-      img.onload = handleLoaded;
-      img.onerror = handleLoaded;
-      img.src = url;
-
-      if (img.complete && img.naturalHeight !== 0) {
-        handleLoaded();
-      }
-    });
-
-    const fallback = setTimeout(() => {
-      if (!cancelled) {
-        setHeroImagesReady(true);
-      }
-    }, 15000);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(fallback);
-    };
-  }, [heroSlides]);
 
   const getHotelGridClass = () => {
     const count = hotels.length;
@@ -291,20 +248,21 @@ export default function HomeClient({
                 heroFallbackTexts[index % heroFallbackTexts.length];
 
               const heroTitle = isVi
-                ? slide.title_vi || fallback.titleVi
-                : slide.title_en || fallback.titleEn;
+                ? slide.title_vi?.trim() || fallback.titleVi
+                : slide.title_en?.trim() || fallback.titleEn;
 
               const heroDescription = isVi
-                ? slide.description_vi || fallback.descriptionVi
-                : slide.description_en || fallback.descriptionEn;
+                ? slide.description_vi?.trim() || fallback.descriptionVi
+                : slide.description_en?.trim() ||
+                  fallback.descriptionEn;
 
               return (
                 <div
                   key={slide.id}
                   className="absolute inset-0"
                   style={{
-                    opacity: heroImagesReady ? undefined : index === 0 ? 1 : 0,
-                    animationName: heroImagesReady ? "heroFade" : "none",
+                    opacity: index === 0 ? 1 : 0,
+                    animationName: "heroFade",
                     animationDuration: `${SLIDE_DURATION}s`,
                     animationTimingFunction: "linear",
                     animationIterationCount: "infinite",
@@ -315,7 +273,10 @@ export default function HomeClient({
                   {slide.image_url && (
                     <Image
                       src={slide.image_url}
-                      alt={heroTitle || "Banner trang chủ"}
+                      alt={
+                        heroTitle ||
+                        "Huyen's Hotels & Stays"
+                      }
                       fill
                       priority={index === 0}
                       quality={95}
@@ -328,12 +289,18 @@ export default function HomeClient({
 
                   <div className="absolute inset-0 z-20 flex items-end px-4 pb-6 sm:px-8 sm:pb-8">
                     <div className="max-w-2xl text-white">
-                      <h1
-                        id={index === 0 ? "hero-heading" : undefined}
-                        className="text-sm font-bold leading-tight text-white drop-shadow-md sm:text-3xl lg:text-4xl"
-                      >
-                        {heroTitle}
-                      </h1>
+                      {index === 0 ? (
+                        <h1
+                          id="hero-heading"
+                          className="text-sm font-bold leading-tight text-white drop-shadow-md sm:text-3xl lg:text-4xl"
+                        >
+                          {heroTitle}
+                        </h1>
+                      ) : (
+                        <p className="text-sm font-bold leading-tight text-white drop-shadow-md sm:text-3xl lg:text-4xl">
+                          {heroTitle}
+                        </p>
+                      )}
 
                       {heroDescription && (
                         <p className="mt-2 max-w-xl text-xs text-white drop-shadow-sm sm:mt-3 sm:text-lg">
@@ -372,7 +339,7 @@ export default function HomeClient({
           <div className="grid gap-8 md:grid-cols-[3fr_7fr]">
             <div>
               <p className="text-xs font-medium uppercase tracking-widest text-sky-600">
-                Huyen's Hotels & Stays
+                Huyen&apos;s Hotels &amp; Stays
               </p>
 
               <h2
@@ -389,7 +356,7 @@ export default function HomeClient({
               <p className="text-base leading-7 text-neutral-600">
                 {isVi ? (
                   <>
-                    Chúng tôi phát triển hệ thống khách sạn, homestay & căn hộ
+                    Chúng tôi phát triển hệ thống khách sạn, homestay &amp; căn hộ
                     dịch vụ tại TP.HCM.
                     <br />
                     Luôn mang đến không gian sạch sẽ, tiện nghi, riêng tư và
@@ -434,7 +401,9 @@ export default function HomeClient({
               id="stays-heading"
               className="mt-2 text-2xl font-bold md:text-3xl"
             >
-              {isVi ? "Các cơ sở lưu trú" : "Listing of Stays"}
+              {isVi
+                ? "Khách sạn và nơi lưu trú tại Quận 1"
+                : "Hotels and Stays in District 1"}
             </h2>
           </div>
 
@@ -450,7 +419,10 @@ export default function HomeClient({
             <div className={`grid gap-6 ${getHotelGridClass()}`}>
               {hotels.map((hotel, index) => {
                 const hotelImage = hotelCovers[hotel.id];
-                const hotelName = t(hotel.name_vi, hotel.name_en);
+                const hotelName = t(
+                  hotel.name_vi,
+                  hotel.name_en
+                );
                 const hotelAddress = t(
                   hotel.address_vi,
                   hotel.address_en
@@ -468,6 +440,11 @@ export default function HomeClient({
                     <Link
                       href={`/khach-san/${hotel.slug}`}
                       className="block"
+                      aria-label={
+                        isVi
+                          ? `Xem ${hotelName}`
+                          : `View ${hotelName}`
+                      }
                     >
                       <div className="aspect-[4/3] overflow-hidden bg-neutral-100">
                         {hotelImage ? (
@@ -482,7 +459,9 @@ export default function HomeClient({
                           />
                         ) : (
                           <div className="flex h-full items-center justify-center text-sm text-neutral-400">
-                            {isVi ? "Chưa có ảnh" : "No image"}
+                            {isVi
+                              ? "Chưa có ảnh"
+                              : "No image"}
                           </div>
                         )}
                       </div>
@@ -495,7 +474,9 @@ export default function HomeClient({
                         </p>
                       )}
 
-                      <Link href={`/khach-san/${hotel.slug}`}>
+                      <Link
+                        href={`/khach-san/${hotel.slug}`}
+                      >
                         <h3 className="mt-2 text-xl font-semibold transition-colors hover:text-sky-500">
                           {hotelName}
                         </h3>
@@ -531,15 +512,11 @@ export default function HomeClient({
       >
         <div className="mx-auto max-w-7xl">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-widest text-sky-500">
-              {isVi ? "Tiện nghi" : "Amenities"}
-            </p>
-
             <h2
               id="amenities-heading"
-              className="mt-2 text-2xl font-bold md:text-3xl"
+              className="text-2xl font-bold md:text-3xl"
             >
-              {isVi ? "Dịch vụ & Tiện nghi" : "What We Offer"}
+              {isVi ? "Tiện nghi" : "Amenities"}
             </h2>
 
             <p className="mt-4 text-neutral-500">
@@ -563,7 +540,9 @@ export default function HomeClient({
                   </div>
 
                   <h3 className="mt-3 font-medium text-neutral-900">
-                    {isVi ? item.titleVi : item.titleEn}
+                    {isVi
+                      ? item.titleVi
+                      : item.titleEn}
                   </h3>
                 </div>
               );
@@ -587,7 +566,9 @@ export default function HomeClient({
               id="reviews-heading"
               className="mt-2 text-2xl font-bold md:text-3xl"
             >
-              {isVi ? "Khách nói về chúng tôi" : "What Guests Say"}
+              {isVi
+                ? "Khách nói về chúng tôi"
+                : "What Guests Say"}
             </h2>
           </div>
 
@@ -597,17 +578,26 @@ export default function HomeClient({
                 key={review.id}
                 className="rounded-xl bg-white p-6 shadow-sm"
               >
-                <div className="text-amber-400">
+                <div
+                  className="text-amber-400"
+                  aria-label={`${review.rating} trên 5 sao`}
+                >
                   {"★".repeat(review.rating)}
                 </div>
 
                 <p className="mt-4 text-sm leading-relaxed text-neutral-600">
-                  "{isVi ? review.reviewVi : review.reviewEn}"
+                  &quot;
+                  {isVi
+                    ? review.reviewVi
+                    : review.reviewEn}
+                  &quot;
                 </p>
 
                 <div className="mt-4 border-t border-neutral-50 pt-4">
                   <p className="text-sm font-semibold">
-                    {isVi ? review.nameVi : review.nameEn}
+                    {isVi
+                      ? review.nameVi
+                      : review.nameEn}
                   </p>
                 </div>
               </article>
@@ -616,7 +606,7 @@ export default function HomeClient({
         </div>
       </section>
 
-      <Footer language={language} />
+      <Footer />
       <AIAssistant language={language} />
     </main>
   );

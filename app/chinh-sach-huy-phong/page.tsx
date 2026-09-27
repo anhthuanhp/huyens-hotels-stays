@@ -1,7 +1,8 @@
+
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 type Language = "vi" | "en";
@@ -15,40 +16,34 @@ type Policy = {
 };
 
 export default function CancellationPolicyPage() {
-  const [language, setLanguage] = useState<Language>("vi");
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") {
+      return "vi";
+    }
+
+    const savedLanguage = localStorage.getItem("huyen-language");
+
+    return savedLanguage === "vi" || savedLanguage === "en"
+      ? savedLanguage
+      : "vi";
+  });
+
   const [policy, setPolicy] = useState<Policy | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedLanguage =
-      localStorage.getItem("huyen-language") as Language | null;
-
-    if (savedLanguage === "vi" || savedLanguage === "en") {
-      setLanguage(savedLanguage);
-    }
-
     const handleLanguageChange = () => {
-      const currentLanguage =
-        localStorage.getItem("huyen-language") as Language | null;
+      const currentLanguage = localStorage.getItem("huyen-language");
 
-      if (
-        currentLanguage === "vi" ||
-        currentLanguage === "en"
-      ) {
+      if (currentLanguage === "vi" || currentLanguage === "en") {
         setLanguage(currentLanguage);
       }
     };
 
-    window.addEventListener(
-      "language-change",
-      handleLanguageChange
-    );
+    window.addEventListener("language-change", handleLanguageChange);
 
     return () => {
-      window.removeEventListener(
-        "language-change",
-        handleLanguageChange
-      );
+      window.removeEventListener("language-change", handleLanguageChange);
     };
   }, []);
 
@@ -78,14 +73,10 @@ export default function CancellationPolicyPage() {
   }, []);
 
   const title =
-    language === "vi"
-      ? policy?.title_vi
-      : policy?.title_en;
+    language === "vi" ? policy?.title_vi : policy?.title_en;
 
   const content =
-    language === "vi"
-      ? policy?.content_vi
-      : policy?.content_en;
+    language === "vi" ? policy?.content_vi : policy?.content_en;
 
   return (
     <>
@@ -163,7 +154,7 @@ export default function CancellationPolicyPage() {
             href="/"
             className="mb-8 inline-flex text-sm font-medium text-sky-600 hover:text-sky-700"
           >
-            ←{" "}
+            &larr;{" "}
             {language === "vi"
               ? "Về trang chủ"
               : "Back to home"}
@@ -171,9 +162,7 @@ export default function CancellationPolicyPage() {
 
           {loading ? (
             <div className="py-20 text-center text-sm text-slate-500">
-              {language === "vi"
-                ? "Đang tải..."
-                : "Loading..."}
+              {language === "vi" ? "Đang tải..." : "Loading..."}
             </div>
           ) : !policy ? (
             <div className="py-20 text-center text-slate-500">
