@@ -169,45 +169,6 @@ function createLocationKeywords(
   return Array.from(keywords);
 }
 
-function createBreadcrumbStructuredData(
-  hotel: HotelSEO,
-  cleanSiteUrl: string
-) {
-  const hotelName =
-    cleanText(hotel.name_vi) ||
-    cleanText(hotel.name_en) ||
-    "Khách sạn";
-
-  const hotelUrl =
-    `${cleanSiteUrl}/khach-san/${hotel.slug}`;
-
-  return {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "@id": `${hotelUrl}#breadcrumb`,
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Trang chủ",
-        item: cleanSiteUrl,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Khách sạn",
-        item: `${cleanSiteUrl}/phong`,
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: hotelName,
-        item: hotelUrl,
-      },
-    ],
-  };
-}
-
 async function getHotel(
   slug: string
 ): Promise<HotelSEO | null> {
@@ -295,14 +256,12 @@ export async function generateMetadata({
     createDescription(hotel);
 
   /*
-   * Root layout đã có:
+   * Root layout có title template:
    *
-   * title: {
-   *   template: "%s | Huyen's Hotels & Stays"
-   * }
+   * "%s | Huyen's Hotels & Stays"
    *
-   * Vì vậy ở đây chỉ trả về title gốc,
-   * không tự thêm tên thương hiệu.
+   * Vì vậy layout khách sạn chỉ trả về
+   * phần title chính.
    */
   const titleLocation =
     address
@@ -313,8 +272,8 @@ export async function generateMetadata({
     `${nameVi}${titleLocation}`;
 
   /*
-   * Giữ title gốc đủ ngắn để sau khi
-   * Root Layout thêm thương hiệu vẫn hợp lý.
+   * Giữ tổng title sau khi root layout
+   * thêm thương hiệu trong khoảng hợp lý.
    */
   if (
     `${title} | Huyen's Hotels & Stays`.length >
@@ -350,7 +309,6 @@ export async function generateMetadata({
   return {
     title,
     description,
-
     keywords: uniqueKeywords,
 
     alternates: {
@@ -388,7 +346,6 @@ export async function generateMetadata({
         : "summary",
 
       title: englishTitle,
-
       description,
 
       images: hotel.image
@@ -400,42 +357,21 @@ export async function generateMetadata({
 
 export default async function HotelSlugLayout({
   children,
-  params,
 }: LayoutProps) {
-  const { slug } = await params;
-
-  const cleanSiteUrl =
-    siteUrl.replace(/\/+$/, "");
-
-  const hotel =
-    await getHotel(slug);
-
-  const breadcrumbData =
-    hotel
-      ? createBreadcrumbStructuredData(
-          hotel,
-          cleanSiteUrl
-        )
-      : null;
-
-  return (
-    <>
-      {breadcrumbData && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html:
-              JSON.stringify(
-                breadcrumbData
-              ).replace(
-                /</g,
-                "\\u003c"
-              ),
-          }}
-        />
-      )}
-
-      {children}
-    </>
-  );
+  /*
+   * Không render BreadcrumbList ở layout này.
+   *
+   * Lý do:
+   * /khach-san/[slug]/phong/[roomSlug]
+   * cũng nằm bên trong layout này.
+   *
+   * Nếu BreadcrumbList được render tại đây,
+   * trang phòng sẽ nhận thêm một BreadcrumbList
+   * của trang khách sạn, dẫn tới duplicate structured data.
+   *
+   * Breadcrumb của trang phòng được xử lý riêng
+   * trong:
+   * app/khach-san/[slug]/phong/[roomSlug]/layout.tsx
+   */
+  return <>{children}</>;
 }
