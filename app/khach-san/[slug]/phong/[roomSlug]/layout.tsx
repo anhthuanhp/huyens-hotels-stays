@@ -193,9 +193,11 @@ function createRoomKeywords(
 
   if (address) {
     keywords.add(address);
+
     keywords.add(
       `phòng khách sạn ${address}`
     );
+
     keywords.add(
       `hotel room ${address}`
     );
@@ -213,12 +215,15 @@ function createRoomKeywords(
     keywords.add(
       "phòng khách sạn Quận 1"
     );
+
     keywords.add(
       "hotel room Quận 1"
     );
+
     keywords.add(
       "phòng nghỉ Quận 1"
     );
+
     keywords.add(
       "khách sạn Quận 1"
     );
@@ -231,9 +236,11 @@ function createRoomKeywords(
     keywords.add(
       "phòng khách sạn Bến Thành"
     );
+
     keywords.add(
       "hotel room Bến Thành"
     );
+
     keywords.add(
       "phòng nghỉ Bến Thành"
     );
@@ -246,6 +253,7 @@ function createRoomKeywords(
     keywords.add(
       "phòng khách sạn Phạm Ngũ Lão"
     );
+
     keywords.add(
       "hotel room Phạm Ngũ Lão"
     );
@@ -258,6 +266,7 @@ function createRoomKeywords(
     keywords.add(
       "phòng khách sạn Đỗ Quang Đẩu"
     );
+
     keywords.add(
       "guesthouse room Đỗ Quang Đẩu"
     );
@@ -270,6 +279,7 @@ function createRoomKeywords(
     keywords.add(
       "phòng khách sạn Cô Bắc"
     );
+
     keywords.add(
       "hotel room Cô Bắc"
     );
@@ -278,12 +288,15 @@ function createRoomKeywords(
   keywords.add(
     "phòng khách sạn TP.HCM"
   );
+
   keywords.add(
     "phòng nghỉ TP.HCM"
   );
+
   keywords.add(
     "hotel room Ho Chi Minh"
   );
+
   keywords.add(
     "Huyen's Hotels & Stays"
   );
@@ -434,16 +447,12 @@ export async function generateMetadata({
 
   if (!data) {
     return {
-      title:
-        "Phòng nghỉ | Huyen's Hotels & Stays",
-
+      title: "Phòng nghỉ",
       description:
         "Thông tin phòng nghỉ tại Huyen's Hotels & Stays.",
-
       alternates: {
         canonical: canonicalUrl,
       },
-
       robots: {
         index: false,
         follow: true,
@@ -484,22 +493,35 @@ export async function generateMetadata({
   const address =
     cleanText(hotel.address_vi);
 
+  /*
+   * Root layout đã có:
+   *
+   * title.template =
+   * "%s | Huyen's Hotels & Stays"
+   *
+   * Vì vậy title ở đây KHÔNG được tự thêm brand.
+   */
   let title = address
     ? `${roomNameVi} tại ${hotelNameVi} | ${address}`
-    : `${roomNameVi} tại ${hotelNameVi} | Huyen's Hotels & Stays`;
+    : `${roomNameVi} tại ${hotelNameVi}`;
 
-  if (title.length > 65) {
+  const finalTitleLength =
+    `${title} | Huyen's Hotels & Stays`.length;
+
+  if (finalTitleLength > 65) {
     title =
-      `${roomNameVi} tại ${hotelNameVi} | Huyen's Hotels & Stays`;
+      `${roomNameVi} tại ${hotelNameVi}`;
   }
 
-  if (title.length > 65) {
-    title =
-      `${roomNameVi} | ${hotelNameVi}`;
+  if (
+    `${title} | Huyen's Hotels & Stays`.length >
+    65
+  ) {
+    title = roomNameVi;
   }
 
   const englishTitle =
-    `${roomNameEn} at ${hotelNameEn} | Huyen's Hotels & Stays`;
+    `${roomNameEn} at ${hotelNameEn}`;
 
   const keywords =
     createRoomKeywords(
@@ -550,7 +572,8 @@ export async function generateMetadata({
       url: canonicalUrl,
       siteName:
         "Huyen's Hotels & Stays",
-      title,
+      title:
+        `${title} | Huyen's Hotels & Stays`,
       description,
 
       images: imageUrl
@@ -568,7 +591,9 @@ export async function generateMetadata({
         ? "summary_large_image"
         : "summary",
 
-      title: englishTitle,
+      title:
+        `${englishTitle} | Huyen's Hotels & Stays`,
+
       description,
 
       images: imageUrl
