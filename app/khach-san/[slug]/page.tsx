@@ -1,3 +1,4 @@
+
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import HotelDetailClient from "./HotelDetailClient";
@@ -41,22 +42,15 @@ type RoomMedia = {
 };
 
 function getSupabaseServerClient() {
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL;
-
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error(
-      "Thiếu biến môi trường Supabase."
-    );
+    throw new Error("Thiếu biến môi trường Supabase.");
   }
 
-  return createClient(
-    supabaseUrl,
-    supabaseKey
-  );
+  return createClient(supabaseUrl, supabaseKey);
 }
 
 function createHotelStructuredData(
@@ -67,52 +61,56 @@ function createHotelStructuredData(
     process.env.NEXT_PUBLIC_SITE_URL ||
     "https://huyenhotels.com";
 
-  const cleanSiteUrl = siteUrl.replace(
-    /\/+$/,
-    ""
-  );
+  const cleanSiteUrl = siteUrl.replace(/\/+$/, "");
 
-  const hotelUrl =
-    `${cleanSiteUrl}/khach-san/${hotel.slug}`;
+  const hotelUrl = `${cleanSiteUrl}/khach-san/${hotel.slug}`;
 
-  const structuredRooms = rooms.map(
-    (room) => {
-      const roomData: Record<string, unknown> = {
-        "@type": "Room",
-        "@id": `${hotelUrl}/phong/${room.slug}`,
-        name: room.name_vi,
-        description:
-          room.description_vi ||
-          undefined,
+  const structuredRooms = rooms.map((room) => {
+    const roomData: Record<string, unknown> = {
+      "@type": "Room",
+      "@id": `${hotelUrl}/phong/${room.slug}`,
+      name: room.name_vi,
+      description:
+        room.description_vi || undefined,
+      url: `${hotelUrl}/phong/${room.slug}`,
+    };
+
+    if (
+      room.base_price !== null &&
+      Number.isFinite(Number(room.base_price))
+    ) {
+      roomData.offers = {
+        "@type": "Offer",
+        price: Number(room.base_price),
+        priceCurrency: "VND",
+        url: `${hotelUrl}/phong/${room.slug}`,
       };
-
-      if (
-        room.base_price !== null &&
-        Number.isFinite(Number(room.base_price))
-      ) {
-        roomData.offers = {
-          "@type": "Offer",
-          price: Number(room.base_price),
-          priceCurrency: "VND",
-          url: `${hotelUrl}/phong/${room.slug}`,
-        };
-      }
-
-      if (room.max_guests !== null) {
-        roomData.occupancy = {
-          "@type": "QuantitativeValue",
-          maxValue: room.max_guests,
-        };
-      }
-
-      return roomData;
     }
-  );
+
+    if (room.max_guests !== null) {
+      roomData.occupancy = {
+        "@type": "QuantitativeValue",
+        maxValue: room.max_guests,
+      };
+    }
+
+    return roomData;
+  });
+
+  const totalRooms = rooms.reduce((total, room) => {
+    const quantity = Number(room.quantity);
+
+    if (Number.isFinite(quantity) && quantity > 0) {
+      return total + quantity;
+    }
+
+    return total;
+  }, 0);
 
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "Hotel",
-    "@id": `${hotelUrl}#hotel`,
+    "@type": "LodgingBusiness",
+    "@id": `${hotelUrl}#lodgingbusiness`,
     name: hotel.name_vi,
     url: hotelUrl,
     description:
@@ -126,6 +124,14 @@ function createHotelStructuredData(
       addressCountry: "VN",
     },
   };
+
+  if (totalRooms > 0) {
+    data.numberOfRooms = totalRooms;
+  }
+
+  if (hotel.map_url) {
+    data.hasMap = hotel.map_url;
+  }
 
   if (structuredRooms.length > 0) {
     data.containsPlace = structuredRooms;
@@ -145,8 +151,7 @@ export default async function HotelDetailPage({
     notFound();
   }
 
-  const supabase =
-    getSupabaseServerClient();
+  const supabase = getSupabaseServerClient();
 
   const {
     data: hotelData,
@@ -230,9 +235,7 @@ export default async function HotelDetailPage({
       error: mediaError,
     } = await supabase
       .from("media")
-      .select(
-        "entity_id, public_url"
-      )
+      .select("entity_id, public_url")
       .eq("entity_type", "room")
       .eq("is_cover", true)
       .eq("status", "active")
