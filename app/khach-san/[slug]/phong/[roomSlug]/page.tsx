@@ -798,7 +798,6 @@ export default function RoomDetailPage({ params }: Props) {
                         room.name_en
                   }
                   fill
-                  unoptimized
                   priority
                   sizes="(max-width: 1280px) 100vw, 1280px"
                   className="object-cover"
@@ -868,7 +867,6 @@ export default function RoomDetailPage({ params }: Props) {
                           room.name_en
                     }
                     fill
-                    unoptimized
                     sizes="80px"
                     className="object-cover"
                   />

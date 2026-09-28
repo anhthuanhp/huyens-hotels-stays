@@ -6,122 +6,124 @@ import ContactFloat from "./components/ContactFloat";
 import VisitorTracker from "./components/VisitorTracker";
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin", "vietnamese"],
-  display: "swap",
+variable: "--font-geist-sans",
+subsets: ["latin", "vietnamese"],
+display: "swap",
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
+variable: "--font-geist-mono",
+subsets: ["latin"],
+display: "swap",
 });
 
 type LayoutProps = {
-  children: React.ReactNode;
+children: React.ReactNode;
 };
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://huyenstays.vercel.app";
+process.env.NEXT_PUBLIC_SITE_URL ||
+"https://huyenstays.vercel.app";
 
 const siteName = "Huyen's Hotels & Stays";
 
 const defaultTitle =
-  "Huyen's Hotels & Stays | Khách sạn & lưu trú tại TP.HCM";
+"Huyen's Hotels & Stays | Khách sạn & lưu trú tại TP.HCM";
 
 const defaultDescription =
-  "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại TP.HCM. Không gian lưu trú tiện nghi, vị trí thuận tiện và đặt phòng trực tiếp.";
+"Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại TP.HCM. Không gian lưu trú tiện nghi, vị trí thuận tiện và đặt phòng trực tiếp.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+metadataBase: new URL(siteUrl),
 
-  title: {
-    default: defaultTitle,
-    template: "%s | Huyen's Hotels & Stays",
-  },
+title: {
+default: defaultTitle,
+template: "%s | Huyen's Hotels & Stays",
+},
 
-  description: defaultDescription,
+description: defaultDescription,
 
-  applicationName: siteName,
+applicationName: siteName,
 
-  authors: [
-    {
-      name: siteName,
-    },
-  ],
+authors: [
+{
+name: siteName,
+},
+],
 
-  creator: siteName,
-  publisher: siteName,
+creator: siteName,
+publisher: siteName,
 
-  formatDetection: {
-    telephone: true,
-    address: true,
-    email: true,
-  },
+verification: {
+google: "iCrbE9Q8mK14ZS_m6-QZWWKbUSEGL6wYlXyMM_Hchlo",
+},
 
-  alternates: {
-    canonical: siteUrl,
-  },
+formatDetection: {
+telephone: true,
+address: true,
+email: true,
+},
 
-  openGraph: {
-    type: "website",
-    siteName,
-    locale: "vi_VN",
-    title: defaultTitle,
-    description: defaultDescription,
-    url: siteUrl,
-    images: [
-      {
-        url: "/hero/hero-1.webp",
-        width: 1600,
-        height: 900,
-        alt:
-          "Huyen's Hotels & Stays - Khách sạn, guesthouse và homestay tại TP.HCM",
-      },
-    ],
-  },
+alternates: {
+canonical: siteUrl,
+},
 
-  twitter: {
-    card: "summary_large_image",
-    title: defaultTitle,
-    description: defaultDescription,
-    images: ["/hero/hero-1.webp"],
-  },
+openGraph: {
+type: "website",
+siteName,
+locale: "vi_VN",
+title: defaultTitle,
+description: defaultDescription,
+url: siteUrl,
+images: [
+{
+url: "/hero/hero-1.webp",
+width: 1600,
+height: 900,
+alt:
+"Huyen's Hotels & Stays - Khách sạn, guesthouse và homestay tại TP.HCM",
+},
+],
+},
 
-  robots: {
-    index: true,
-    follow: true,
+twitter: {
+card: "summary_large_image",
+title: defaultTitle,
+description: defaultDescription,
+images: ["/hero/hero-1.webp"],
+},
 
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
-    },
-  },
+robots: {
+index: true,
+follow: true,
+googleBot: {
+index: true,
+follow: true,
+"max-image-preview": "large",
+"max-snippet": -1,
+"max-video-preview": -1,
+},
+},
 };
 
 export default function RootLayout({
-  children,
+children,
 }: LayoutProps) {
-  return (
-    <html
-      lang="vi"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-white text-neutral-900 font-sans">
-        <VisitorTracker />
+return (
+<html
+lang="vi"
+className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+> <body className="min-h-full flex flex-col bg-white text-neutral-900 font-sans"> <VisitorTracker />
 
-        <ConditionalHeader />
+```
+    <ConditionalHeader />
 
-        <main className="flex-1">
-          {children}
-        </main>
+    <main className="flex-1">
+      {children}
+    </main>
 
-        <ContactFloat />
-      </body>
-    </html>
-  );
+    <ContactFloat />
+  </body>
+</html>
+);
 }

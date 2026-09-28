@@ -30,6 +30,8 @@ const supabaseUrl =
 const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
+const siteName = "Huyen's Hotels & Stays";
+
 function cleanText(
   value: string | null | undefined
 ): string {
@@ -64,7 +66,7 @@ function createDescription(
   const name =
     cleanText(hotel.name_vi) ||
     cleanText(hotel.name_en) ||
-    "Huyen's Hotels & Stays";
+    siteName;
 
   let result = description;
 
@@ -151,6 +153,7 @@ function createLocationKeywords(
   ) {
     keywords.add("khách sạn Đỗ Quang Đẩu");
     keywords.add("guesthouse Đỗ Quang Đẩu");
+    keywords.add("hotel Đỗ Quang Đẩu");
   }
 
   if (
@@ -245,10 +248,6 @@ export async function generateMetadata({
     cleanText(hotel.name_en) ||
     "Khách sạn";
 
-  const nameEn =
-    cleanText(hotel.name_en) ||
-    nameVi;
-
   const address =
     cleanText(hotel.address_vi);
 
@@ -260,55 +259,61 @@ export async function generateMetadata({
    *
    * "%s | Huyen's Hotels & Stays"
    *
-   * Vì vậy layout khách sạn chỉ trả về
-   * phần title chính.
+   * Vì vậy ở đây chỉ trả về title chính.
    */
-  const titleLocation =
-    address
-      ? ` | ${address}`
-      : " | TP.HCM";
 
-  let title =
-    `${nameVi}${titleLocation}`;
+  let title = nameVi;
 
   /*
-   * Giữ tổng title sau khi root layout
-   * thêm thương hiệu trong khoảng hợp lý.
+   * Nếu có địa chỉ, thêm khu vực/ngữ cảnh
+   * vào title khi vẫn giữ độ dài hợp lý.
+   *
+   * Không đưa toàn bộ địa chỉ dài vào title.
    */
-  if (
-    `${title} | Huyen's Hotels & Stays`.length >
-    65
-  ) {
-    title = nameVi;
-  }
 
-  const englishTitle =
-    `${nameEn} | Huyen's Hotels & Stays`;
+  if (address) {
+    const shortAddress =
+      address.length > 35
+        ? address.slice(0, 35).trim()
+        : address;
+
+    const candidate =
+      `${nameVi} | ${shortAddress}`;
+
+    if (
+      `${candidate} | ${siteName}`.length <= 65
+    ) {
+      title = candidate;
+    }
+  }
 
   const keywords = [
     nameVi,
-    nameEn,
+    cleanText(hotel.name_en),
     address,
     ...createLocationKeywords(address),
-    "Huyen's Hotels & Stays",
+    siteName,
   ].filter(Boolean);
 
   const uniqueKeywords =
-    Array.from(new Set(keywords));
+    Array.from(
+      new Set(keywords)
+    );
 
   const images = hotel.image
     ? [
         {
           url: hotel.image,
-          alt:
-            `${nameVi} - Huyen's Hotels & Stays`,
+          alt: `${nameVi} - ${siteName}`,
         },
       ]
     : undefined;
 
   return {
     title,
+
     description,
+
     keywords: uniqueKeywords,
 
     alternates: {
@@ -332,10 +337,8 @@ export async function generateMetadata({
       type: "website",
       locale: "vi_VN",
       url: canonicalUrl,
-      siteName:
-        "Huyen's Hotels & Stays",
-      title:
-        `${nameVi} | Huyen's Hotels & Stays`,
+      siteName,
+      title: `${nameVi} | ${siteName}`,
       description,
       images,
     },
@@ -345,7 +348,8 @@ export async function generateMetadata({
         ? "summary_large_image"
         : "summary",
 
-      title: englishTitle,
+      title: `${nameVi} | ${siteName}`,
+
       description,
 
       images: hotel.image
@@ -361,17 +365,16 @@ export default async function HotelSlugLayout({
   /*
    * Không render BreadcrumbList ở layout này.
    *
-   * Lý do:
-   * /khach-san/[slug]/phong/[roomSlug]
-   * cũng nằm bên trong layout này.
-   *
-   * Nếu BreadcrumbList được render tại đây,
-   * trang phòng sẽ nhận thêm một BreadcrumbList
-   * của trang khách sạn, dẫn tới duplicate structured data.
+   * Trang phòng nằm bên trong layout khách sạn,
+   * vì vậy BreadcrumbList của khách sạn sẽ không
+   * được render tại đây để tránh structured data
+   * bị trùng trên trang phòng.
    *
    * Breadcrumb của trang phòng được xử lý riêng
    * trong:
+   *
    * app/khach-san/[slug]/phong/[roomSlug]/layout.tsx
    */
+
   return <>{children}</>;
 }
