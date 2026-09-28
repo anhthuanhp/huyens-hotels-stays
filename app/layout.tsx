@@ -32,7 +32,7 @@ const defaultTitle =
   "Huyen's Hotels & Stays | Khách sạn & lưu trú tại TP.HCM";
 
 const defaultDescription =
-  "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại TP.HCM. Không gian lưu trú tiện nghi, vị trí thuận tiện và đặt phòng trực tiếp.";
+  "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại TP.HCM. Không gian lưu trú tiện nghi, vị trí thuận thuận tiện và đặt phòng trực tiếp.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   publisher: siteName,
 
   verification: {
-    google: "iCrbE9Q8mK14ZS_m6-QZWWKbUSEGL6wYlXyMM_Hchlo",
+    google: "O57H556eHBb9rgobX6XVlkAIEeGlPXpWmwD0Wj6shvk",
   },
 
   formatDetection: {
