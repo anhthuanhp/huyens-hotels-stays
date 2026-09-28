@@ -1,6 +1,11 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import {
+  useRef,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import { useRouter } from "next/navigation";
 
 type Language = "vi" | "en";
@@ -9,10 +14,13 @@ export type HotelOption = {
   id: number;
   name: string;
   slug: string;
+  name_vi?: string;
+  name_en?: string;
 };
 
 type BookingSearchProps = {
   hotels: HotelOption[];
+  initialHotelSlug?: string;
 };
 
 declare global {
@@ -21,7 +29,10 @@ declare global {
   }
 }
 
-export default function BookingSearch({ hotels }: BookingSearchProps) {
+export default function BookingSearch({
+  hotels,
+  initialHotelSlug = "",
+}: BookingSearchProps) {
   const router = useRouter();
 
   const [language, setLanguage] = useState<Language>(() => {
@@ -29,42 +40,70 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
       return "vi";
     }
 
-    const saved = localStorage.getItem("huyen-language");
+    const saved =
+      window.localStorage.getItem("language") ||
+      window.localStorage.getItem("huyen-language");
 
     return saved === "vi" || saved === "en"
       ? saved
       : "vi";
   });
 
-  const [hotel, setHotel] = useState("");
+  const [hotel, setHotel] =
+    useState(initialHotelSlug);
+
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
 
-  const checkInRef = useRef<HTMLInputElement>(null);
-  const checkOutRef = useRef<HTMLInputElement>(null);
+  const checkInRef =
+    useRef<HTMLInputElement>(null);
 
-  const today = new Date().toISOString().split("T")[0];
+  const checkOutRef =
+    useRef<HTMLInputElement>(null);
+
+  const today = new Date()
+    .toISOString()
+    .split("T")[0];
+
+  useEffect(() => {
+    if (initialHotelSlug) {
+      setHotel(initialHotelSlug);
+    }
+  }, [initialHotelSlug]);
 
   useEffect(() => {
     const handler = (e: CustomEvent<Language>) => {
-      if (e.detail === "vi" || e.detail === "en") {
+      if (
+        e.detail === "vi" ||
+        e.detail === "en"
+      ) {
         setLanguage(e.detail);
       }
     };
 
-    window.addEventListener("language-change", handler);
+    window.addEventListener(
+      "language-change",
+      handler
+    );
 
     return () => {
-      window.removeEventListener("language-change", handler);
+      window.removeEventListener(
+        "language-change",
+        handler
+      );
     };
   }, []);
 
   const isVi = language === "vi";
 
   const openDatePicker = useCallback(
-    (inputRef: React.RefObject<HTMLInputElement | null>) => {
+    (
+      inputRef: React.RefObject<
+        HTMLInputElement | null
+      >
+    ) => {
       const input = inputRef.current;
 
       if (!input) return;
@@ -116,7 +155,9 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
     params.set("adults", String(adults));
     params.set("children", String(children));
 
-    router.push(`/tim-phong?${params.toString()}`);
+    router.push(
+      `/tim-phong?${params.toString()}`
+    );
   }, [
     hotel,
     checkIn,
@@ -128,31 +169,37 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
   ]);
 
   const increaseAdults = () =>
-    setAdults((v) => v + 1);
+    setAdults((value) => value + 1);
 
   const decreaseAdults = () =>
-    setAdults((v) => Math.max(1, v - 1));
+    setAdults((value) =>
+      Math.max(1, value - 1)
+    );
 
   const increaseChildren = () =>
-    setChildren((v) => v + 1);
+    setChildren((value) => value + 1);
 
   const decreaseChildren = () =>
-    setChildren((v) => Math.max(0, v - 1));
+    setChildren((value) =>
+      Math.max(0, value - 1)
+    );
 
   return (
     <div className="w-full min-w-0">
-      <div className="rounded-2xl border border-neutral-300 bg-white/70 p-2.5 shadow-lg backdrop-blur-md">
-        <div className="grid min-w-0 grid-cols-2 gap-2 lg:grid-cols-7">
+      <div className="rounded-2xl border border-neutral-300 bg-white/70 p-3 shadow-lg backdrop-blur-md">
+        <div className="grid min-w-0 grid-cols-2 gap-2.5 lg:grid-cols-7">
           {/* KHÁCH SẠN */}
           <div className="col-span-2 min-w-0 lg:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-neutral-900">
+            <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
               {isVi ? "Khách sạn" : "Hotel"}
             </label>
 
             <select
               value={hotel}
-              onChange={(e) => setHotel(e.target.value)}
-              className="h-9 w-full min-w-0 rounded-xl border border-neutral-400 bg-white px-3 text-sm text-neutral-900 shadow-sm outline-none transition hover:border-neutral-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 sm:px-4"
+              onChange={(e) =>
+                setHotel(e.target.value)
+              }
+              className="h-10 w-full min-w-0 rounded-xl border border-neutral-400 bg-white px-3 text-sm text-neutral-900 shadow-sm outline-none transition hover:border-neutral-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 sm:px-4"
             >
               <option value="">
                 {isVi
@@ -160,25 +207,37 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                   : "Select hotel"}
               </option>
 
-              {hotels.map((item) => (
-                <option key={item.id} value={item.slug}>
-                  {item.name}
-                </option>
-              ))}
+              {hotels.map((item) => {
+                const displayName =
+                  language === "vi"
+                    ? item.name_vi || item.name
+                    : item.name_en || item.name;
+
+                return (
+                  <option
+                    key={item.id}
+                    value={item.slug}
+                  >
+                    {displayName}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
-          {/* NHẬN PHÒNG */}
+          {/* NGÀY NHẬN */}
           <div className="min-w-0 lg:col-span-1">
-            <label className="mb-1 block text-sm font-medium text-neutral-900">
-              {isVi ? "Nhận phòng" : "Check-in"}
+            <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
+              {isVi
+                ? "Ngày nhận"
+                : "Check-in"}
             </label>
 
             <div
               onClick={() =>
                 openDatePicker(checkInRef)
               }
-              className="relative flex h-9 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-2 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-4"
+              className="relative flex h-10 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-2.5 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-3"
             >
               <input
                 ref={checkInRef}
@@ -186,11 +245,14 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 min={today}
                 value={checkIn}
                 onChange={(e) => {
-                  const val = e.target.value;
+                  const value = e.target.value;
 
-                  setCheckIn(val);
+                  setCheckIn(value);
 
-                  if (checkOut && val >= checkOut) {
+                  if (
+                    checkOut &&
+                    value >= checkOut
+                  ) {
                     setCheckOut("");
                   }
                 }}
@@ -211,17 +273,19 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
             </div>
           </div>
 
-          {/* TRẢ PHÒNG */}
+          {/* NGÀY TRẢ */}
           <div className="min-w-0 lg:col-span-1">
-            <label className="mb-1 block text-sm font-medium text-neutral-900">
-              {isVi ? "Trả phòng" : "Check-out"}
+            <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
+              {isVi
+                ? "Ngày trả"
+                : "Check-out"}
             </label>
 
             <div
               onClick={() =>
                 openDatePicker(checkOutRef)
               }
-              className="relative flex h-9 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-2 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-4"
+              className="relative flex h-10 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-2.5 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-3"
             >
               <input
                 ref={checkOutRef}
@@ -229,12 +293,15 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                 min={checkIn || today}
                 value={checkOut}
                 onChange={(e) => {
-                  const val = e.target.value;
+                  const value = e.target.value;
 
-                  if (checkIn && val <= checkIn) {
+                  if (
+                    checkIn &&
+                    value <= checkIn
+                  ) {
                     setCheckOut("");
                   } else {
-                    setCheckOut(val);
+                    setCheckOut(value);
                   }
                 }}
                 className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
@@ -256,11 +323,13 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
 
           {/* NGƯỜI LỚN */}
           <div className="min-w-0 lg:col-span-1">
-            <label className="mb-1 block text-sm font-medium text-neutral-900">
-              {isVi ? "Người lớn" : "Adults"}
+            <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
+              {isVi
+                ? "Người lớn"
+                : "Adults"}
             </label>
 
-            <div className="flex h-9 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
+            <div className="flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
               <button
                 type="button"
                 onClick={decreaseAdults}
@@ -270,7 +339,7 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                     ? "Giảm số người lớn"
                     : "Decrease adults"
                 }
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
               >
                 −
               </button>
@@ -287,7 +356,7 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                     ? "Tăng số người lớn"
                     : "Increase adults"
                 }
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
               >
                 +
               </button>
@@ -296,11 +365,13 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
 
           {/* TRẺ EM */}
           <div className="min-w-0 lg:col-span-1">
-            <label className="mb-1 block text-sm font-medium text-neutral-900">
-              {isVi ? "Trẻ em" : "Children"}
+            <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
+              {isVi
+                ? "Trẻ em"
+                : "Children"}
             </label>
 
-            <div className="flex h-9 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
+            <div className="flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
               <button
                 type="button"
                 onClick={decreaseChildren}
@@ -310,7 +381,7 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                     ? "Giảm số trẻ em"
                     : "Decrease children"
                 }
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
               >
                 −
               </button>
@@ -327,19 +398,19 @@ export default function BookingSearch({ hotels }: BookingSearchProps) {
                     ? "Tăng số trẻ em"
                     : "Increase children"
                 }
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
               >
                 +
               </button>
             </div>
           </div>
 
-          {/* NÚT TÌM */}
+          {/* TÌM PHÒNG */}
           <div className="col-span-2 flex items-end lg:col-span-1">
             <button
               type="button"
               onClick={handleSearch}
-              className="h-9 w-full rounded-xl bg-sky-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.99]"
+              className="h-10 w-full rounded-xl bg-sky-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.99]"
             >
               {isVi
                 ? "Tìm phòng"

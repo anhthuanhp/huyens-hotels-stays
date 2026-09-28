@@ -1,20 +1,13 @@
-
 import type { Metadata } from "next";
 
-type LayoutProps = {
-  children: React.ReactNode;
-};
-
 const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://huyenhotels.com";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://huyenhotels.com";
 
 const canonicalUrl =
   `${siteUrl.replace(/\/+$/, "")}/lien-he`;
 
 export const metadata: Metadata = {
-  title:
-    "Liên hệ Huyen's Hotels & Stays | Khách sạn & lưu trú TP.HCM",
+  title: "Liên hệ Huyen's Hotels & Stays | Khách sạn & lưu trú TP.HCM",
 
   description:
     "Liên hệ Huyen's Hotels & Stays để được hỗ trợ về phòng nghỉ, đặt phòng và thông tin lưu trú tại TP.HCM. Hotline, Zalo, WhatsApp và Email.",
@@ -37,7 +30,6 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
-
     googleBot: {
       index: true,
       follow: true,
@@ -52,13 +44,10 @@ export const metadata: Metadata = {
     locale: "vi_VN",
     url: canonicalUrl,
     siteName: "Huyen's Hotels & Stays",
-
     title:
       "Liên hệ Huyen's Hotels & Stays | Khách sạn & lưu trú TP.HCM",
-
     description:
       "Liên hệ Huyen's Hotels & Stays để được hỗ trợ về phòng nghỉ, đặt phòng và thông tin lưu trú tại TP.HCM.",
-
     images: [
       {
         url: `${siteUrl.replace(/\/+$/, "")}/hero/hero-1.webp`,
@@ -71,21 +60,16 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-
     title:
       "Liên hệ Huyen's Hotels & Stays | Khách sạn & lưu trú TP.HCM",
-
     description:
       "Liên hệ Huyen's Hotels & Stays để được hỗ trợ về phòng nghỉ và đặt phòng tại TP.HCM.",
-
     images: [
       `${siteUrl.replace(/\/+$/, "")}/hero/hero-1.webp`,
     ],
   },
 };
 
-export default function LienHeLayout({
-  children,
-}: LayoutProps) {
-  return children;
+export default function LienHePage() {
+  return null;
 }

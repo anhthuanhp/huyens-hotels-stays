@@ -1,20 +1,13 @@
-
 import type { Metadata } from "next";
 
-type LayoutProps = {
-  children: React.ReactNode;
-};
-
 const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://huyenhotels.com";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://huyenhotels.com";
 
 const canonicalUrl =
   `${siteUrl.replace(/\/+$/, "")}/chinh-sach-dat-phong`;
 
 export const metadata: Metadata = {
-  title:
-    "Chính sách đặt phòng | Huyen's Hotels & Stays",
+  title: "Chính sách đặt phòng | Huyen's Hotels & Stays",
 
   description:
     "Chính sách đặt phòng của Huyen's Hotels & Stays, bao gồm các quy định và thông tin cần biết khi đặt phòng tại khách sạn, guesthouse và homestay.",
@@ -34,7 +27,6 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
-
     googleBot: {
       index: true,
       follow: true,
@@ -49,13 +41,9 @@ export const metadata: Metadata = {
     locale: "vi_VN",
     url: canonicalUrl,
     siteName: "Huyen's Hotels & Stays",
-
-    title:
-      "Chính sách đặt phòng | Huyen's Hotels & Stays",
-
+    title: "Chính sách đặt phòng | Huyen's Hotels & Stays",
     description:
       "Tìm hiểu các quy định và thông tin cần biết khi đặt phòng tại Huyen's Hotels & Stays.",
-
     images: [
       {
         url: `${siteUrl.replace(/\/+$/, "")}/hero/hero-1.webp`,
@@ -68,21 +56,15 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-
-    title:
-      "Chính sách đặt phòng | Huyen's Hotels & Stays",
-
+    title: "Chính sách đặt phòng | Huyen's Hotels & Stays",
     description:
       "Các quy định và thông tin cần biết khi đặt phòng tại Huyen's Hotels & Stays.",
-
     images: [
       `${siteUrl.replace(/\/+$/, "")}/hero/hero-1.webp`,
     ],
   },
 };
 
-export default function BookingPolicyLayout({
-  children,
-}: LayoutProps) {
-  return children;
+export default function BookingPolicyPage() {
+  return null;
 }
