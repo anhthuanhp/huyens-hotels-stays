@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConditionalHeader from "./components/ConditionalHeader";
 import ContactFloat from "./components/ContactFloat";
+import AIAssistant from "./components/AIAssistant";
 import VisitorTracker from "./components/VisitorTracker";
 
 const geistSans = Geist({
@@ -127,6 +128,8 @@ export default function RootLayout({
         </main>
 
         <ContactFloat />
+
+        <AIAssistant />
       </body>
     </html>
   );

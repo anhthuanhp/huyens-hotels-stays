@@ -15,7 +15,6 @@ import {
 import BookingSearch from "./components/BookingSearch";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import AIAssistant from "./components/AIAssistant";
 
 type Language = "vi" | "en";
 
@@ -631,7 +630,6 @@ export default function HomeClient({
       </section>
 
       <Footer />
-      <AIAssistant language={language} />
     </main>
   );
 }
