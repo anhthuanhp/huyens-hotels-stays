@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BedDouble,
@@ -13,7 +13,6 @@ import {
   Maximize2,
   Users,
 } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
 
 type Language = "vi" | "en";
 
@@ -55,43 +54,18 @@ type RoomMedia = {
   public_url: string;
 };
 
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error(
-      "Thiếu biến môi trường Supabase: NEXT_PUBLIC_SUPABASE_URL hoặc NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
-    );
-  }
-
-  return createClient(supabaseUrl, supabaseKey);
-}
-
 function extractMapUrl(value: string | null): string | null {
   if (!value) return null;
 
   const trimmed = value.trim();
 
-  /*
-   * Nếu map_url đã là URL Google Maps Embed
-   */
   if (
-    trimmed.startsWith(
-      "https://www.google.com/maps/embed"
-    ) ||
+    trimmed.startsWith("https://www.google.com/maps/embed") ||
     trimmed.startsWith("https://maps.google.com/maps")
   ) {
     return trimmed;
   }
 
-  /*
-   * Nếu map_url đang lưu nguyên thẻ iframe:
-   * <iframe src="https://www.google.com/maps/embed?..."></iframe>
-   *
-   * Ta chỉ lấy phần src.
-   */
   const srcMatch = trimmed.match(
     /<iframe[^>]+src=["']([^"']+)["']/i
   );
@@ -100,9 +74,6 @@ function extractMapUrl(value: string | null): string | null {
     return srcMatch[1];
   }
 
-  /*
-   * Trường hợp dữ liệu có HTML entity hoặc bị escape.
-   */
   const htmlDecoded = trimmed
     .replace(/&quot;/g, '"')
     .replace(/&#34;/g, '"')
@@ -180,20 +151,16 @@ function parseAmenities(value: unknown): string[] {
   return [];
 }
 
-export default function HotelDetailPage({
+export default function HotelDetailClient({
   initialHotel,
+  initialRooms,
+  initialRoomCovers,
 }: {
   initialHotel: Hotel;
+  initialRooms: Room[];
+  initialRoomCovers: RoomMedia[];
 }) {
-  const params = useParams();
   const router = useRouter();
-
-  const slug =
-    typeof params?.slug === "string"
-      ? params.slug
-      : Array.isArray(params?.slug)
-        ? params.slug[0]
-        : "";
 
   const [language, setLanguage] = useState<Language>(() => {
     if (typeof window === "undefined") {
@@ -209,11 +176,8 @@ export default function HotelDetailPage({
       : "vi";
   });
 
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [roomCovers, setRoomCovers] = useState<
-    Record<number, string>
-  >({});
-  const [error, setError] = useState("");
+  const hotel = initialHotel;
+  const rooms = initialRooms;
 
   useEffect(() => {
     const handleLanguageChange = () => {
@@ -241,145 +205,36 @@ export default function HotelDetailPage({
     };
   }, []);
 
-  useEffect(() => {
-    if (!slug) return;
+  const roomCovers = useMemo(() => {
+    const result: Record<number, string> = {};
 
-    let cancelled = false;
-
-    async function loadHotel() {
-      try {
-        setError("");
-
-        const supabase = getSupabaseClient();
-
-        const { data: roomData, error: roomError } =
-          await supabase
-            .from("rooms")
-            .select(
-              `
-                id,
-                hotel_id,
-                slug,
-                name_vi,
-                name_en,
-                description_vi,
-                description_en,
-                image,
-                size,
-                max_guests,
-                beds_vi,
-                beds_en,
-                base_price,
-                quantity,
-                amenities_vi,
-                amenities_en,
-                amenities,
-                status
-              `
-            )
-            .eq("hotel_id", initialHotel.id)
-            .eq("status", "active")
-            .order("id", { ascending: true });
-
-        if (roomError) {
-          throw new Error(roomError.message);
-        }
-
-        const loadedRooms = (roomData || []) as Room[];
-
-        const loadedRoomCovers: Record<number, string> =
-          {};
-
-        if (loadedRooms.length > 0) {
-          const roomIds = loadedRooms.map(
-            (room) => room.id
-          );
-
-          const {
-            data: mediaData,
-            error: mediaError,
-          } = await supabase
-            .from("media")
-            .select("entity_id, public_url")
-            .eq("entity_type", "room")
-            .eq("is_cover", true)
-            .eq("status", "active")
-            .in("entity_id", roomIds);
-
-          if (mediaError) {
-            console.error(
-              "⚠️ Lỗi lấy ảnh cover phòng:",
-              mediaError
-            );
-          } else if (mediaData) {
-            (mediaData as RoomMedia[]).forEach((item) => {
-              if (
-                item.entity_id &&
-                item.public_url
-              ) {
-                loadedRoomCovers[item.entity_id] =
-                  item.public_url;
-              }
-            });
-          }
-        }
-
-        if (cancelled) return;
-
-        setRooms(loadedRooms);
-        setRoomCovers(loadedRoomCovers);
-      } catch (err) {
-        console.error(
-          "❌ Lỗi trang chi tiết khách sạn:",
-          err
-        );
-
-        if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Không thể tải thông tin khách sạn."
-          );
-        }
+    initialRoomCovers.forEach((item) => {
+      if (item.entity_id && item.public_url) {
+        result[item.entity_id] = item.public_url;
       }
-    }
+    });
 
-    loadHotel();
+    return result;
+  }, [initialRoomCovers]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, initialHotel.id]);
-
-  const hotel = initialHotel;
-
-  const hotelName = useMemo(() => {
-    if (!hotel) return "";
-
-    return language === "vi"
+  const hotelName =
+    language === "vi"
       ? hotel.name_vi
       : hotel.name_en;
-  }, [hotel, language]);
 
-  const hotelAddress = useMemo(() => {
-    if (!hotel) return "";
-
-    return language === "vi"
+  const hotelAddress =
+    language === "vi"
       ? hotel.address_vi
       : hotel.address_en;
-  }, [hotel, language]);
 
-  const hotelDescription = useMemo(() => {
-    if (!hotel) return "";
-
-    return language === "vi"
+  const hotelDescription =
+    language === "vi"
       ? hotel.description_vi
       : hotel.description_en;
-  }, [hotel, language]);
 
   const mapUrl = useMemo(() => {
-    return extractMapUrl(hotel?.map_url || null);
-  }, [hotel]);
+    return extractMapUrl(hotel.map_url);
+  }, [hotel.map_url]);
 
   const formatPrice = (price: number | null) => {
     if (
@@ -397,8 +252,6 @@ export default function HotelDetailPage({
   };
 
   const handleBooking = (room: Room) => {
-    if (!hotel) return;
-
     const bookingParams = new URLSearchParams();
 
     bookingParams.set("hotel", hotel.slug);
@@ -408,38 +261,6 @@ export default function HotelDetailPage({
       `/tim-phong?${bookingParams.toString()}`
     );
   };
-
-  if (error || !hotel) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-white px-6">
-        <div className="max-w-lg text-center">
-          <h1 className="text-2xl font-semibold text-neutral-900">
-            {language === "vi"
-              ? "Không tìm thấy khách sạn"
-              : "Hotel not found"}
-          </h1>
-
-          <p className="mt-3 text-sm leading-6 text-neutral-500">
-            {error ||
-              (language === "vi"
-                ? "Khách sạn không tồn tại hoặc đã ngừng hoạt động."
-                : "The hotel does not exist or is no longer active.")}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
-          >
-            <ArrowLeft size={17} />
-            {language === "vi"
-              ? "Quay lại"
-              : "Go back"}
-          </button>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-white text-neutral-900">
@@ -459,6 +280,7 @@ export default function HotelDetailPage({
             className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600 transition hover:text-sky-700"
           >
             <ArrowLeft size={16} />
+
             {language === "vi"
               ? "Quay lại"
               : "Back"}
@@ -614,6 +436,7 @@ export default function HotelDetailPage({
                                   size={16}
                                   className="text-sky-600"
                                 />
+
                                 <span>
                                   {room.size} m²
                                 </span>
@@ -626,6 +449,7 @@ export default function HotelDetailPage({
                                   size={16}
                                   className="text-sky-600"
                                 />
+
                                 <span>
                                   {room.max_guests}{" "}
                                   {language === "vi"
@@ -641,6 +465,7 @@ export default function HotelDetailPage({
                                   size={16}
                                   className="text-sky-600"
                                 />
+
                                 <span>{beds}</span>
                               </div>
                             )}
@@ -663,6 +488,7 @@ export default function HotelDetailPage({
                                         size={15}
                                         className="text-sky-600"
                                       />
+
                                       <span>
                                         {amenity}
                                       </span>
@@ -807,6 +633,7 @@ export default function HotelDetailPage({
                     size={17}
                     className="mt-0.5 shrink-0 text-sky-600"
                   />
+
                   <span>{hotelAddress}</span>
                 </div>
               )}
