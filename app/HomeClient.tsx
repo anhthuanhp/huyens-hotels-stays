@@ -13,6 +13,7 @@ import {
   Wifi,
 } from "lucide-react";
 import BookingSearch from "./components/BookingSearch";
+import Header from "./components/Header";
 import Footer from "./components/Footer";
 import AIAssistant from "./components/AIAssistant";
 
@@ -233,7 +234,9 @@ export default function HomeClient({
 
   return (
     <main className="min-h-screen bg-white text-neutral-900">
-      {/* HERO */}
+      {/* =====================================================
+          HERO
+          ===================================================== */}
       <section
         className="px-4 pt-4 sm:px-6 sm:pt-6"
         aria-labelledby="hero-heading"
@@ -243,6 +246,14 @@ export default function HomeClient({
             className="relative h-[320px] overflow-hidden rounded-2xl bg-neutral-900 sm:h-[360px] lg:h-[420px]"
             aria-live="polite"
           >
+            {/* =================================================
+                HEADER NẰM TRỰC TIẾP TRONG HERO
+                ================================================= */}
+            <Header />
+
+            {/* =================================================
+                HERO SLIDES
+                ================================================= */}
             {heroSlides.map((slide, index) => {
               const fallback =
                 heroFallbackTexts[index % heroFallbackTexts.length];
@@ -252,7 +263,8 @@ export default function HomeClient({
                 : slide.title_en?.trim() || fallback.titleEn;
 
               const heroDescription = isVi
-                ? slide.description_vi?.trim() || fallback.descriptionVi
+                ? slide.description_vi?.trim() ||
+                  fallback.descriptionVi
                 : slide.description_en?.trim() ||
                   fallback.descriptionEn;
 
@@ -324,13 +336,18 @@ export default function HomeClient({
             `}</style>
           </div>
 
+          {/* ===================================================
+              BOOKING SEARCH
+              =================================================== */}
           <div className="mt-4 w-full">
             <BookingSearch hotels={bookingHotels} />
           </div>
         </div>
       </section>
 
-      {/* GIỚI THIỆU */}
+      {/* =====================================================
+          GIỚI THIỆU
+          ===================================================== */}
       <section
         className="px-4 py-12 sm:px-6"
         aria-labelledby="about-heading"
@@ -356,19 +373,20 @@ export default function HomeClient({
               <p className="text-base leading-7 text-neutral-600">
                 {isVi ? (
                   <>
-                    Chúng tôi phát triển hệ thống khách sạn, homestay &amp; căn hộ
-                    dịch vụ tại TP.HCM.
+                    Chúng tôi phát triển hệ thống khách sạn, homestay
+                    &amp; căn hộ dịch vụ tại TP.HCM.
                     <br />
-                    Luôn mang đến không gian sạch sẽ, tiện nghi, riêng tư và
-                    thuận tiện cho mọi chuyến đi.
+                    Luôn mang đến không gian sạch sẽ, tiện nghi, riêng tư
+                    và thuận tiện cho mọi chuyến đi.
                   </>
                 ) : (
                   <>
-                    We specialize in operating hotels, homestays, and serviced
-                    apartments in Ho Chi Minh City.
+                    We specialize in operating hotels, homestays, and
+                    serviced apartments in Ho Chi Minh City.
                     <br />
-                    We are committed to providing clean, comfortable, and
-                    private spaces that are convenient for every trip.
+                    We are committed to providing clean, comfortable,
+                    and private spaces that are convenient for every
+                    trip.
                   </>
                 )}
               </p>
@@ -385,7 +403,9 @@ export default function HomeClient({
         </div>
       </section>
 
-      {/* DANH SÁCH LƯU TRÚ */}
+      {/* =====================================================
+          DANH SÁCH LƯU TRÚ
+          ===================================================== */}
       <section
         id="hotels"
         className="bg-neutral-50 px-4 py-16 sm:px-6"
@@ -402,8 +422,8 @@ export default function HomeClient({
               className="mt-2 text-2xl font-bold md:text-3xl"
             >
               {isVi
-                ? "Khách sạn và nơi lưu trú tại Quận 1"
-                : "Hotels and Stays in District 1"}
+                ? "Các khách sạn, homestay & căn hộ dịch vụ tại TP.HCM"
+                : "Hotels, Homestays & Serviced Apartments in Ho Chi Minh City"}
             </h2>
           </div>
 
@@ -505,7 +525,9 @@ export default function HomeClient({
         </div>
       </section>
 
-      {/* TIỆN NGHI */}
+      {/* =====================================================
+          TIỆN NGHI
+          ===================================================== */}
       <section
         className="px-4 py-16 sm:px-6"
         aria-labelledby="amenities-heading"
@@ -551,7 +573,9 @@ export default function HomeClient({
         </div>
       </section>
 
-      {/* ĐÁNH GIÁ */}
+      {/* =====================================================
+          ĐÁNH GIÁ
+          ===================================================== */}
       <section
         className="bg-neutral-50 px-4 py-16 sm:px-6"
         aria-labelledby="reviews-heading"

@@ -1,3 +1,4 @@
+"use client";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -47,9 +48,10 @@ export default function Header() {
     };
   }, []);
 
-  // Đóng menu khi bấm ra bên ngoài
   useEffect(() => {
-    if (!mobileMenuOpen) return;
+    if (!mobileMenuOpen) {
+      return;
+    }
 
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -89,286 +91,303 @@ export default function Header() {
     );
   };
 
-  const isVi = language === "vi";
-
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
   };
 
+  const isVi = language === "vi";
+
   return (
     <header className="absolute left-0 top-0 z-50 w-full">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
-        {/* =====================================================
-            LOGO
-            ===================================================== */}
-        <Link
-          href="/"
-          onClick={closeMobileMenu}
-          className="flex flex-col leading-none"
-        >
-          <span className="text-xl font-semibold tracking-tight text-white">
-            Huyen&apos;s
-          </span>
-
-          <span className="mt-1 text-[9px] font-medium uppercase tracking-[0.22em] text-white/80">
-            Hotels &amp; Stays
-          </span>
-        </Link>
-
-        {/* =====================================================
-            MENU DESKTOP
-            ===================================================== */}
-        <nav className="hidden items-center gap-8 md:flex">
+      <div className="px-4 pt-0 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-1 py-2 sm:px-2">
+          {/* =====================================================
+              LOGO
+              ===================================================== */}
           <Link
             href="/"
-            className="text-sm font-medium text-white transition hover:text-sky-300"
+            onClick={closeMobileMenu}
+            className="flex shrink-0 flex-col leading-none text-white drop-shadow-lg"
+            aria-label="Huyen's Hotels & Stays"
           >
-            {isVi ? "Trang chủ" : "Home"}
+            <span className="text-lg font-semibold tracking-tight sm:text-xl">
+              HUYEN'S
+            </span>
+
+            <span className="mt-1 text-[8px] font-medium uppercase tracking-[0.22em] text-white/80 sm:text-[9px]">
+              Hotels &amp; Stays
+            </span>
           </Link>
 
-          <Link
-            href="/#hotels"
-            className="text-sm font-medium text-white transition hover:text-sky-300"
+          {/* =====================================================
+              DESKTOP MENU
+              ===================================================== */}
+          <nav
+            className="hidden items-center gap-5 text-[11px] font-bold tracking-wide text-white drop-shadow-lg lg:flex xl:gap-7"
+            aria-label={
+              isVi
+                ? "Điều hướng chính"
+                : "Main navigation"
+            }
           >
-            {isVi ? "Khách sạn" : "Hotels"}
-          </Link>
-
-          <Link
-            href="/phong"
-            className="text-sm font-medium text-white transition hover:text-sky-300"
-          >
-            {isVi ? "Phòng & Giá" : "Rooms & Rates"}
-          </Link>
-
-          <Link
-            href="/trai-nghiem"
-            className="text-sm font-medium text-white transition hover:text-sky-300"
-          >
-            {isVi ? "Trải nghiệm" : "Experiences"}
-          </Link>
-
-          <Link
-            href="/blog"
-            className="text-sm font-medium text-white transition hover:text-sky-300"
-          >
-            Blog
-          </Link>
-
-          <Link
-            href="/lien-he"
-            className="text-sm font-medium text-white transition hover:text-sky-300"
-          >
-            {isVi ? "Liên hệ" : "Contact"}
-          </Link>
-        </nav>
-
-        {/* =====================================================
-            RIGHT
-            ===================================================== */}
-        <div className="flex items-center gap-3">
-          {/* ===================================================
-              LANGUAGE DESKTOP
-              =================================================== */}
-          <div className="hidden items-center gap-2 md:flex">
-            <button
-              type="button"
-              onClick={() => changeLanguage("vi")}
-              aria-label="Tiếng Việt"
-              className={`flex items-center gap-1.5 transition ${
-                language === "vi"
-                  ? "text-sm font-bold text-white"
-                  : "text-xs font-normal text-white/50 hover:text-white/80"
-              }`}
+            <Link
+              href="/"
+              className="transition hover:text-white"
             >
-              <svg
-                viewBox="0 0 28 20"
-                className={
+              {isVi ? "TRANG CHỦ" : "HOME"}
+            </Link>
+
+            <Link
+              href="/#hotels"
+              className="transition hover:text-white"
+            >
+              {isVi ? "KHÁCH SẠN" : "HOTELS"}
+            </Link>
+
+            <Link
+              href="/phong"
+              className="transition hover:text-white"
+            >
+              {isVi
+                ? "PHÒNG & GIÁ"
+                : "ROOMS & RATES"}
+            </Link>
+
+            <Link
+              href="/trai-nghiem"
+              className="transition hover:text-white"
+            >
+              {isVi
+                ? "TRẢI NGHIỆM"
+                : "EXPERIENCES"}
+            </Link>
+
+            <Link
+              href="/blog"
+              className="transition hover:text-white"
+            >
+              BLOG
+            </Link>
+
+            <Link
+              href="/lien-he"
+              className="transition hover:text-white"
+            >
+              {isVi ? "LIÊN HỆ" : "CONTACT"}
+            </Link>
+          </nav>
+
+          {/* =====================================================
+              LANGUAGE
+              ===================================================== */}
+          <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-2 md:flex">
+              {/* VI */}
+              <button
+                type="button"
+                onClick={() => changeLanguage("vi")}
+                aria-label="Tiếng Việt"
+                className={`flex items-center gap-1.5 transition ${
                   language === "vi"
-                    ? "h-5 w-7"
-                    : "h-4 w-5"
-                }
-                aria-hidden="true"
+                    ? "text-sm font-bold text-white"
+                    : "text-xs font-normal text-white/50 hover:text-white"
+                }`}
               >
-                <rect
-                  width="28"
-                  height="20"
-                  rx="2"
-                  fill="#DA251D"
-                />
+                <svg
+                  viewBox="0 0 28 20"
+                  className={
+                    language === "vi"
+                      ? "h-5 w-7"
+                      : "h-4 w-5"
+                  }
+                  aria-hidden="true"
+                >
+                  <rect
+                    width="28"
+                    height="20"
+                    rx="2"
+                    fill="#DA251D"
+                  />
 
-                <path
-                  d="M14 3.5L15.55 8.25H20.55L16.5 11.15L18.05 15.9L14 12.95L9.95 15.9L11.5 11.15L7.45 8.25H12.45L14 3.5Z"
-                  fill="#FFDD00"
-                />
-              </svg>
+                  <path
+                    d="M14 3.5L15.55 8.25H20.55L16.5 11.15L18.05 15.9L14 12.95L9.95 15.9L11.5 11.15L7.45 8.25H12.45L14 3.5Z"
+                    fill="#FFDD00"
+                  />
+                </svg>
 
-              <span>VI</span>
-            </button>
+                <span>VI</span>
+              </button>
 
-            <span className="text-white/30">|</span>
+              <span className="text-white/30">|</span>
 
-            <button
-              type="button"
-              onClick={() => changeLanguage("en")}
-              aria-label="English"
-              className={`flex items-center gap-1.5 transition ${
-                language === "en"
-                  ? "text-sm font-bold text-white"
-                  : "text-xs font-normal text-white/50 hover:text-white/80"
-              }`}
-            >
-              <svg
-                viewBox="0 0 28 20"
-                className={
+              {/* EN */}
+              <button
+                type="button"
+                onClick={() => changeLanguage("en")}
+                aria-label="English"
+                className={`flex items-center gap-1.5 transition ${
                   language === "en"
-                    ? "h-5 w-7"
-                    : "h-4 w-5"
-                }
-                aria-hidden="true"
+                    ? "text-sm font-bold text-white"
+                    : "text-xs font-normal text-white/50 hover:text-white"
+                }`}
               >
-                <rect
-                  width="28"
-                  height="20"
-                  rx="2"
-                  fill="#012169"
+                <svg
+                  viewBox="0 0 28 20"
+                  className={
+                    language === "en"
+                      ? "h-5 w-7"
+                      : "h-4 w-5"
+                  }
+                  aria-hidden="true"
+                >
+                  <rect
+                    width="28"
+                    height="20"
+                    rx="2"
+                    fill="#012169"
+                  />
+
+                  <path
+                    d="M0 0L28 20M28 0L0 20"
+                    stroke="#FFFFFF"
+                    strokeWidth="4"
+                  />
+
+                  <path
+                    d="M0 0L28 20M28 0L0 20"
+                    stroke="#C8102E"
+                    strokeWidth="2"
+                  />
+
+                  <path
+                    d="M14 0V20M0 10H28"
+                    stroke="#FFFFFF"
+                    strokeWidth="6"
+                  />
+
+                  <path
+                    d="M14 0V20M0 10H28"
+                    stroke="#C8102E"
+                    strokeWidth="3"
+                  />
+                </svg>
+
+                <span>EN</span>
+              </button>
+            </div>
+
+            {/* ===================================================
+                MOBILE MENU BUTTON
+                =================================================== */}
+            <button
+              ref={mobileButtonRef}
+              type="button"
+              onClick={() =>
+                setMobileMenuOpen((value) => !value)
+              }
+              aria-label={
+                mobileMenuOpen
+                  ? "Close menu"
+                  : "Open menu"
+              }
+              aria-expanded={mobileMenuOpen}
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-neutral-900 shadow-md transition hover:bg-neutral-100 lg:hidden"
+            >
+              <span className="relative block h-5 w-5">
+                <span
+                  className={`absolute left-0 top-1 block h-0.5 w-5 bg-neutral-900 transition ${
+                    mobileMenuOpen
+                      ? "translate-y-2 rotate-45"
+                      : ""
+                  }`}
                 />
 
-                <path
-                  d="M0 0L28 20M28 0L0 20"
-                  stroke="#FFFFFF"
-                  strokeWidth="4"
+                <span
+                  className={`absolute left-0 top-2.5 block h-0.5 w-5 bg-neutral-900 transition ${
+                    mobileMenuOpen
+                      ? "opacity-0"
+                      : "opacity-100"
+                  }`}
                 />
 
-                <path
-                  d="M0 0L28 20M28 0L0 20"
-                  stroke="#C8102E"
-                  strokeWidth="2"
+                <span
+                  className={`absolute left-0 top-4 block h-0.5 w-5 bg-neutral-900 transition ${
+                    mobileMenuOpen
+                      ? "-translate-y-1 -rotate-45"
+                      : ""
+                  }`}
                 />
-
-                <path
-                  d="M14 0V20M0 10H28"
-                  stroke="#FFFFFF"
-                  strokeWidth="6"
-                />
-
-                <path
-                  d="M14 0V20M0 10H28"
-                  stroke="#C8102E"
-                  strokeWidth="3"
-                />
-              </svg>
-
-              <span>EN</span>
+              </span>
             </button>
           </div>
-
-          {/* ===================================================
-              MOBILE MENU BUTTON
-              =================================================== */}
-          <button
-            ref={mobileButtonRef}
-            type="button"
-            onClick={() =>
-              setMobileMenuOpen((value) => !value)
-            }
-            aria-label={
-              mobileMenuOpen
-                ? "Close menu"
-                : "Open menu"
-            }
-            aria-expanded={mobileMenuOpen}
-            className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-neutral-900 shadow-md transition hover:bg-neutral-100 md:hidden"
-          >
-            <span className="relative block h-5 w-5">
-              <span
-                className={`absolute left-0 top-1 block h-0.5 w-5 bg-neutral-900 transition ${
-                  mobileMenuOpen
-                    ? "translate-y-2 rotate-45"
-                    : ""
-                }`}
-              />
-
-              <span
-                className={`absolute left-0 top-2.5 block h-0.5 w-5 bg-neutral-900 transition ${
-                  mobileMenuOpen
-                    ? "opacity-0"
-                    : "opacity-100"
-                }`}
-              />
-
-              <span
-                className={`absolute left-0 top-4 block h-0.5 w-5 bg-neutral-900 transition ${
-                  mobileMenuOpen
-                    ? "-translate-y-1 -rotate-45"
-                    : ""
-                }`}
-              />
-            </span>
-          </button>
         </div>
       </div>
 
-      {/* =======================================================
+      {/* =========================================================
           MOBILE MENU
-          ======================================================= */}
+          ========================================================= */}
       {mobileMenuOpen && (
         <div
           ref={mobileMenuRef}
-          className="absolute right-4 top-[calc(100%+8px)] w-56 overflow-hidden rounded-xl border border-white/20 bg-black/85 shadow-xl backdrop-blur-md sm:right-6 md:hidden"
+          className="absolute right-4 top-[calc(100%+8px)] w-60 overflow-hidden rounded-xl border border-white/20 bg-black/85 shadow-xl backdrop-blur-md sm:right-6 lg:hidden"
         >
           <nav className="flex flex-col">
             <Link
               href="/"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 hover:text-white"
             >
-              {isVi ? "Trang chủ" : "Home"}
+              {isVi ? "TRANG CHỦ" : "HOME"}
             </Link>
 
             <Link
               href="/#hotels"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 hover:text-white"
             >
-              {isVi ? "Khách sạn" : "Hotels"}
+              {isVi ? "KHÁCH SẠN" : "HOTELS"}
             </Link>
 
             <Link
               href="/phong"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 hover:text-white"
             >
-              {isVi ? "Phòng & Giá" : "Rooms & Rates"}
+              {isVi
+                ? "PHÒNG & GIÁ"
+                : "ROOMS & RATES"}
             </Link>
 
             <Link
               href="/trai-nghiem"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 hover:text-white"
             >
               {isVi
-                ? "Trải nghiệm"
-                : "Experiences"}
+                ? "TRẢI NGHIỆM"
+                : "EXPERIENCES"}
             </Link>
 
             <Link
               href="/blog"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 hover:text-white"
             >
-              Blog
+              BLOG
             </Link>
 
             <Link
               href="/lien-he"
               onClick={closeMobileMenu}
-              className="border-b border-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 hover:text-sky-300"
+              className="border-b border-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 hover:text-white"
             >
-              {isVi ? "Liên hệ" : "Contact"}
+              {isVi ? "LIÊN HỆ" : "CONTACT"}
             </Link>
 
-            {/* MOBILE LANGUAGE */}
-            <div className="flex items-center gap-3 px-5 py-3">
+            {/* =================================================
+                MOBILE LANGUAGE
+                ================================================= */}
+            <div className="flex items-center gap-3 border-t border-white/10 px-5 py-3">
               <button
                 type="button"
                 onClick={() => changeLanguage("vi")}

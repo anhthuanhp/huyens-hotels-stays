@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -37,9 +38,7 @@ export default function BlogDetailClient({
       return "vi";
     }
 
-    const saved = localStorage.getItem(
-      "huyen-language"
-    );
+    const saved = localStorage.getItem("huyen-language");
 
     return saved === "vi" || saved === "en"
       ? saved
@@ -110,183 +109,70 @@ export default function BlogDetailClient({
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
-      {/* HEADER */}
-      <header className="fixed left-0 top-0 z-50 w-full border-b border-white/20 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between px-6">
+      {/* ARTICLE HEADER */}
+      <section className="bg-white px-6 pb-10 pt-10">
+        <div className="mx-auto max-w-[1000px]">
           <Link
-            href="/"
-            className="text-xl font-bold tracking-tight"
+            href="/blog"
+            className="mb-8 inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
           >
-            Huyen&apos;s Hotels &amp; Stays
+            ←{" "}
+            {isVi
+              ? "Quay lại Blog"
+              : "Back to Blog"}
           </Link>
 
-          <nav className="hidden items-center gap-7 text-sm font-medium lg:flex">
-            <Link
-              href="/"
-              className="hover:text-sky-600"
-            >
-              {isVi ? "TRANG CHỦ" : "HOME"}
-            </Link>
+          <div className="mb-5 flex items-center gap-3 text-sm font-semibold uppercase tracking-wider text-sky-600">
+            <span>{category}</span>
 
-            <Link
-              href="/kham-pha-huyens"
-              className="hover:text-sky-600"
-            >
-              {isVi ? "KHÁM PHÁ" : "DISCOVER"}
-            </Link>
+            <span className="text-slate-300">
+              •
+            </span>
 
-            <Link
-              href="/phong"
-              className="hover:text-sky-600"
-            >
-              {isVi ? "PHÒNG" : "ROOMS"}
-            </Link>
-
-            <Link
-              href="/trai-nghiem"
-              className="hover:text-sky-600"
-            >
+            <span>
+              {post.read_time}{" "}
               {isVi
-                ? "TRẢI NGHIỆM"
-                : "EXPERIENCES"}
-            </Link>
-
-            <Link
-              href="/blog"
-              className="font-semibold text-sky-600"
-            >
-              BLOG
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden items-center gap-2 text-xs font-semibold sm:flex">
-              <button
-                type="button"
-                onClick={() => {
-                  localStorage.setItem(
-                    "huyen-language",
-                    "vi"
-                  );
-
-                  setLanguage("vi");
-
-                  window.dispatchEvent(
-                    new CustomEvent<Language>(
-                      "language-change",
-                      {
-                        detail: "vi",
-                      }
-                    )
-                  );
-                }}
-                className={
-                  language === "vi"
-                    ? "text-sky-600"
-                    : "text-slate-500"
-                }
-              >
-                VI
-              </button>
-
-              <span className="text-slate-300">
-                |
-              </span>
-
-              <button
-                type="button"
-                onClick={() => {
-                  localStorage.setItem(
-                    "huyen-language",
-                    "en"
-                  );
-
-                  setLanguage("en");
-
-                  window.dispatchEvent(
-                    new CustomEvent<Language>(
-                      "language-change",
-                      {
-                        detail: "en",
-                      }
-                    )
-                  );
-                }}
-                className={
-                  language === "en"
-                    ? "text-sky-600"
-                    : "text-slate-500"
-                }
-              >
-                EN
-              </button>
-            </div>
-
-            <Link
-              href="/tim-phong"
-              className="rounded-full bg-sky-600 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-sky-700"
-            >
-              {isVi
-                ? "ĐẶT PHÒNG"
-                : "BOOK NOW"}
-            </Link>
+                ? "phút đọc"
+                : "min read"}
+            </span>
           </div>
-        </div>
-      </header>
 
-      {/* ARTICLE HERO */}
-      <section className="relative overflow-hidden pt-20">
-        <div className="relative h-[520px] bg-slate-900">
-          {post.image && (
-            <Image
-              src={post.image}
-              alt={title}
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
-            />
+          <h1 className="max-w-4xl text-3xl font-semibold leading-tight text-slate-900 md:text-5xl">
+            {title}
+          </h1>
+
+          {excerpt && (
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+              {excerpt}
+            </p>
           )}
 
-          <div className="absolute inset-0 bg-black/55" />
-
-          <div className="relative z-10 mx-auto flex h-full max-w-[1100px] items-end px-6 pb-16">
-            <div className="max-w-4xl text-white">
-              <div className="mb-5 flex items-center gap-3 text-sm font-semibold uppercase tracking-wider text-sky-300">
-                <span>{category}</span>
-
-                <span className="text-white/40">
-                  •
-                </span>
-
-                <span>
-                  {post.read_time}{" "}
-                  {isVi
-                    ? "phút đọc"
-                    : "min read"}
-                </span>
-              </div>
-
-              <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
-                {title}
-              </h1>
-
-              {excerpt && (
-                <p className="mt-6 max-w-3xl text-lg leading-8 text-white/85">
-                  {excerpt}
-                </p>
-              )}
-
-              <p className="mt-6 text-sm text-white/60">
-                {formattedDate}
-              </p>
-            </div>
-          </div>
+          <p className="mt-5 text-sm text-slate-400">
+            {formattedDate}
+          </p>
         </div>
       </section>
 
+      {/* FEATURE IMAGE */}
+      {post.image && (
+        <section className="px-6 pb-12">
+          <div className="mx-auto max-w-[1000px]">
+            <div className="relative h-[280px] overflow-hidden rounded-2xl bg-slate-100 md:h-[400px]">
+              <Image
+                src={post.image}
+                alt={title}
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 1000px"
+                className="object-cover"
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ARTICLE */}
-      <article className="mx-auto max-w-[820px] px-6 py-16">
+      <article className="mx-auto max-w-[820px] px-6 pb-16">
         <div className="space-y-7">
           {content.length > 0 ? (
             content.map((paragraph, index) => (
@@ -306,10 +192,11 @@ export default function BlogDetailClient({
           )}
         </div>
 
+        {/* BACK TO BLOG */}
         <div className="mt-14 border-t border-slate-200 pt-8">
           <Link
             href="/blog"
-            className="inline-flex rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold transition hover:border-sky-600 hover:text-sky-600"
+            className="inline-flex items-center rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-600 hover:text-sky-600"
           >
             ←{" "}
             {isVi
@@ -367,7 +254,9 @@ export default function BlogDetailClient({
               href="/phong"
               className="hover:text-sky-600"
             >
-              {isVi ? "Phòng" : "Rooms"}
+              {isVi
+                ? "Phòng"
+                : "Rooms"}
             </Link>
 
             <Link
