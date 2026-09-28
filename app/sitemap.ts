@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const baseUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://huyenstays.vercel.app";
+  "https://huyenhotels.com";
 
 const siteUrl = baseUrl.replace(/\/+$/, "");
 

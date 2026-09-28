@@ -7,7 +7,7 @@ type LayoutProps = {
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://huyenstays.vercel.app";
+  "https://huyenhotels.com";
 
 const canonicalUrl =
   `${siteUrl.replace(/\/+$/, "")}/phong`;

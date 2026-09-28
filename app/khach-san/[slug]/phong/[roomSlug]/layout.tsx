@@ -47,7 +47,7 @@ type MediaSEO = {
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://huyenstays.vercel.app";
+  "https://huyenhotels.com";
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL;

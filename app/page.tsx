@@ -1,7 +1,10 @@
 
 import type { Metadata } from "next";
+
 import Link from "next/link";
+
 import { createClient } from "@supabase/supabase-js";
+
 import HomeClient from "./HomeClient";
 
 // =========================================================
@@ -9,6 +12,7 @@ import HomeClient from "./HomeClient";
 // =========================================================
 
 export const revalidate = 60;
+
 export const dynamic = "force-static";
 
 // =========================================================
@@ -17,7 +21,7 @@ export const dynamic = "force-static";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://huyenstays.vercel.app";
+  "https://huyenhotels.com";
 
 const SITE_NAME = "Huyen's Hotels & Stays";
 
@@ -415,9 +419,13 @@ export default async function HomePage() {
 
       {
         "@type": "Organization",
+
         "@id": `${canonicalUrl}/#organization`,
+
         name: SITE_NAME,
+
         url: canonicalUrl,
+
         description: SEO_DESCRIPTION,
       },
 
@@ -427,13 +435,19 @@ export default async function HomePage() {
 
       {
         "@type": "WebSite",
+
         "@id": `${canonicalUrl}/#website`,
+
         url: canonicalUrl,
+
         name: SITE_NAME,
+
         description: SEO_DESCRIPTION,
+
         publisher: {
           "@id": `${canonicalUrl}/#organization`,
         },
+
         inLanguage: "vi-VN",
       },
 
@@ -443,7 +457,9 @@ export default async function HomePage() {
 
       {
         "@type": "ItemList",
+
         "@id": `${canonicalUrl}/#hotel-list`,
+
         name:
           "Khách sạn và nơi lưu trú tại TP.HCM",
 

@@ -153,7 +153,7 @@ export async function generateMetadata({
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://huyenstays.vercel.app";
+    "https://huyenhotels.com";
 
   const cleanSiteUrl =
     siteUrl.replace(/\/+$/, "");
@@ -271,7 +271,7 @@ export default async function BlogDetailPage({
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://huyenstays.vercel.app";
+    "https://huyenhotels.com";
 
   const cleanSiteUrl =
     siteUrl.replace(/\/+$/, "");
