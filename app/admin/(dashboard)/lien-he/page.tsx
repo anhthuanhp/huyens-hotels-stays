@@ -1,4 +1,6 @@
-﻿import { FormEvent, useState } from "react";
+﻿"use client";
+
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 
 type Language = "vi" | "en";
