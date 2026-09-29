@@ -1,4 +1,3 @@
-
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
@@ -17,6 +16,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
 type Language = "vi" | "en";
+type StayType = "day" | "month";
 
 type SelectedRoom = {
   hotelSlug: string;
@@ -46,7 +46,8 @@ type Room = {
   name_en: string;
   description_vi: string | null;
   description_en: string | null;
-  base_price: number | null;
+  base_price_daily: number | null;
+  base_price_monthly: number | null;
   quantity: number | null;
   size: number | null;
   max_guests: number | null;
@@ -80,10 +81,12 @@ type AvailabilityRoom = {
   roomId: number;
   roomSlug: string;
   hotelSlug: string;
-  basePrice?: number;
   totalQuantity: number;
   bookedQuantity: number;
   availableQuantity: number;
+  basePrice?: number | null;
+  basePriceDaily?: number | null;
+  basePriceMonthly?: number | null;
 };
 
 type DisplayRoom = Room & {
@@ -99,13 +102,13 @@ type DisplayRoom = Room & {
 const fallbackRoomImage = "/images/hero/hero-2.jpg";
 const MAX_GUESTS_FALLBACK = 10;
 
-const formatPrice = (v: number) =>
-  new Intl.NumberFormat("vi-VN").format(v);
+const formatPrice = (value: number) =>
+  new Intl.NumberFormat("vi-VN").format(value);
 
-const formatDate = (v: string) =>
-  v && v.length === 10
-    ? v.split("-").reverse().join("/")
-    : v;
+const formatDate = (value: string) =>
+  value && value.length === 10
+    ? value.split("-").reverse().join("/")
+    : value;
 
 const calculateNights = (
   inDate: string,
@@ -129,11 +132,24 @@ function TimPhongContent() {
   const hotelSlug =
     searchParams.get("hotel") || "";
 
+  const stayTypeParam =
+    searchParams.get("stayType");
+
+  const stayType: StayType =
+    stayTypeParam === "month"
+      ? "month"
+      : "day";
+
   const checkIn =
     searchParams.get("checkIn") || "";
 
   const checkOut =
     searchParams.get("checkOut") || "";
+
+  const monthsFromUrl = Math.max(
+    1,
+    Number(searchParams.get("months")) || 1
+  );
 
   const adults = Math.max(
     1,
@@ -198,7 +214,7 @@ function TimPhongContent() {
     useState(true);
 
   const [loadingAvailability, setLoadingAvailability] =
-    useState(true);
+    useState(false);
 
   const [availabilityError, setAvailabilityError] =
     useState("");
@@ -206,11 +222,17 @@ function TimPhongContent() {
   const [editHotel, setEditHotel] =
     useState(hotelSlug);
 
+  const [editStayType, setEditStayType] =
+    useState<StayType>(stayType);
+
   const [editCheckIn, setEditCheckIn] =
     useState(checkIn);
 
   const [editCheckOut, setEditCheckOut] =
     useState(checkOut);
+
+  const [editMonths, setEditMonths] =
+    useState(monthsFromUrl);
 
   const [editAdults, setEditAdults] =
     useState(adults);
@@ -227,14 +249,6 @@ function TimPhongContent() {
   const checkOutRef =
     useRef<HTMLInputElement>(null);
 
-  /*
-    Tải danh sách khách sạn đang hoạt động
-    để sử dụng cho ô chọn khách sạn trên
-    trang /tim-phong.
-
-    Đồng thời tải địa chỉ để hiển thị
-    ở khu vực thông tin đặt phòng.
-  */
   useEffect(() => {
     let cancelled = false;
 
@@ -284,40 +298,45 @@ function TimPhongContent() {
   }, []);
 
   /*
-    URL parameters là nguồn dữ liệu chính
-    cho tìm phòng hiện tại.
+    Đồng bộ URL với form.
   */
   useEffect(() => {
     setEditHotel(hotelSlug);
+    setEditStayType(stayType);
     setEditCheckIn(checkIn);
     setEditCheckOut(checkOut);
+    setEditMonths(monthsFromUrl);
     setEditAdults(adults);
     setEditChildren(children);
     setEditError("");
     setSelectedRooms({});
   }, [
     hotelSlug,
+    stayType,
     checkIn,
     checkOut,
+    monthsFromUrl,
     adults,
     children,
   ]);
 
+  /*
+    Đồng bộ ngôn ngữ.
+  */
   useEffect(() => {
-    const handleLanguageChange =
-      () => {
-        const current =
-          window.localStorage.getItem(
-            "huyen-language"
-          );
+    const handleLanguageChange = () => {
+      const current =
+        window.localStorage.getItem(
+          "huyen-language"
+        );
 
-        if (
-          current === "vi" ||
-          current === "en"
-        ) {
-          setLanguage(current);
-        }
-      };
+      if (
+        current === "vi" ||
+        current === "en"
+      ) {
+        setLanguage(current);
+      }
+    };
 
     window.addEventListener(
       "language-change",
@@ -333,36 +352,7 @@ function TimPhongContent() {
   }, []);
 
   /*
-    Nếu URL chưa có đủ thông tin tìm phòng,
-    không tự động redirect.
-
-    Người dùng vẫn có thể chọn khách sạn,
-    ngày và số khách trên trang này.
-  */
-  useEffect(() => {
-    if (
-      !hotelSlug ||
-      !checkIn ||
-      !checkOut
-    ) {
-      setLoading(false);
-      setLoadingAvailability(false);
-      setHotel(null);
-      setRooms([]);
-      setRoomMedia([]);
-      setRoomAmenities([]);
-      setAvailabilityRooms([]);
-      setAvailabilityError("");
-    }
-  }, [
-    hotelSlug,
-    checkIn,
-    checkOut,
-  ]);
-
-  /*
-    Đồng bộ khách sạn hiện tại từ URL
-    với danh sách khách sạn đã tải.
+    Đồng bộ khách sạn hiện tại.
   */
   useEffect(() => {
     if (!hotelSlug) {
@@ -383,15 +373,32 @@ function TimPhongContent() {
   ]);
 
   /*
-    Khi đã có khách sạn + ngày nhận/trả,
-    tải thông tin phòng.
+    Tải thông tin khách sạn + phòng.
+
+    Day:
+      cần checkIn/checkOut.
+
+    Month:
+      không cần checkIn/checkOut.
   */
   useEffect(() => {
+    if (!hotelSlug) {
+      setLoading(false);
+      setHotel(null);
+      setRooms([]);
+      setRoomMedia([]);
+      setRoomAmenities([]);
+      return;
+    }
+
     if (
-      !hotelSlug ||
-      !checkIn ||
-      !checkOut
+      stayType === "day" &&
+      (!checkIn || !checkOut)
     ) {
+      setLoading(false);
+      setRooms([]);
+      setRoomMedia([]);
+      setRoomAmenities([]);
       return;
     }
 
@@ -441,7 +448,7 @@ function TimPhongContent() {
         } = await supabase
           .from("rooms")
           .select(
-            "id,hotel_id,slug,name_vi,name_en,description_vi,description_en,base_price,quantity,size,max_guests,beds_vi,beds_en,status"
+            "id,hotel_id,slug,name_vi,name_en,description_vi,description_en,base_price_daily,base_price_monthly,quantity,size,max_guests,beds_vi,beds_en,status"
           )
           .eq(
             "hotel_id",
@@ -454,18 +461,8 @@ function TimPhongContent() {
           throw roomError;
         }
 
-        if (!roomData) {
-          if (!cancelled) {
-            setRooms([]);
-            setRoomMedia([]);
-            setRoomAmenities([]);
-          }
-
-          return;
-        }
-
         const currentRooms =
-          roomData as unknown as Room[];
+          (roomData || []) as unknown as Room[];
 
         if (!cancelled) {
           setRooms(currentRooms);
@@ -521,17 +518,18 @@ function TimPhongContent() {
 
         if (!cancelled) {
           setRoomMedia(
-            (mediaResult.data ||
-              []) as unknown as Media[]
+            (mediaResult.data || []) as unknown as Media[]
           );
 
           setRoomAmenities(
-            (amenitiesResult.data ||
-              []) as unknown as RoomAmenity[]
+            (amenitiesResult.data || []) as unknown as RoomAmenity[]
           );
         }
       } catch (error) {
-        console.error(error);
+        console.error(
+          "Không tải được phòng:",
+          error
+        );
 
         if (!cancelled) {
           setHotel(null);
@@ -551,19 +549,47 @@ function TimPhongContent() {
     };
   }, [
     hotelSlug,
+    stayType,
     checkIn,
     checkOut,
   ]);
 
   /*
-    Kiểm tra tình trạng phòng thực tế.
+    Kiểm tra availability cho cả ngày và tháng.
+
+    Day:
+      gửi hotelSlug + checkIn + checkOut.
+
+    Month:
+      gửi hotelSlug + stayType=month + months.
+      API tự xác định khoảng thời gian tháng
+      dựa trên ngày hiện tại.
   */
   useEffect(() => {
+    if (!hotelSlug) {
+      setAvailabilityRooms([]);
+      setLoadingAvailability(false);
+      setAvailabilityError("");
+      return;
+    }
+
     if (
-      !hotelSlug ||
-      !checkIn ||
-      !checkOut
+      stayType === "day" &&
+      (!checkIn || !checkOut)
     ) {
+      setAvailabilityRooms([]);
+      setLoadingAvailability(false);
+      setAvailabilityError("");
+      return;
+    }
+
+    if (
+      stayType === "month" &&
+      monthsFromUrl < 1
+    ) {
+      setAvailabilityRooms([]);
+      setLoadingAvailability(false);
+      setAvailabilityError("");
       return;
     }
 
@@ -571,6 +597,7 @@ function TimPhongContent() {
 
     setLoadingAvailability(true);
     setAvailabilityError("");
+    setAvailabilityRooms([]);
 
     (async () => {
       try {
@@ -582,11 +609,20 @@ function TimPhongContent() {
               "Content-Type":
                 "application/json",
             },
-            body: JSON.stringify({
-              hotelSlug,
-              checkIn,
-              checkOut,
-            }),
+            body: JSON.stringify(
+              stayType === "month"
+                ? {
+                    hotelSlug,
+                    stayType: "month",
+                    months: monthsFromUrl,
+                  }
+                : {
+                    hotelSlug,
+                    stayType: "day",
+                    checkIn,
+                    checkOut,
+                  }
+            ),
             cache: "no-store",
           }
         );
@@ -601,18 +637,15 @@ function TimPhongContent() {
           );
         }
 
+        const apiRooms =
+          Array.isArray(data?.rooms)
+            ? data.rooms
+            : [];
+
         if (!cancelled) {
           setAvailabilityRooms(
-            (
-              Array.isArray(
-                data?.rooms
-              )
-                ? data.rooms
-                : []
-            ).filter(
-              (
-                room: AvailabilityRoom
-              ) =>
+            apiRooms.filter(
+              (room: AvailabilityRoom) =>
                 room.hotelSlug ===
                 hotelSlug
             )
@@ -629,9 +662,7 @@ function TimPhongContent() {
         }
       } finally {
         if (!cancelled) {
-          setLoadingAvailability(
-            false
-          );
+          setLoadingAvailability(false);
         }
       }
     })();
@@ -640,9 +671,11 @@ function TimPhongContent() {
       cancelled = true;
     };
   }, [
+    stayType,
     hotelSlug,
     checkIn,
     checkOut,
+    monthsFromUrl,
   ]);
 
   const roomCoverMap = useMemo(() => {
@@ -678,6 +711,15 @@ function TimPhongContent() {
     return map;
   }, [roomMedia]);
 
+  /*
+    Danh sách phòng phù hợp.
+
+    Cả Day và Month đều lấy
+    availableQuantity từ API.
+
+    Không còn lấy room.quantity trực tiếp
+    cho thuê tháng.
+  */
   const availableRooms =
     useMemo<DisplayRoom[]>(() => {
       if (!hotel) {
@@ -724,8 +766,10 @@ function TimPhongContent() {
 
           const availableQuantity =
             Math.max(
-              totalQuantity -
-                bookedQuantity,
+              Number(
+                availability?.availableQuantity ??
+                  0
+              ) || 0,
               0
             );
 
@@ -762,6 +806,15 @@ function TimPhongContent() {
             room.max_guests ??
             MAX_GUESTS_FALLBACK;
 
+          const price =
+            stayType === "month"
+              ? Number(
+                  room.base_price_monthly
+                ) || 0
+              : Number(
+                  room.base_price_daily
+                ) || 0;
+
           return (
             room.status ===
               "active" &&
@@ -770,18 +823,31 @@ function TimPhongContent() {
             maxGuests >=
               totalGuests &&
             room.availableQuantity >
-              0
+              0 &&
+            price > 0
           );
         })
-        .sort(
-          (a, b) =>
-            (Number(
-              a.base_price
-            ) || 0) -
-            (Number(
-              b.base_price
-            ) || 0)
-        );
+        .sort((a, b) => {
+          const priceA =
+            stayType === "month"
+              ? Number(
+                  a.base_price_monthly
+                ) || 0
+              : Number(
+                  a.base_price_daily
+                ) || 0;
+
+          const priceB =
+            stayType === "month"
+              ? Number(
+                  b.base_price_monthly
+                ) || 0
+              : Number(
+                  b.base_price_daily
+                ) || 0;
+
+          return priceA - priceB;
+        });
     }, [
       rooms,
       hotel,
@@ -790,6 +856,7 @@ function TimPhongContent() {
       roomCoverMap,
       roomAmenities,
       language,
+      stayType,
     ]);
 
   const nights = useMemo(
@@ -815,26 +882,44 @@ function TimPhongContent() {
     );
 
   const selectedTotal =
-    useMemo(
-      () =>
-        availableRooms.reduce(
-          (sum, room) =>
+    useMemo(() => {
+      return availableRooms.reduce(
+        (sum, room) => {
+          const quantity =
+            selectedRooms[
+              room.slug
+            ] || 0;
+
+          const price =
+            stayType === "month"
+              ? Number(
+                  room.base_price_monthly
+                ) || 0
+              : Number(
+                  room.base_price_daily
+                ) || 0;
+
+          const duration =
+            stayType === "month"
+              ? monthsFromUrl
+              : nights;
+
+          return (
             sum +
-            (Number(
-              room.base_price
-            ) || 0) *
-              (selectedRooms[
-                room.slug
-              ] || 0) *
-              nights,
-          0
-        ),
-      [
-        availableRooms,
-        selectedRooms,
-        nights,
-      ]
-    );
+            price *
+              quantity *
+              duration
+          );
+        },
+        0
+      );
+    }, [
+      availableRooms,
+      selectedRooms,
+      stayType,
+      monthsFromUrl,
+      nights,
+    ]);
 
   const openDatePicker =
     useCallback(
@@ -859,10 +944,73 @@ function TimPhongContent() {
     );
 
   /*
-    Áp dụng thay đổi tìm phòng.
+    Đổi loại thuê.
+  */
+  const handleStayTypeChange =
+    useCallback(
+      (value: StayType) => {
+        setEditStayType(value);
+        setEditError("");
+        setSelectedRooms({});
 
-    Khách sạn bây giờ cũng là trường
-    người dùng có thể thay đổi.
+        const params =
+          new URLSearchParams(
+            searchParams.toString()
+          );
+
+        params.set(
+          "stayType",
+          value
+        );
+
+        if (value === "day") {
+          params.delete("months");
+
+          if (editCheckIn) {
+            params.set(
+              "checkIn",
+              editCheckIn
+            );
+          }
+
+          if (editCheckOut) {
+            params.set(
+              "checkOut",
+              editCheckOut
+            );
+          }
+        } else {
+          params.delete("checkIn");
+          params.delete("checkOut");
+
+          params.set(
+            "months",
+            String(
+              Math.max(
+                1,
+                Math.floor(
+                  editMonths
+                )
+              )
+            )
+          );
+        }
+
+        router.replace(
+          `/tim-phong?${params.toString()}`
+        );
+      },
+      [
+        searchParams,
+        router,
+        editCheckIn,
+        editCheckOut,
+        editMonths,
+      ]
+    );
+
+  /*
+    Áp dụng thay đổi tìm phòng.
   */
   const applyBookingChanges =
     useCallback(() => {
@@ -878,41 +1026,63 @@ function TimPhongContent() {
       }
 
       if (
-        !editCheckIn ||
-        !editCheckOut
+        editStayType === "day"
       ) {
-        setEditError(
-          language === "vi"
-            ? "Chọn ngày vào và ngày ra"
-            : "Select check-in/out dates"
-        );
-        return;
+        if (
+          !editCheckIn ||
+          !editCheckOut
+        ) {
+          setEditError(
+            language === "vi"
+              ? "Chọn ngày vào và ngày ra"
+              : "Select check-in/out dates"
+          );
+          return;
+        }
+
+        if (
+          editCheckOut <=
+          editCheckIn
+        ) {
+          setEditError(
+            language === "vi"
+              ? "Ngày ra phải sau ngày vào"
+              : "Check-out must be after check-in"
+          );
+          return;
+        }
+
+        if (
+          calculateNights(
+            editCheckIn,
+            editCheckOut
+          ) < 1
+        ) {
+          setEditError(
+            language === "vi"
+              ? "Khoảng thời gian không hợp lệ"
+              : "Invalid date range"
+          );
+          return;
+        }
       }
 
       if (
-        editCheckOut <=
-        editCheckIn
+        editStayType === "month"
       ) {
-        setEditError(
-          language === "vi"
-            ? "Ngày ra phải sau ngày vào"
-            : "Check-out must be after check-in"
-        );
-        return;
-      }
-
-      if (
-        calculateNights(
-          editCheckIn,
-          editCheckOut
-        ) < 1
-      ) {
-        setEditError(
-          language === "vi"
-            ? "Khoảng thời gian không hợp lệ"
-            : "Invalid date range"
-        );
-        return;
+        if (
+          !Number.isFinite(
+            editMonths
+          ) ||
+          editMonths < 1
+        ) {
+          setEditError(
+            language === "vi"
+              ? "Số tháng phải từ 1 tháng trở lên"
+              : "Months must be at least 1"
+          );
+          return;
+        }
       }
 
       const params =
@@ -926,14 +1096,40 @@ function TimPhongContent() {
       );
 
       params.set(
-        "checkIn",
-        editCheckIn
+        "stayType",
+        editStayType
       );
 
-      params.set(
-        "checkOut",
-        editCheckOut
-      );
+      if (
+        editStayType === "day"
+      ) {
+        params.set(
+          "checkIn",
+          editCheckIn
+        );
+
+        params.set(
+          "checkOut",
+          editCheckOut
+        );
+
+        params.delete("months");
+      } else {
+        params.delete("checkIn");
+        params.delete("checkOut");
+
+        params.set(
+          "months",
+          String(
+            Math.max(
+              1,
+              Math.floor(
+                editMonths
+              )
+            )
+          )
+        );
+      }
 
       params.set(
         "adults",
@@ -967,8 +1163,10 @@ function TimPhongContent() {
       );
     }, [
       editHotel,
+      editStayType,
       editCheckIn,
       editCheckOut,
+      editMonths,
       editAdults,
       editChildren,
       searchParams,
@@ -978,11 +1176,7 @@ function TimPhongContent() {
     ]);
 
   /*
-    Khi người dùng đổi khách sạn,
-    cập nhật ngay giá trị trên URL.
-
-    Nếu ngày đã có thì trang sẽ tự tải
-    lại phòng của khách sạn mới.
+    Khi đổi khách sạn.
   */
   const handleHotelChange =
     useCallback(
@@ -1063,6 +1257,9 @@ function TimPhongContent() {
       []
     );
 
+  /*
+    Chuyển sang /dat-phong.
+  */
   const continueBooking =
     useCallback(() => {
       if (
@@ -1107,14 +1304,30 @@ function TimPhongContent() {
       );
 
       params.set(
-        "checkIn",
-        checkIn
+        "stayType",
+        stayType
       );
 
-      params.set(
-        "checkOut",
-        checkOut
-      );
+      if (
+        stayType === "day"
+      ) {
+        params.set(
+          "checkIn",
+          checkIn
+        );
+
+        params.set(
+          "checkOut",
+          checkOut
+        );
+      } else {
+        params.set(
+          "months",
+          String(
+            monthsFromUrl
+          )
+        );
+      }
 
       params.set(
         "adults",
@@ -1138,8 +1351,10 @@ function TimPhongContent() {
       selectedRoomCount,
       selectedRooms,
       hotel,
+      stayType,
       checkIn,
       checkOut,
+      monthsFromUrl,
       adults,
       children,
       requestedRooms,
@@ -1157,6 +1372,15 @@ function TimPhongContent() {
       ? hotel.address_vi
       : hotel.address_en
     : "";
+
+  const hasValidSearch =
+    Boolean(hotelSlug) &&
+    (stayType === "month"
+      ? monthsFromUrl >= 1
+      : Boolean(
+          checkIn &&
+            checkOut
+        ));
 
   return (
     <main className="min-h-screen bg-neutral-50">
@@ -1216,14 +1440,67 @@ function TimPhongContent() {
             </h2>
 
             <p className="mt-1 text-sm text-neutral-500">
-              {language === "vi"
-                ? "Chọn khách sạn, ngày vào, ngày đi và số khách."
-                : "Choose your hotel, dates and guests."}
+              {editStayType ===
+              "month"
+                ? language === "vi"
+                  ? "Chọn khách sạn, số tháng và số khách."
+                  : "Choose your hotel, number of months and guests."
+                : language === "vi"
+                  ? "Chọn khách sạn, ngày vào, ngày đi và số khách."
+                  : "Choose your hotel, dates and guests."}
             </p>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr_1fr_1.5fr_auto]">
-            {/* KHÁCH SẠN */}
+          <div className="mb-5">
+            <div className="inline-flex rounded-xl border border-neutral-200 bg-neutral-50 p-1">
+              <button
+                type="button"
+                onClick={() =>
+                  handleStayTypeChange(
+                    "day"
+                  )
+                }
+                className={`rounded-lg px-5 py-2.5 text-sm font-semibold transition ${
+                  editStayType ===
+                  "day"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-neutral-500 hover:text-slate-900"
+                }`}
+              >
+                {language === "vi"
+                  ? "Theo ngày"
+                  : "Daily"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleStayTypeChange(
+                    "month"
+                  )
+                }
+                className={`rounded-lg px-5 py-2.5 text-sm font-semibold transition ${
+                  editStayType ===
+                  "month"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-neutral-500 hover:text-slate-900"
+                }`}
+              >
+                {language === "vi"
+                  ? "Theo tháng"
+                  : "Monthly"}
+              </button>
+            </div>
+          </div>
+
+          <div
+            className={
+              editStayType ===
+              "month"
+                ? "grid gap-4 lg:grid-cols-[1.25fr_1fr_1.5fr_auto]"
+                : "grid gap-4 lg:grid-cols-[1.25fr_1fr_1fr_1.5fr_auto]"
+            }
+          >
             <div>
               <label
                 htmlFor="tim-phong-hotel"
@@ -1242,7 +1519,9 @@ function TimPhongContent() {
                     event.target.value
                   )
                 }
-                disabled={loadingHotels}
+                disabled={
+                  loadingHotels
+                }
                 className="h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none transition hover:border-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-500/10 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
               >
                 <option value="">
@@ -1271,124 +1550,199 @@ function TimPhongContent() {
               </select>
             </div>
 
-            {/* NGÀY VÀO */}
-            <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                {language === "vi"
-                  ? "Ngày vào"
-                  : "Check-in"}
-              </label>
+            {editStayType ===
+            "day" ? (
+              <>
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    {language === "vi"
+                      ? "Ngày vào"
+                      : "Check-in"}
+                  </label>
 
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() =>
-                  openDatePicker(
-                    checkInRef
-                  )
-                }
-                onKeyDown={(
-                  event
-                ) => {
-                  if (
-                    event.key ===
-                      "Enter" ||
-                    event.key ===
-                      " "
-                  ) {
-                    event.preventDefault();
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      openDatePicker(
+                        checkInRef
+                      )
+                    }
+                    onKeyDown={(
+                      event
+                    ) => {
+                      if (
+                        event.key ===
+                          "Enter" ||
+                        event.key ===
+                          " "
+                      ) {
+                        event.preventDefault();
 
-                    openDatePicker(
-                      checkInRef
-                    );
-                  }
-                }}
-                className="relative flex h-12 w-full cursor-pointer items-center rounded-xl border border-neutral-200 bg-white px-4 hover:border-slate-400 focus-within:border-slate-500"
-              >
-                <input
-                  ref={checkInRef}
-                  type="date"
-                  min={
-                    new Date()
-                      .toISOString()
-                      .split("T")[0]
-                  }
+                        openDatePicker(
+                          checkInRef
+                        );
+                      }
+                    }}
+                    className="relative flex h-12 w-full cursor-pointer items-center rounded-xl border border-neutral-200 bg-white px-4 hover:border-slate-400 focus-within:border-slate-500"
+                  >
+                    <input
+                      ref={
+                        checkInRef
+                      }
+                      type="date"
+                      min={
+                        new Date()
+                          .toISOString()
+                          .split(
+                            "T"
+                          )[0]
+                      }
+                      value={
+                        editCheckIn
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setEditCheckIn(
+                          event
+                            .target
+                            .value
+                        )
+                      }
+                      className="h-full w-full cursor-pointer border-0 bg-transparent p-0 text-sm font-medium text-slate-900 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    {language === "vi"
+                      ? "Ngày đi"
+                      : "Check-out"}
+                  </label>
+
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      openDatePicker(
+                        checkOutRef
+                      )
+                    }
+                    onKeyDown={(
+                      event
+                    ) => {
+                      if (
+                        event.key ===
+                          "Enter" ||
+                        event.key ===
+                          " "
+                      ) {
+                        event.preventDefault();
+
+                        openDatePicker(
+                          checkOutRef
+                        );
+                      }
+                    }}
+                    className="relative flex h-12 w-full cursor-pointer items-center rounded-xl border border-neutral-200 bg-white px-4 hover:border-slate-400 focus-within:border-slate-500"
+                  >
+                    <input
+                      ref={
+                        checkOutRef
+                      }
+                      type="date"
+                      value={
+                        editCheckOut
+                      }
+                      min={
+                        editCheckIn ||
+                        new Date()
+                          .toISOString()
+                          .split(
+                            "T"
+                          )[0]
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setEditCheckOut(
+                          event
+                            .target
+                            .value
+                        )
+                      }
+                      className="h-full w-full cursor-pointer border-0 bg-transparent p-0 text-sm font-medium text-slate-900 outline-none"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  {language === "vi"
+                    ? "Thời gian thuê"
+                    : "Rental period"}
+                </label>
+
+                <select
                   value={
-                    editCheckIn
+                    editMonths
                   }
                   onChange={(
                     event
                   ) =>
-                    setEditCheckIn(
-                      event.target
-                        .value
+                    setEditMonths(
+                      Math.max(
+                        1,
+                        Number(
+                          event
+                            .target
+                            .value
+                        ) || 1
+                      )
                     )
                   }
-                  className="h-full w-full cursor-pointer border-0 bg-transparent p-0 text-sm font-medium text-slate-900 outline-none"
-                />
+                  className="h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none transition hover:border-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-500/10"
+                >
+                  {Array.from(
+                    {
+                      length: 12,
+                    },
+                    (
+                      _,
+                      index
+                    ) => {
+                      const value =
+                        index +
+                        1;
+
+                      return (
+                        <option
+                          key={
+                            value
+                          }
+                          value={
+                            value
+                          }
+                        >
+                          {value}{" "}
+                          {language ===
+                          "vi"
+                            ? "tháng"
+                            : value ===
+                                1
+                              ? "month"
+                              : "months"}
+                        </option>
+                      );
+                    }
+                  )}
+                </select>
               </div>
-            </div>
+            )}
 
-            {/* NGÀY ĐI */}
-            <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                {language === "vi"
-                  ? "Ngày đi"
-                  : "Check-out"}
-              </label>
-
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() =>
-                  openDatePicker(
-                    checkOutRef
-                  )
-                }
-                onKeyDown={(
-                  event
-                ) => {
-                  if (
-                    event.key ===
-                      "Enter" ||
-                    event.key ===
-                      " "
-                  ) {
-                    event.preventDefault();
-
-                    openDatePicker(
-                      checkOutRef
-                    );
-                  }
-                }}
-                className="relative flex h-12 w-full cursor-pointer items-center rounded-xl border border-neutral-200 bg-white px-4 hover:border-slate-400 focus-within:border-slate-500"
-              >
-                <input
-                  ref={checkOutRef}
-                  type="date"
-                  value={
-                    editCheckOut
-                  }
-                  min={
-                    editCheckIn ||
-                    new Date()
-                      .toISOString()
-                      .split("T")[0]
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setEditCheckOut(
-                      event.target
-                        .value
-                    )
-                  }
-                  className="h-full w-full cursor-pointer border-0 bg-transparent p-0 text-sm font-medium text-slate-900 outline-none"
-                />
-              </div>
-            </div>
-
-            {/* KHÁCH */}
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
                 {language === "vi"
@@ -1501,7 +1855,6 @@ function TimPhongContent() {
               </div>
             </div>
 
-            {/* CẬP NHẬT */}
             <div className="flex items-end">
               <button
                 type="button"
@@ -1526,9 +1879,7 @@ function TimPhongContent() {
             </div>
           )}
 
-          {/* THÔNG TIN TÓM TẮT: ĐỊA CHỈ TRÁI - ĐẶT PHÒNG PHẢI */}
           <div className="mt-4 flex flex-col gap-3 border-t border-neutral-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            {/* ĐỊA CHỈ - BÊN TRÁI */}
             <div className="flex min-w-0 items-start gap-1.5 text-sm text-neutral-500">
               {hotelAddress && (
                 <>
@@ -1546,39 +1897,54 @@ function TimPhongContent() {
               )}
             </div>
 
-            {/* THÔNG TIN ĐẶT PHÒNG - BÊN PHẢI */}
             <div className="flex flex-wrap items-center justify-start gap-x-5 gap-y-2 text-sm text-neutral-500 sm:justify-end">
-              <span>
-                {language ===
-                "vi"
-                  ? "Vào:"
-                  : "Check-in:"}{" "}
-                <strong className="text-slate-800">
-                  {formatDate(
-                    checkIn
-                  )}
-                </strong>
-              </span>
+              {stayType ===
+              "day" ? (
+                <>
+                  <span>
+                    {language ===
+                    "vi"
+                      ? "Vào:"
+                      : "Check-in:"}{" "}
+                    <strong className="text-slate-800">
+                      {formatDate(
+                        checkIn
+                      )}
+                    </strong>
+                  </span>
 
-              <span>
-                {language ===
-                "vi"
-                  ? "Đi:"
-                  : "Check-out:"}{" "}
-                <strong className="text-slate-800">
-                  {formatDate(
-                    checkOut
-                  )}
-                </strong>
-              </span>
+                  <span>
+                    {language ===
+                    "vi"
+                      ? "Đi:"
+                      : "Check-out:"}{" "}
+                    <strong className="text-slate-800">
+                      {formatDate(
+                        checkOut
+                      )}
+                    </strong>
+                  </span>
 
-              <span>
-                {nights}{" "}
-                {language ===
-                "vi"
-                  ? "đêm"
-                  : "nights"}
-              </span>
+                  <span>
+                    {nights}{" "}
+                    {language ===
+                    "vi"
+                      ? "đêm"
+                      : "nights"}
+                  </span>
+                </>
+              ) : (
+                <span>
+                  {monthsFromUrl}{" "}
+                  {language ===
+                  "vi"
+                    ? "tháng"
+                    : monthsFromUrl ===
+                        1
+                      ? "month"
+                      : "months"}
+                </span>
+              )}
 
               <span>
                 {totalGuests}{" "}
@@ -1599,9 +1965,7 @@ function TimPhongContent() {
           </div>
         </section>
 
-        {!hotelSlug ||
-          !checkIn ||
-          !checkOut ? (
+        {!hasValidSearch ? (
           <div className="rounded-2xl border border-neutral-200 bg-white p-10 text-center shadow-sm">
             <h2 className="text-xl font-bold text-slate-900">
               {language === "vi"
@@ -1610,9 +1974,14 @@ function TimPhongContent() {
             </h2>
 
             <p className="mx-auto mt-2 max-w-xl text-sm text-neutral-500">
-              {language === "vi"
-                ? "Vui lòng chọn khách sạn, ngày nhận phòng và ngày trả phòng, sau đó bấm Cập nhật."
-                : "Please select a hotel, check-in and check-out dates, then click Update."}
+              {stayType ===
+              "month"
+                ? language === "vi"
+                  ? "Vui lòng chọn khách sạn và số tháng, sau đó bấm Cập nhật."
+                  : "Please select a hotel and number of months, then click Update."
+                : language === "vi"
+                  ? "Vui lòng chọn khách sạn, ngày nhận phòng và ngày trả phòng, sau đó bấm Cập nhật."
+                  : "Please select a hotel, check-in and check-out dates, then click Update."}
             </p>
           </div>
         ) : (
@@ -1667,9 +2036,14 @@ function TimPhongContent() {
                   </h2>
 
                   <p className="mx-auto mt-2 max-w-xl text-sm text-neutral-500">
-                    {language === "vi"
-                      ? "Thay đổi ngày hoặc số khách thử lại."
-                      : "Try changing dates or guest count."}
+                    {stayType ===
+                    "month"
+                      ? language === "vi"
+                        ? "Không có phòng có giá tháng hoặc phòng phù hợp với số khách trong khoảng thời gian đã chọn."
+                        : "No rooms with a monthly price are available for your guest count during the selected period."
+                      : language === "vi"
+                        ? "Thay đổi ngày hoặc số khách thử lại."
+                        : "Try changing dates or guest count."}
                   </p>
                 </div>
               )}
@@ -1710,6 +2084,16 @@ function TimPhongContent() {
                         "vi"
                           ? room.amenitiesVi
                           : room.amenitiesEn;
+
+                      const roomPrice =
+                        stayType ===
+                        "month"
+                          ? Number(
+                              room.base_price_monthly
+                            ) || 0
+                          : Number(
+                              room.base_price_daily
+                            ) || 0;
 
                       return (
                         <article
@@ -1765,19 +2149,22 @@ function TimPhongContent() {
                                 <div className="shrink-0 text-left sm:text-right">
                                   <div className="text-xl font-bold text-slate-900">
                                     {formatPrice(
-                                      Number(
-                                        room.base_price
-                                      ) ||
-                                        0
+                                      roomPrice
                                     )}{" "}
                                     ₫
                                   </div>
 
                                   <div className="text-xs text-neutral-500">
-                                    {language ===
-                                    "vi"
-                                      ? "/đêm"
-                                      : "/night"}
+                                    {stayType ===
+                                    "month"
+                                      ? language ===
+                                        "vi"
+                                        ? "/tháng"
+                                        : "/month"
+                                      : language ===
+                                          "vi"
+                                        ? "/đêm"
+                                        : "/night"}
                                   </div>
                                 </div>
                               </div>
@@ -1942,11 +2329,23 @@ function TimPhongContent() {
               </div>
 
               <div className="text-xs text-neutral-500">
-                {nights}{" "}
-                {language ===
-                "vi"
-                  ? "đêm"
-                  : "nights"}
+                {stayType ===
+                "month"
+                  ? `${monthsFromUrl} ${
+                      language ===
+                      "vi"
+                        ? "tháng"
+                        : monthsFromUrl ===
+                            1
+                          ? "month"
+                          : "months"
+                    }`
+                  : `${nights} ${
+                      language ===
+                      "vi"
+                        ? "đêm"
+                        : "nights"
+                    }`}
               </div>
             </div>
 
@@ -1995,4 +2394,3 @@ export default function TimPhongPage() {
     </Suspense>
   );
 }
-

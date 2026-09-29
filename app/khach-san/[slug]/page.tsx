@@ -1,5 +1,9 @@
+
 import { notFound } from "next/navigation";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  createClient,
+  type SupabaseClient,
+} from "@supabase/supabase-js";
 import HotelDetailClient from "./HotelDetailClient";
 
 type Hotel = {
@@ -49,24 +53,6 @@ type RoomMedia = {
   sort_order: number | null;
 };
 
-type HotelOTAChannelRow = {
-  id: number;
-  hotel_id: number;
-  ota_id: number | null;
-  listing_url: string | null;
-  external_hotel_id: string | null;
-  sort_order: number | null;
-  status: string | null;
-};
-
-type OTAPlatform = {
-  id: number;
-  name: string | null;
-  slug: string | null;
-  logo: string | null;
-  website: string | null;
-};
-
 type ClientRoom = {
   id: number;
   hotel_id: number;
@@ -93,17 +79,6 @@ type ClientRoomMedia = {
   public_url: string;
 };
 
-type HotelOTA = {
-  id: number;
-  name: string;
-  slug: string;
-  logo: string | null;
-  website: string | null;
-  listing_url: string | null;
-  external_hotel_id: string | null;
-  sort_order: number;
-};
-
 type HotelListItem = {
   id: number;
   slug: string;
@@ -125,7 +100,9 @@ type StructuredRoom = {
 };
 
 function getSupabaseServerClient(): SupabaseClient {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
+
   const supabaseKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -135,10 +112,15 @@ function getSupabaseServerClient(): SupabaseClient {
     );
   }
 
-  return createClient(supabaseUrl, supabaseKey);
+  return createClient(
+    supabaseUrl,
+    supabaseKey
+  );
 }
 
-function isActiveStatus(status: string | null): boolean {
+function isActiveStatus(
+  status: string | null
+): boolean {
   return (
     typeof status === "string" &&
     status.trim().toLowerCase() === "active"
@@ -149,7 +131,8 @@ function createHotelStructuredData(
   hotel: Hotel,
   rooms: ClientRoom[]
 ): Record<string, unknown> {
-  const baseUrl = "https://huyenhotels.com";
+  const baseUrl =
+    "https://huyenhotels.com";
 
   const hotelName =
     hotel.name_vi ||
@@ -161,44 +144,49 @@ function createHotelStructuredData(
     hotel.description_en ||
     `Thông tin lưu trú tại ${hotelName}.`;
 
-  const roomOffers: StructuredRoom[] = rooms
-    .filter((room) => isActiveStatus(room.status))
-    .map((room) => {
-      const roomName =
-        room.name_vi ||
-        room.name_en ||
-        "Phòng lưu trú";
+  const roomOffers: StructuredRoom[] =
+    rooms
+      .filter((room) =>
+        isActiveStatus(room.status)
+      )
+      .map((room) => {
+        const roomName =
+          room.name_vi ||
+          room.name_en ||
+          "Phòng lưu trú";
 
-      const roomDescription =
-        room.description_vi ||
-        room.description_en ||
-        undefined;
+        const roomDescription =
+          room.description_vi ||
+          room.description_en ||
+          undefined;
 
-      const roomData: StructuredRoom = {
-        "@type": "Product",
-        name: roomName,
-      };
-
-      if (roomDescription) {
-        roomData.description = roomDescription;
-      }
-
-      if (
-        typeof room.base_price === "number" &&
-        Number.isFinite(room.base_price) &&
-        room.base_price > 0
-      ) {
-        roomData.offers = {
-          "@type": "Offer",
-          priceCurrency: "VND",
-          price: room.base_price,
-          availability: "https://schema.org/InStock",
-          url: `${baseUrl}/khach-san/${hotel.slug}/phong/${room.slug}`,
+        const roomData: StructuredRoom = {
+          "@type": "Product",
+          name: roomName,
         };
-      }
 
-      return roomData;
-    });
+        if (roomDescription) {
+          roomData.description =
+            roomDescription;
+        }
+
+        if (
+          typeof room.base_price === "number" &&
+          Number.isFinite(room.base_price) &&
+          room.base_price > 0
+        ) {
+          roomData.offers = {
+            "@type": "Offer",
+            priceCurrency: "VND",
+            price: room.base_price,
+            availability:
+              "https://schema.org/InStock",
+            url: `${baseUrl}/khach-san/${hotel.slug}/phong/${room.slug}`,
+          };
+        }
+
+        return roomData;
+      });
 
   return {
     "@context": "https://schema.org",
@@ -248,7 +236,8 @@ export default async function HotelDetailPage({
 }: PageProps) {
   const { slug } = await params;
 
-  const supabase = getSupabaseServerClient();
+  const supabase =
+    getSupabaseServerClient();
 
   /*
    * ============================================================
@@ -298,29 +287,71 @@ export default async function HotelDetailPage({
     notFound();
   }
 
-  const hotel = hotelData as Hotel;
-
-  console.log("HOTEL FROM SERVER:", {
-    id: hotel.id,
-    slug: hotel.slug,
-    name_vi: hotel.name_vi,
-    name_en: hotel.name_en,
-  });
+  const hotel =
+    hotelData as Hotel;
 
   /*
    * ============================================================
-   * 2. LẤY DANH SÁCH KHÁCH SẠN CHO SIDEBAR TÌM PHÒNG
+   * 2 + 3. LẤY DANH SÁCH KHÁCH SẠN + PHÒNG SONG SONG
+   * ============================================================
+   */
+
+  const [
+    hotelListResult,
+    roomsResult,
+  ] = await Promise.all([
+    supabase
+      .from("hotels")
+      .select(
+        "id, slug, name_vi, name_en"
+      )
+      .eq("status", "active")
+      .order("id", {
+        ascending: true,
+      }),
+
+    supabase
+      .from("rooms")
+      .select(
+        `
+          id,
+          hotel_id,
+          slug,
+          name_vi,
+          name_en,
+          description_vi,
+          description_en,
+          image,
+          size,
+          max_guests,
+          beds_vi,
+          beds_en,
+          base_price,
+          quantity,
+          amenities_vi,
+          amenities_en,
+          amenities,
+          status
+        `
+      )
+      .eq("hotel_id", hotel.id)
+      .eq("status", "active")
+      .order("id", {
+        ascending: true,
+      }),
+  ]);
+
+  /*
+   * ============================================================
+   * 2. XỬ LÝ DANH SÁCH KHÁCH SẠN
+   * CHO SIDEBAR TÌM PHÒNG
    * ============================================================
    */
 
   const {
     data: hotelListData,
     error: hotelListError,
-  } = await supabase
-    .from("hotels")
-    .select("id, slug, name_vi, name_en")
-    .eq("status", "active")
-    .order("id", { ascending: true });
+  } = hotelListResult;
 
   if (hotelListError) {
     console.error(
@@ -329,51 +360,26 @@ export default async function HotelDetailPage({
     );
   }
 
-  const initialHotels: HotelListItem[] = (
-    hotelListData || []
-  ).map((item) => ({
-    id: item.id,
-    slug: item.slug,
-    name_vi: item.name_vi,
-    name_en: item.name_en,
-  }));
+  const initialHotels: HotelListItem[] =
+    (hotelListData || []).map(
+      (item) => ({
+        id: item.id,
+        slug: item.slug,
+        name_vi: item.name_vi,
+        name_en: item.name_en,
+      })
+    );
 
   /*
    * ============================================================
-   * 3. LẤY PHÒNG
+   * 3. XỬ LÝ PHÒNG
    * ============================================================
    */
 
   const {
     data: roomsData,
     error: roomsError,
-  } = await supabase
-    .from("rooms")
-    .select(
-      `
-        id,
-        hotel_id,
-        slug,
-        name_vi,
-        name_en,
-        description_vi,
-        description_en,
-        image,
-        size,
-        max_guests,
-        beds_vi,
-        beds_en,
-        base_price,
-        quantity,
-        amenities_vi,
-        amenities_en,
-        amenities,
-        status
-      `
-    )
-    .eq("hotel_id", hotel.id)
-    .eq("status", "active")
-    .order("id", { ascending: true });
+  } = roomsResult;
 
   if (roomsError) {
     console.error(
@@ -382,11 +388,13 @@ export default async function HotelDetailPage({
     );
   }
 
-  const rooms = (roomsData || []) as Room[];
+  const rooms =
+    (roomsData || []) as Room[];
 
-  const activeRooms = rooms.filter((room) =>
-    isActiveStatus(room.status)
-  );
+  const activeRooms =
+    rooms.filter((room) =>
+      isActiveStatus(room.status)
+    );
 
   /*
    * ============================================================
@@ -401,19 +409,28 @@ export default async function HotelDetailPage({
       slug: room.slug,
       name_vi: room.name_vi,
       name_en: room.name_en,
-      description_vi: room.description_vi,
-      description_en: room.description_en,
+      description_vi:
+        room.description_vi,
+      description_en:
+        room.description_en,
       image: room.image,
       size: room.size,
-      max_guests: room.max_guests,
+      max_guests:
+        room.max_guests,
       beds_vi: room.beds_vi,
       beds_en: room.beds_en,
-      base_price: room.base_price,
-      quantity: room.quantity,
-      amenities_vi: room.amenities_vi,
-      amenities_en: room.amenities_en,
-      amenities: room.amenities,
-      status: room.status,
+      base_price:
+        room.base_price,
+      quantity:
+        room.quantity,
+      amenities_vi:
+        room.amenities_vi,
+      amenities_en:
+        room.amenities_en,
+      amenities:
+        room.amenities,
+      status:
+        room.status,
     }));
 
   /*
@@ -422,13 +439,15 @@ export default async function HotelDetailPage({
    * ============================================================
    */
 
-  let roomCovers: ClientRoomMedia[] = [];
-
-  if (activeRooms.length > 0) {
-    const roomIds = activeRooms.map(
+  const roomIds =
+    activeRooms.map(
       (room) => room.id
     );
 
+  let roomCovers: ClientRoomMedia[] =
+    [];
+
+  if (roomIds.length > 0) {
     const {
       data: mediaData,
       error: mediaError,
@@ -442,7 +461,10 @@ export default async function HotelDetailPage({
           sort_order
         `
       )
-      .in("entity_id", roomIds)
+      .in(
+        "entity_id",
+        roomIds
+      )
       .order("sort_order", {
         ascending: true,
       })
@@ -460,13 +482,17 @@ export default async function HotelDetailPage({
     const mediaRows =
       (mediaData || []) as RoomMedia[];
 
-    const coverMap = new Map<number, string>();
+    const coverMap =
+      new Map<number, string>();
 
     for (const media of mediaRows) {
       if (
-        typeof media.entity_id !== "number" ||
+        typeof media.entity_id !==
+          "number" ||
         !media.public_url ||
-        coverMap.has(media.entity_id)
+        coverMap.has(
+          media.entity_id
+        )
       ) {
         continue;
       }
@@ -477,224 +503,20 @@ export default async function HotelDetailPage({
       );
     }
 
-    roomCovers = Array.from(
-      coverMap.entries()
-    ).map(
-      ([entity_id, public_url]) => ({
-        entity_id,
-        public_url,
-      })
-    );
-  }
-
-  /*
-   * ============================================================
-   * 6. LẤY OTA CỦA KHÁCH SẠN
-   * ============================================================
-   *
-   * hotel_ota_channels:
-   *   id
-   *   hotel_id
-   *   ota_id
-   *   listing_url
-   *   external_hotel_id
-   *   status
-   *   sort_order
-   *   created_at
-   */
-
-  const {
-    data: otaRowsData,
-    error: otaRowsError,
-  } = await supabase
-    .from("hotel_ota_channels")
-    .select(
-      `
-        id,
-        hotel_id,
-        ota_id,
-        listing_url,
-        external_hotel_id,
-        sort_order,
-        status
-      `
-    )
-    .eq("hotel_id", hotel.id)
-    .order("sort_order", {
-      ascending: true,
-    });
-
-  /*
-   * DEBUG OTA
-   *
-   * Mục đích:
-   * xác nhận Next.js đang dùng đúng hotel.id
-   * và Supabase thực sự trả dữ liệu OTA.
-   */
-  console.log("OTA QUERY INPUT:", {
-    hotelId: hotel.id,
-    hotelSlug: hotel.slug,
-  });
-
-  console.log("OTA QUERY RESULT:", {
-    data: otaRowsData,
-    error: otaRowsError,
-  });
-
-  if (otaRowsError) {
-    console.error(
-      "LỖI LẤY OTA CỦA KHÁCH SẠN:",
-      otaRowsError
-    );
-  }
-
-  const otaRows: HotelOTAChannelRow[] = (
-    otaRowsData || []
-  ).filter((row) =>
-    isActiveStatus(row.status)
-  ) as HotelOTAChannelRow[];
-
-  /*
-   * ============================================================
-   * 7. LẤY THÔNG TIN OTA PLATFORM
-   * ============================================================
-   */
-
-  const platformIds = Array.from(
-    new Set(
-      otaRows
-        .map((item) => item.ota_id)
-        .filter(
-          (id): id is number =>
-            typeof id === "number" &&
-            Number.isFinite(id)
-        )
-    )
-  );
-
-  console.log(
-    "OTA PLATFORM IDS:",
-    platformIds
-  );
-
-  let platformMap =
-    new Map<number, OTAPlatform>();
-
-  if (platformIds.length > 0) {
-    const {
-      data: platformData,
-      error: platformError,
-    } = await supabase
-      .from("ota_platforms")
-      .select(
-        `
-          id,
-          name,
-          slug,
-          logo,
-          website
-        `
-      )
-      .in("id", platformIds);
-
-    console.log("OTA PLATFORM QUERY RESULT:", {
-      data: platformData,
-      error: platformError,
-    });
-
-    if (platformError) {
-      console.error(
-        "Lỗi lấy OTA platforms:",
-        platformError
+    roomCovers =
+      Array.from(
+        coverMap.entries()
+      ).map(
+        ([entity_id, public_url]) => ({
+          entity_id,
+          public_url,
+        })
       );
-    }
-
-    const platforms =
-      (platformData || []) as OTAPlatform[];
-
-    platformMap = new Map(
-      platforms.map((platform) => [
-        platform.id,
-        platform,
-      ])
-    );
   }
 
   /*
    * ============================================================
-   * 8. GHÉP HOTEL OTA + OTA PLATFORM
-   * ============================================================
-   */
-
-  const hotelOTAs: HotelOTA[] =
-    otaRows
-      .map((row) => {
-        const platform =
-          row.ota_id !== null
-            ? platformMap.get(row.ota_id)
-            : undefined;
-
-        const name =
-          platform?.name ||
-          (row.ota_id !== null
-            ? `OTA ${row.ota_id}`
-            : "OTA");
-
-        return {
-          id: row.id,
-
-          name,
-
-          slug:
-            platform?.slug ||
-            "",
-
-          logo:
-            platform?.logo ||
-            null,
-
-          website:
-            platform?.website ||
-            null,
-
-          listing_url:
-            row.listing_url ||
-            null,
-
-          external_hotel_id:
-            row.external_hotel_id ||
-            null,
-
-          sort_order:
-            typeof row.sort_order === "number"
-              ? row.sort_order
-              : 0,
-        };
-      })
-      .sort(
-        (a, b) =>
-          a.sort_order -
-          b.sort_order
-      );
-
-  console.log(
-    "HOTEL OTA CHANNELS:",
-    otaRows
-  );
-
-  console.log(
-    "HOTEL OTA PLATFORMS:",
-    Array.from(platformMap.values())
-  );
-
-  console.log(
-    "HOTEL OTAS FINAL:",
-    hotelOTAs
-  );
-
-  /*
-   * ============================================================
-   * 9. STRUCTURED DATA / SEO
+   * 6. STRUCTURED DATA / SEO
    * ============================================================
    */
 
@@ -706,7 +528,7 @@ export default async function HotelDetailPage({
 
   /*
    * ============================================================
-   * 10. RENDER
+   * 7. RENDER
    * ============================================================
    */
 
@@ -725,9 +547,12 @@ export default async function HotelDetailPage({
       <HotelDetailClient
         initialHotel={hotel}
         initialRooms={clientRooms}
-        initialRoomCovers={roomCovers}
-        initialOTAs={hotelOTAs}
-        initialHotels={initialHotels}
+        initialRoomCovers={
+          roomCovers
+        }
+        initialHotels={
+          initialHotels
+        }
       />
     </>
   );

@@ -2,7 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   AirVent,
@@ -39,6 +44,11 @@ type Hotel = {
   description_en: string | null;
   image: string | null;
   status: "active" | "inactive";
+  business_model:
+    | "daily"
+    | "monthly"
+    | string
+    | null;
 };
 
 type Room = {
@@ -50,6 +60,8 @@ type Room = {
   description_vi: string | null;
   description_en: string | null;
   base_price: number | null;
+  base_price_daily: number | null;
+  base_price_monthly: number | null;
   quantity: number | null;
   size: number | null;
   max_guests: number | null;
@@ -89,7 +101,10 @@ type RoomAmenity = {
   icon: string | null;
   sort_order: number;
   status: "active" | "inactive";
-  amenity_catalog?: AmenityCatalog | AmenityCatalog[] | null;
+  amenity_catalog?:
+    | AmenityCatalog
+    | AmenityCatalog[]
+    | null;
 };
 
 type ErrorCode =
@@ -114,11 +129,15 @@ function formatPrice(
   language: Language
 ) {
   if (price === null) {
-    return language === "vi" ? "Liên hệ" : "Contact";
+    return language === "vi"
+      ? "Liên hệ"
+      : "Contact";
   }
 
   return new Intl.NumberFormat(
-    language === "vi" ? "vi-VN" : "en-US",
+    language === "vi"
+      ? "vi-VN"
+      : "en-US",
     {
       style: "currency",
       currency: "VND",
@@ -130,10 +149,19 @@ function formatPrice(
 function getCatalog(
   amenity: RoomAmenity
 ): AmenityCatalog | null {
-  if (!amenity.amenity_catalog) return null;
+  if (!amenity.amenity_catalog) {
+    return null;
+  }
 
-  if (Array.isArray(amenity.amenity_catalog)) {
-    return amenity.amenity_catalog[0] ?? null;
+  if (
+    Array.isArray(
+      amenity.amenity_catalog
+    )
+  ) {
+    return (
+      amenity.amenity_catalog[0] ??
+      null
+    );
   }
 
   return amenity.amenity_catalog;
@@ -371,7 +399,10 @@ export default function RoomDetailClient({
 
   const [language, setLanguage] =
     useState<Language>(() => {
-      if (typeof window === "undefined") {
+      if (
+        typeof window ===
+        "undefined"
+      ) {
         return "vi";
       }
 
@@ -380,7 +411,8 @@ export default function RoomDetailClient({
           "huyen-language"
         );
 
-      return saved === "en" || saved === "vi"
+      return saved === "en" ||
+        saved === "vi"
         ? saved
         : "vi";
     });
@@ -396,6 +428,12 @@ export default function RoomDetailClient({
 
   const [checkOut, setCheckOut] =
     useState("");
+
+  const [stayType, setStayType] =
+    useState<"day" | "month">("day");
+
+  const [months, setMonths] =
+    useState(1);
 
   const [adults, setAdults] =
     useState(1);
@@ -416,7 +454,9 @@ export default function RoomDetailClient({
     useRef<HTMLInputElement>(null);
 
   const today =
-    new Date().toISOString().split("T")[0];
+    new Date()
+      .toISOString()
+      .split("T")[0];
 
   // --- Language ---
 
@@ -454,7 +494,8 @@ export default function RoomDetailClient({
   // --- Derived Data ---
 
   const images =
-    media.length === 0 && hotel?.image
+    media.length === 0 &&
+    hotel?.image
       ? [
           {
             id: 0,
@@ -503,8 +544,14 @@ export default function RoomDetailClient({
         )
       : 1;
 
+  const isMonthly = stayType === "month";
+
   const nights = (() => {
-    if (!checkIn || !checkOut) {
+    if (
+      stayType !== "day" ||
+      !checkIn ||
+      !checkOut
+    ) {
       return 0;
     }
 
@@ -530,11 +577,22 @@ export default function RoomDetailClient({
     );
   })();
 
+  const billingUnits =
+    stayType === "month"
+      ? Math.max(1, months)
+      : nights;
+
+  const selectedPrice =
+    stayType === "month"
+      ? room?.base_price_monthly ?? null
+      : room?.base_price_daily ?? room?.base_price ?? null;
+
   const totalPrice =
-    room?.base_price &&
-    nights > 0
-      ? room.base_price *
-        nights *
+    selectedPrice !== null &&
+    selectedPrice !== undefined &&
+    billingUnits > 0
+      ? selectedPrice *
+        billingUnits *
         effectiveRoomQuantity
       : 0;
 
@@ -549,7 +607,9 @@ export default function RoomDetailClient({
   const openDatePicker =
     useCallback(
       (
-        inputRef: React.RefObject<HTMLInputElement | null>
+        inputRef: React.RefObject<
+          HTMLInputElement | null
+        >
       ) => {
         const input =
           inputRef.current;
@@ -558,7 +618,9 @@ export default function RoomDetailClient({
 
         input.focus();
 
-        if ("showPicker" in input) {
+        if (
+          "showPicker" in input
+        ) {
           try {
             (
               input as HTMLInputElement & {
@@ -573,31 +635,37 @@ export default function RoomDetailClient({
 
   const handlePreviousImage =
     useCallback(() => {
-      setSelectedImage((curr) =>
-        images.length <= 1
-          ? curr
-          : curr === 0
-          ? images.length - 1
-          : curr - 1
+      setSelectedImage(
+        (curr) =>
+          images.length <= 1
+            ? curr
+            : curr === 0
+            ? images.length - 1
+            : curr - 1
       );
     }, [images.length]);
 
   const handleNextImage =
     useCallback(() => {
-      setSelectedImage((curr) =>
-        images.length <= 1
-          ? curr
-          : curr ===
-            images.length - 1
-          ? 0
-          : curr + 1
+      setSelectedImage(
+        (curr) =>
+          images.length <= 1
+            ? curr
+            : curr ===
+              images.length - 1
+            ? 0
+            : curr + 1
       );
     }, [images.length]);
 
   const handleDecreaseRooms =
     useCallback(() => {
-      setRoomQuantity((curr) =>
-        Math.max(1, curr - 1)
+      setRoomQuantity(
+        (curr) =>
+          Math.max(
+            1,
+            curr - 1
+          )
       );
 
       setBookingError("");
@@ -605,11 +673,12 @@ export default function RoomDetailClient({
 
   const handleIncreaseRooms =
     useCallback(() => {
-      setRoomQuantity((curr) =>
-        Math.min(
-          availableRooms,
-          curr + 1
-        )
+      setRoomQuantity(
+        (curr) =>
+          Math.min(
+            availableRooms,
+            curr + 1
+          )
       );
 
       setBookingError("");
@@ -618,7 +687,10 @@ export default function RoomDetailClient({
   const handleDecreaseAdults =
     useCallback(() => {
       setAdults((curr) =>
-        Math.max(1, curr - 1)
+        Math.max(
+          1,
+          curr - 1
+        )
       );
 
       setBookingError("");
@@ -639,7 +711,10 @@ export default function RoomDetailClient({
   const handleDecreaseChildren =
     useCallback(() => {
       setChildren((curr) =>
-        Math.max(0, curr - 1)
+        Math.max(
+          0,
+          curr - 1
+        )
       );
 
       setBookingError("");
@@ -655,7 +730,10 @@ export default function RoomDetailClient({
       );
 
       setBookingError("");
-    }, [maxGuests, adults]);
+    }, [
+      maxGuests,
+      adults,
+    ]);
 
   const handleBooking =
     useCallback(() => {
@@ -675,32 +753,63 @@ export default function RoomDetailClient({
         return;
       }
 
-      if (!checkIn || !checkOut) {
-        setBookingError(
-          language === "vi"
-            ? "Vui lòng chọn ngày nhận và trả phòng."
-            : "Please select check-in and check-out dates."
+      if (stayType === "day") {
+        if (
+          !checkIn ||
+          !checkOut
+        ) {
+          setBookingError(
+            language === "vi"
+              ? "Vui lòng chọn ngày nhận và trả phòng."
+              : "Please select check-in and check-out dates."
+          );
+
+          return;
+        }
+
+        const start = new Date(
+          `${checkIn}T00:00:00`
         );
 
-        return;
-      }
-
-      const start = new Date(
-        `${checkIn}T00:00:00`
-      );
-
-      const end = new Date(
-        `${checkOut}T00:00:00`
-      );
-
-      if (end <= start) {
-        setBookingError(
-          language === "vi"
-            ? "Ngày trả phòng phải sau ngày nhận phòng."
-            : "Check-out must be after check-in."
+        const end = new Date(
+          `${checkOut}T00:00:00`
         );
 
-        return;
+        if (end <= start) {
+          setBookingError(
+            language === "vi"
+              ? "Ngày trả phòng phải sau ngày nhận phòng."
+              : "Check-out must be after check-in."
+          );
+
+          return;
+        }
+      } else {
+        if (
+          !Number.isInteger(months) ||
+          months < 1
+        ) {
+          setBookingError(
+            language === "vi"
+              ? "Vui lòng chọn số tháng hợp lệ."
+              : "Please select a valid number of months."
+          );
+
+          return;
+        }
+
+        if (
+          room.base_price_monthly === null ||
+          room.base_price_monthly === undefined
+        ) {
+          setBookingError(
+            language === "vi"
+              ? "Phòng này chưa được thiết lập giá theo tháng."
+              : "This room does not have a monthly price yet."
+          );
+
+          return;
+        }
       }
 
       if (
@@ -716,7 +825,10 @@ export default function RoomDetailClient({
         return;
       }
 
-      if (totalGuests > maxGuests) {
+      if (
+        totalGuests >
+        maxGuests
+      ) {
         setBookingError(
           language === "vi"
             ? `Tổng số khách không được vượt quá ${maxGuests} người.`
@@ -744,14 +856,26 @@ export default function RoomDetailClient({
       );
 
       params.set(
-        "checkIn",
-        checkIn
+        "stayType",
+        stayType
       );
 
-      params.set(
-        "checkOut",
-        checkOut
-      );
+      if (stayType === "day") {
+        params.set(
+          "checkIn",
+          checkIn
+        );
+
+        params.set(
+          "checkOut",
+          checkOut
+        );
+      } else {
+        params.set(
+          "months",
+          String(months)
+        );
+      }
 
       params.set(
         "adults",
@@ -775,8 +899,10 @@ export default function RoomDetailClient({
       room,
       hotel,
       availableRooms,
+      stayType,
       checkIn,
       checkOut,
+      months,
       effectiveRoomQuantity,
       totalGuests,
       maxGuests,
@@ -876,7 +1002,9 @@ export default function RoomDetailClient({
             {currentImage ? (
               <>
                 <Image
-                  src={currentImage.public_url}
+                  src={
+                    currentImage.public_url
+                  }
                   alt={
                     language === "vi"
                       ? currentImage.alt_vi ||
@@ -936,7 +1064,10 @@ export default function RoomDetailClient({
           {images.length > 1 && (
             <div className="flex gap-2 overflow-x-auto bg-white p-3">
               {images.map(
-                (image, index) => (
+                (
+                  image,
+                  index
+                ) => (
                   <button
                     key={image.id}
                     type="button"
@@ -946,15 +1077,19 @@ export default function RoomDetailClient({
                       )
                     }
                     className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                      selectedImage === index
+                      selectedImage ===
+                      index
                         ? "border-slate-900"
                         : "border-transparent opacity-70 hover:opacity-100"
                     }`}
                   >
                     <Image
-                      src={image.public_url}
+                      src={
+                        image.public_url
+                      }
                       alt={
-                        language === "vi"
+                        language ===
+                        "vi"
                           ? image.alt_vi ||
                             room.name_vi
                           : image.alt_en ||
@@ -982,13 +1117,15 @@ export default function RoomDetailClient({
                 href={`/khach-san/${hotel.slug}`}
                 className="text-sm font-semibold text-slate-500 transition hover:text-slate-900"
               >
-                {language === "vi"
+                {language ===
+                "vi"
                   ? hotel.name_vi
                   : hotel.name_en}
               </Link>
 
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-                {language === "vi"
+                {language ===
+                "vi"
                   ? room.name_vi
                   : room.name_en}
               </h1>
@@ -996,7 +1133,8 @@ export default function RoomDetailClient({
               {(hotel.address_vi ||
                 hotel.address_en) && (
                 <p className="mt-3 text-sm leading-6 text-slate-500">
-                  {language === "vi"
+                  {language ===
+                  "vi"
                     ? hotel.address_vi
                     : hotel.address_en}
                 </p>
@@ -1006,10 +1144,12 @@ export default function RoomDetailClient({
             {/* SPECS */}
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {room.size !== null && (
+              {room.size !==
+                null && (
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? "Diện tích"
                       : "Size"}
                   </p>
@@ -1024,14 +1164,18 @@ export default function RoomDetailClient({
                 null && (
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? "Sức chứa"
                       : "Guests"}
                   </p>
 
                   <p className="mt-2 font-semibold text-slate-900">
-                    {room.max_guests}{" "}
-                    {language === "vi"
+                    {
+                      room.max_guests
+                    }{" "}
+                    {language ===
+                    "vi"
                       ? "khách"
                       : "guests"}
                   </p>
@@ -1042,13 +1186,15 @@ export default function RoomDetailClient({
                 room.beds_en) && (
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? "Giường"
                       : "Bed"}
                   </p>
 
                   <p className="mt-2 font-semibold text-slate-900">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? room.beds_vi
                       : room.beds_en}
                   </p>
@@ -1057,23 +1203,28 @@ export default function RoomDetailClient({
 
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  {language === "vi"
+                  {language ===
+                  "vi"
                     ? "Phòng còn lại"
                     : "Rooms left"}
                 </p>
 
                 <p
                   className={`mt-2 font-semibold ${
-                    availableRooms > 0
+                    availableRooms >
+                    0
                       ? "text-emerald-600"
                       : "text-red-600"
                   }`}
                 >
-                  {availableRooms > 0
-                    ? language === "vi"
+                  {availableRooms >
+                  0
+                    ? language ===
+                      "vi"
                       ? `Còn ${availableRooms} phòng`
                       : `${availableRooms} left`
-                    : language === "vi"
+                    : language ===
+                      "vi"
                     ? "Hết phòng"
                     : "Sold out"}
                 </p>
@@ -1086,13 +1237,15 @@ export default function RoomDetailClient({
               room.description_en) && (
               <section className="mt-12">
                 <h2 className="text-2xl font-bold text-slate-950">
-                  {language === "vi"
+                  {language ===
+                  "vi"
                     ? "Thông tin phòng"
                     : "Room information"}
                 </h2>
 
                 <div className="mt-4 whitespace-pre-line text-[15px] leading-8 text-slate-600">
-                  {language === "vi"
+                  {language ===
+                  "vi"
                     ? room.description_vi
                     : room.description_en}
                 </div>
@@ -1103,14 +1256,16 @@ export default function RoomDetailClient({
 
             <section className="mt-12">
               <h2 className="text-2xl font-bold text-slate-950">
-                {language === "vi"
+                {language ===
+                "vi"
                   ? "Khu vực xung quanh"
                   : "Around the area"}
               </h2>
 
               <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <p className="text-[15px] leading-7 text-slate-600">
-                  {language === "vi"
+                  {language ===
+                  "vi"
                     ? `Khách sạn nằm tại ${
                         hotel.address_vi ||
                         "khu vực trung tâm"
@@ -1127,7 +1282,8 @@ export default function RoomDetailClient({
 
             <section className="mt-12">
               <h2 className="text-2xl font-bold text-slate-950">
-                {language === "vi"
+                {language ===
+                "vi"
                   ? "Tiện nghi phòng"
                   : "Room amenities"}
               </h2>
@@ -1136,9 +1292,13 @@ export default function RoomDetailClient({
               0 ? (
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
                   {activeAmenities.map(
-                    (amenity) => (
+                    (
+                      amenity
+                    ) => (
                       <div
-                        key={amenity.id}
+                        key={
+                          amenity.id
+                        }
                         className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm"
                       >
                         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
@@ -1150,7 +1310,8 @@ export default function RoomDetailClient({
                         </span>
 
                         <span className="text-sm font-medium text-slate-800">
-                          {language === "vi"
+                          {language ===
+                          "vi"
                             ? amenity.nameVi
                             : amenity.nameEn}
                         </span>
@@ -1160,7 +1321,8 @@ export default function RoomDetailClient({
                 </div>
               ) : (
                 <p className="mt-4 text-sm text-slate-500">
-                  {language === "vi"
+                  {language ===
+                  "vi"
                     ? "Chưa có thông tin tiện nghi."
                     : "No amenity information available."}
                 </p>
@@ -1177,20 +1339,32 @@ export default function RoomDetailClient({
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    {language === "vi"
+                    {isMonthly
+                      ? language ===
+                        "vi"
+                        ? "Giá thuê"
+                        : "Monthly rent"
+                      : language ===
+                        "vi"
                       ? "Giá phòng"
                       : "Room price"}
                   </p>
 
                   <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
                     {formatPrice(
-                      room.base_price,
+                      selectedPrice,
                       language
                     )}
                   </p>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    {language === "vi"
+                    {isMonthly
+                      ? language ===
+                        "vi"
+                        ? "mỗi tháng"
+                        : "per month"
+                      : language ===
+                        "vi"
                       ? "mỗi đêm"
                       : "per night"}
                   </p>
@@ -1198,16 +1372,20 @@ export default function RoomDetailClient({
 
                 <div
                   className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                    availableRooms > 0
+                    availableRooms >
+                    0
                       ? "bg-emerald-50 text-emerald-700"
                       : "bg-red-50 text-red-600"
                   }`}
                 >
-                  {availableRooms > 0
-                    ? language === "vi"
+                  {availableRooms >
+                  0
+                    ? language ===
+                      "vi"
                       ? `Còn ${availableRooms} phòng`
                       : `${availableRooms} left`
-                    : language === "vi"
+                    : language ===
+                      "vi"
                     ? "Hết phòng"
                     : "Sold out"}
                 </div>
@@ -1215,12 +1393,63 @@ export default function RoomDetailClient({
 
               <div className="my-6 h-px bg-slate-200" />
 
-              {/* DATES */}
+              {/* STAY TYPE */}
 
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">
+                  {language === "vi"
+                    ? "Hình thức ở"
+                    : "Stay type"}
+                </label>
+
+                <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStayType("day");
+                      setBookingError("");
+                    }}
+                    className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+                      stayType === "day"
+                        ? "bg-white text-slate-950 shadow-sm"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    {language === "vi"
+                      ? "Ngày"
+                      : "Daily"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStayType("month");
+                      setCheckIn("");
+                      setCheckOut("");
+                      setBookingError("");
+                    }}
+                    className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+                      stayType === "month"
+                        ? "bg-white text-slate-950 shadow-sm"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    {language === "vi"
+                      ? "Tháng"
+                      : "Monthly"}
+                  </button>
+                </div>
+              </div>
+
+              {stayType === "day" ? (
+                <>
+                  {/* DATES */}
+
+                  <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-1">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-800">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? "Nhận phòng"
                       : "Check-in"}
                   </label>
@@ -1234,24 +1463,36 @@ export default function RoomDetailClient({
                     className="relative flex h-12 w-full cursor-pointer items-center overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-400 focus-within:border-slate-500 focus-within:ring-2 focus-within:ring-slate-100"
                   >
                     <input
-                      ref={checkInRef}
+                      ref={
+                        checkInRef
+                      }
                       type="date"
                       min={today}
                       value={checkIn}
-                      onChange={(e) => {
+                      onChange={(
+                        e
+                      ) => {
                         const val =
-                          e.target.value;
+                          e.target
+                            .value;
 
-                        setCheckIn(val);
+                        setCheckIn(
+                          val
+                        );
 
                         if (
                           checkOut &&
-                          val >= checkOut
+                          val >=
+                            checkOut
                         ) {
-                          setCheckOut("");
+                          setCheckOut(
+                            ""
+                          );
                         }
 
-                        setBookingError("");
+                        setBookingError(
+                          ""
+                        );
                       }}
                       className="h-full w-full cursor-pointer border-0 bg-transparent px-4 text-sm text-slate-900 outline-none"
                     />
@@ -1260,7 +1501,8 @@ export default function RoomDetailClient({
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-800">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? "Trả phòng"
                       : "Check-out"}
                   </label>
@@ -1274,31 +1516,98 @@ export default function RoomDetailClient({
                     className="relative flex h-12 w-full cursor-pointer items-center overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-400 focus-within:border-slate-500 focus-within:ring-2 focus-within:ring-slate-100"
                   >
                     <input
-                      ref={checkOutRef}
+                      ref={
+                        checkOutRef
+                      }
                       type="date"
                       min={
                         checkIn ||
                         today
                       }
                       value={checkOut}
-                      onChange={(e) => {
+                      onChange={(
+                        e
+                      ) => {
                         setCheckOut(
-                          e.target.value
+                          e.target
+                            .value
                         );
-                        setBookingError("");
+                        setBookingError(
+                          ""
+                        );
                       }}
                       className="h-full w-full cursor-pointer border-0 bg-transparent px-4 text-sm text-slate-900 outline-none"
                     />
                   </div>
                 </div>
-              </div>
+                  </div>
+                </>
+              ) : (
+                <div className="mt-5">
+                  <label className="mb-2 block text-sm font-semibold text-slate-800">
+                    {language === "vi"
+                      ? "Số tháng"
+                      : "Number of months"}
+                  </label>
+
+                  <div className="flex h-12 items-center justify-between rounded-xl border border-slate-200 bg-white px-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMonths((curr) =>
+                          Math.max(1, curr - 1)
+                        );
+                        setBookingError("");
+                      }}
+                      disabled={months <= 1}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+
+                    <span className="text-sm font-semibold text-slate-900">
+                      {months}{" "}
+                      {language === "vi"
+                        ? months === 1
+                          ? "tháng"
+                          : "tháng"
+                        : months === 1
+                          ? "month"
+                          : "months"}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMonths((curr) =>
+                          Math.min(60, curr + 1)
+                        );
+                        setBookingError("");
+                      }}
+                      disabled={months >= 60}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {room.base_price_monthly === null && (
+                    <p className="mt-2 text-xs leading-5 text-amber-600">
+                      {language === "vi"
+                        ? "Phòng này chưa có giá theo tháng."
+                        : "This room does not have a monthly price yet."}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* GUESTS */}
 
               <div className="mt-5 grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-800">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? "Người lớn"
                       : "Adults"}
                   </label>
@@ -1313,7 +1622,8 @@ export default function RoomDetailClient({
                         adults <= 1
                       }
                       aria-label={
-                        language === "vi"
+                        language ===
+                        "vi"
                           ? "Giảm người lớn"
                           : "Decrease adults"
                       }
@@ -1336,7 +1646,8 @@ export default function RoomDetailClient({
                         maxGuests
                       }
                       aria-label={
-                        language === "vi"
+                        language ===
+                        "vi"
                           ? "Tăng người lớn"
                           : "Increase adults"
                       }
@@ -1349,7 +1660,8 @@ export default function RoomDetailClient({
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-800">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? "Trẻ em"
                       : "Children"}
                   </label>
@@ -1361,10 +1673,12 @@ export default function RoomDetailClient({
                         handleDecreaseChildren
                       }
                       disabled={
-                        children <= 0
+                        children <=
+                        0
                       }
                       aria-label={
-                        language === "vi"
+                        language ===
+                        "vi"
                           ? "Giảm trẻ em"
                           : "Decrease children"
                       }
@@ -1388,7 +1702,8 @@ export default function RoomDetailClient({
                         maxGuests
                       }
                       aria-label={
-                        language === "vi"
+                        language ===
+                        "vi"
                           ? "Tăng trẻ em"
                           : "Increase children"
                       }
@@ -1405,13 +1720,15 @@ export default function RoomDetailClient({
               <div className="mt-5">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-800">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? "Số phòng"
                       : "Rooms"}
                   </span>
 
                   <span className="text-xs text-slate-500">
-                    {language === "vi"
+                    {language ===
+                    "vi"
                       ? `Tối đa ${availableRooms}`
                       : `Max ${availableRooms}`}
                   </span>
@@ -1433,7 +1750,9 @@ export default function RoomDetailClient({
                   </button>
 
                   <span className="font-semibold text-slate-900">
-                    {effectiveRoomQuantity}
+                    {
+                      effectiveRoomQuantity
+                    }
                   </span>
 
                   <button
@@ -1456,26 +1775,39 @@ export default function RoomDetailClient({
 
               {/* TOTAL */}
 
-              {nights > 0 &&
-                room.base_price !==
+              {billingUnits >
+                0 &&
+                selectedPrice !==
                   null && (
                   <div className="mt-6 rounded-2xl bg-slate-50 p-4">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-500">
                         {formatPrice(
-                          room.base_price,
+                          selectedPrice,
                           language
                         )}{" "}
-                        × {nights}{" "}
-                        {language === "vi"
+                        ×{" "}
+                        {
+                          billingUnits
+                        }{" "}
+                        {isMonthly
+                          ? language ===
+                            "vi"
+                            ? billingUnits ===
+                              1
+                              ? "tháng"
+                              : "tháng"
+                            : "months"
+                          : language ===
+                            "vi"
                           ? "đêm"
                           : "nights"}
                       </span>
 
                       <span className="font-medium text-slate-800">
                         {formatPrice(
-                          room.base_price *
-                            nights,
+                          selectedPrice *
+                            billingUnits,
                           language
                         )}
                       </span>
@@ -1489,7 +1821,8 @@ export default function RoomDetailClient({
                           {
                             effectiveRoomQuantity
                           }{" "}
-                          {language === "vi"
+                          {language ===
+                          "vi"
                             ? "phòng"
                             : "rooms"}
                         </span>
@@ -1507,7 +1840,8 @@ export default function RoomDetailClient({
 
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-slate-900">
-                        {language === "vi"
+                        {language ===
+                        "vi"
                           ? "Tổng cộng"
                           : "Total"}
                       </span>
@@ -1537,21 +1871,27 @@ export default function RoomDetailClient({
                   availableRooms <=
                     0 ||
                   totalGuests >
-                    maxGuests
+                    maxGuests ||
+                  (stayType === "month" &&
+                    room.base_price_monthly === null)
                 }
                 className="mt-5 flex w-full items-center justify-center rounded-xl bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                {availableRooms <= 0
-                  ? language === "vi"
+                {availableRooms <=
+                0
+                  ? language ===
+                    "vi"
                     ? "Hết phòng"
                     : "Sold out"
-                  : language === "vi"
+                  : language ===
+                    "vi"
                   ? "Đặt phòng"
                   : "Book now"}
               </button>
 
               <p className="mt-4 text-center text-xs leading-5 text-slate-400">
-                {language === "vi"
+                {language ===
+                "vi"
                   ? "Bạn sẽ được chuyển đến trang xác nhận đặt phòng."
                   : "You will be redirected to the booking confirmation page."}
               </p>

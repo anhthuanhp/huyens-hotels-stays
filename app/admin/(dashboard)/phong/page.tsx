@@ -3,14 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
-type BusinessModel = "daily" | "monthly";
-
 type Hotel = {
   id: number;
   slug: string;
   name_vi: string;
   name_en: string;
-  business_model: BusinessModel;
 };
 
 type Room = {
@@ -26,7 +23,8 @@ type Room = {
   max_guests: number;
   beds_vi: string | null;
   beds_en: string | null;
-  base_price: number;
+  base_price_daily: number;
+  base_price_monthly: number;
   quantity: number;
   amenities_vi: string[];
   amenities_en: string[];
@@ -45,7 +43,8 @@ type RoomForm = {
   max_guests: string;
   beds_vi: string;
   beds_en: string;
-  base_price: string;
+  base_price_daily: string;
+  base_price_monthly: string;
   quantity: string;
   amenities_vi: string;
   amenities_en: string;
@@ -64,7 +63,8 @@ const emptyForm: RoomForm = {
   max_guests: "2",
   beds_vi: "",
   beds_en: "",
-  base_price: "0",
+  base_price_daily: "0",
+  base_price_monthly: "0",
   quantity: "1",
   amenities_vi: "",
   amenities_en: "",
@@ -93,9 +93,7 @@ export default function AdminRoomsPage() {
     const [hotelsResult, roomsResult] = await Promise.all([
       supabase
         .from("hotels")
-        .select(
-          "id, slug, name_vi, name_en, business_model"
-        )
+        .select("id, slug, name_vi, name_en")
         .order("name_vi", {
           ascending: true,
         }),
@@ -117,15 +115,7 @@ export default function AdminRoomsPage() {
         hotelsResult.error
       );
     } else {
-      const normalizedHotels = (
-        hotelsResult.data ?? []
-      ).map((hotel) => ({
-        ...(hotel as Hotel),
-        business_model:
-          (hotel.business_model as BusinessModel) || "daily",
-      }));
-
-      setHotels(normalizedHotels);
+      setHotels((hotelsResult.data ?? []) as Hotel[]);
     }
 
     if (roomsResult.error) {
@@ -134,9 +124,7 @@ export default function AdminRoomsPage() {
         roomsResult.error
       );
     } else {
-      setRooms(
-        (roomsResult.data ?? []) as Room[]
-      );
+      setRooms((roomsResult.data ?? []) as Room[]);
     }
 
     setLoading(false);
@@ -162,15 +150,9 @@ export default function AdminRoomsPage() {
       }
 
       return (
-        room.name_vi
-          .toLowerCase()
-          .includes(keyword) ||
-        room.name_en
-          .toLowerCase()
-          .includes(keyword) ||
-        room.slug
-          .toLowerCase()
-          .includes(keyword)
+        room.name_vi.toLowerCase().includes(keyword) ||
+        room.name_en.toLowerCase().includes(keyword) ||
+        room.slug.toLowerCase().includes(keyword)
       );
     });
   }, [rooms, selectedHotel, search]);
@@ -179,36 +161,6 @@ export default function AdminRoomsPage() {
     return hotels.find(
       (hotel) => hotel.id === hotelId
     );
-  };
-
-  const getBusinessModel = (
-    hotelId: number
-  ): BusinessModel => {
-    return getHotel(hotelId)?.business_model || "daily";
-  };
-
-  const getBusinessModelLabel = (
-    hotelId: number
-  ) => {
-    return getBusinessModel(hotelId) === "monthly"
-      ? "Theo tháng"
-      : "Theo ngày";
-  };
-
-  const getPriceUnit = (
-    hotelId: number
-  ) => {
-    return getBusinessModel(hotelId) === "monthly"
-      ? "VNĐ / tháng"
-      : "VNĐ / đêm";
-  };
-
-  const getPriceShortLabel = (
-    hotelId: number
-  ) => {
-    return getBusinessModel(hotelId) === "monthly"
-      ? "Giá/tháng"
-      : "Giá/đêm";
   };
 
   const openCreate = () => {
@@ -235,26 +187,23 @@ export default function AdminRoomsPage() {
       slug: room.slug,
       name_vi: room.name_vi,
       name_en: room.name_en,
-      description_vi:
-        room.description_vi ?? "",
-      description_en:
-        room.description_en ?? "",
+      description_vi: room.description_vi ?? "",
+      description_en: room.description_en ?? "",
       image: room.image ?? "",
       size:
         room.size !== null
           ? String(room.size)
           : "",
-      max_guests: String(
-        room.max_guests
-      ),
+      max_guests: String(room.max_guests),
       beds_vi: room.beds_vi ?? "",
       beds_en: room.beds_en ?? "",
-      base_price: String(
-        room.base_price
+      base_price_daily: String(
+        room.base_price_daily ?? 0
       ),
-      quantity: String(
-        room.quantity
+      base_price_monthly: String(
+        room.base_price_monthly ?? 0
       ),
+      quantity: String(room.quantity),
       amenities_vi:
         Array.isArray(room.amenities_vi)
           ? room.amenities_vi.join(", ")
@@ -325,16 +274,15 @@ export default function AdminRoomsPage() {
       return;
     }
 
-    const quantity = Number(
-      form.quantity
+    const quantity = Number(form.quantity);
+    const maxGuests = Number(form.max_guests);
+
+    const basePriceDaily = Number(
+      form.base_price_daily
     );
 
-    const maxGuests = Number(
-      form.max_guests
-    );
-
-    const basePrice = Number(
-      form.base_price
+    const basePriceMonthly = Number(
+      form.base_price_monthly
     );
 
     const size =
@@ -363,19 +311,28 @@ export default function AdminRoomsPage() {
     }
 
     if (
-      !Number.isFinite(basePrice) ||
-      basePrice < 0
+      !Number.isFinite(basePriceDaily) ||
+      basePriceDaily < 0
     ) {
       window.alert(
-        "Giá phòng không hợp lệ."
+        "Giá ngày không hợp lệ."
+      );
+      return;
+    }
+
+    if (
+      !Number.isFinite(basePriceMonthly) ||
+      basePriceMonthly < 0
+    ) {
+      window.alert(
+        "Giá tháng không hợp lệ."
       );
       return;
     }
 
     if (
       size !== null &&
-      (!Number.isFinite(size) ||
-        size <= 0)
+      (!Number.isFinite(size) || size <= 0)
     ) {
       window.alert(
         "Diện tích phòng không hợp lệ."
@@ -394,20 +351,22 @@ export default function AdminRoomsPage() {
         form.description_vi.trim() || null,
       description_en:
         form.description_en.trim() || null,
-      image:
-        form.image.trim() || null,
+      image: form.image.trim() || null,
       size,
       max_guests: maxGuests,
-      beds_vi:
-        form.beds_vi.trim() || null,
-      beds_en:
-        form.beds_en.trim() || null,
-      base_price: basePrice,
+      beds_vi: form.beds_vi.trim() || null,
+      beds_en: form.beds_en.trim() || null,
+
+      base_price_daily: basePriceDaily,
+      base_price_monthly: basePriceMonthly,
+
       quantity,
+
       amenities_vi:
         parseAmenities(form.amenities_vi),
       amenities_en:
         parseAmenities(form.amenities_en),
+
       status: form.status,
     };
 
@@ -523,33 +482,13 @@ export default function AdminRoomsPage() {
     );
   };
 
-  const formatMoney = (
-    value: number
-  ) => {
+  const formatMoney = (value: number) => {
     return (
       new Intl.NumberFormat("vi-VN").format(
         value
       ) + " đ"
     );
   };
-
-  const selectedFormHotel = form.hotel_id
-    ? getHotel(Number(form.hotel_id))
-    : null;
-
-  const selectedFormBusinessModel =
-    selectedFormHotel?.business_model ||
-    "daily";
-
-  const selectedFormPriceUnit =
-    selectedFormBusinessModel === "monthly"
-      ? "VNĐ / tháng"
-      : "VNĐ / đêm";
-
-  const selectedFormPriceLabel =
-    selectedFormBusinessModel === "monthly"
-      ? "Giá/tháng"
-      : "Giá/đêm";
 
   return (
     <div>
@@ -560,7 +499,7 @@ export default function AdminRoomsPage() {
           </h1>
 
           <p className="mt-1 text-sm text-slate-500">
-            Quản lý loại phòng, giá và số lượng phòng thực tế.
+            Quản lý loại phòng, giá ngày, giá tháng và số lượng phòng thực tế.
           </p>
         </div>
 
@@ -651,7 +590,7 @@ export default function AdminRoomsPage() {
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1250px] text-left text-sm">
+          <table className="w-full min-w-[1450px] text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
                 <th className="px-5 py-4">
@@ -671,7 +610,11 @@ export default function AdminRoomsPage() {
                 </th>
 
                 <th className="px-5 py-4">
-                  Giá
+                  Giá/ngày
+                </th>
+
+                <th className="px-5 py-4">
+                  Giá/tháng
                 </th>
 
                 <th className="px-5 py-4">
@@ -692,186 +635,158 @@ export default function AdminRoomsPage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-5 py-12 text-center text-slate-400"
                   >
                     Đang tải dữ liệu...
                   </td>
                 </tr>
-              ) : filteredRooms.length ===
-                0 ? (
+              ) : filteredRooms.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-5 py-12 text-center text-slate-400"
                   >
                     Chưa có loại phòng phù hợp.
                   </td>
                 </tr>
               ) : (
-                filteredRooms.map(
-                  (room) => {
-                    const businessModel =
-                      getBusinessModel(
-                        room.hotel_id
-                      );
-
-                    return (
-                      <tr
-                        key={room.id}
-                        className="hover:bg-slate-50"
-                      >
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                              {room.image ? (
-                                <img
-                                  src={
-                                    room.image
-                                  }
-                                  alt={
-                                    room.name_vi
-                                  }
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-full items-center justify-center text-xs text-slate-400">
-                                  No image
-                                </div>
-                              )}
+                filteredRooms.map((room) => (
+                  <tr
+                    key={room.id}
+                    className="hover:bg-slate-50"
+                  >
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                          {room.image ? (
+                            <img
+                              src={room.image}
+                              alt={room.name_vi}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                              No image
                             </div>
+                          )}
+                        </div>
 
-                            <div>
-                              <div className="font-semibold text-slate-900">
-                                {room.name_vi}
-                              </div>
-
-                              <div className="mt-1 text-xs text-slate-400">
-                                {room.name_en}
-                              </div>
-
-                              <div className="mt-1 text-[11px] text-slate-400">
-                                {room.slug}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <div className="text-slate-700">
-                            {getHotel(
-                              room.hotel_id
-                            )?.name_vi ?? "—"}
-                          </div>
-
-                          <div
-                            className={`mt-1 text-xs font-medium ${
-                              businessModel ===
-                              "monthly"
-                                ? "text-blue-600"
-                                : "text-emerald-600"
-                            }`}
-                          >
-                            {businessModel ===
-                            "monthly"
-                              ? "Theo tháng"
-                              : "Theo ngày"}
-                          </div>
-                        </td>
-
-                        <td className="px-5 py-4 text-slate-600">
-                          {room.size
-                            ? `${room.size} m²`
-                            : "—"}
-                        </td>
-
-                        <td className="px-5 py-4 text-slate-600">
-                          {room.max_guests} khách
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <div className="font-semibold text-slate-800">
-                            {formatMoney(
-                              Number(
-                                room.base_price
-                              )
-                            )}
+                        <div>
+                          <div className="font-semibold text-slate-900">
+                            {room.name_vi}
                           </div>
 
                           <div className="mt-1 text-xs text-slate-400">
-                            {businessModel ===
-                            "monthly"
-                              ? "VNĐ / tháng"
-                              : "VNĐ / đêm"}
+                            {room.name_en}
                           </div>
-                        </td>
 
-                        <td className="px-5 py-4">
-                          <span className="rounded-lg bg-slate-100 px-3 py-1.5 font-semibold text-slate-800">
-                            {room.quantity}
-                          </span>
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              toggleStatus(
-                                room
-                              )
-                            }
-                            className={`rounded-full px-3 py-1 text-xs font-medium ${
-                              room.status ===
-                              "active"
-                                ? "bg-emerald-50 text-emerald-700"
-                                : "bg-slate-100 text-slate-500"
-                            }`}
-                          >
-                            {room.status ===
-                            "active"
-                              ? "Đang bán"
-                              : "Ngừng bán"}
-                          </button>
-                        </td>
-
-                        <td className="px-5 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openEdit(
-                                  room
-                                )
-                              }
-                              className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
-                            >
-                              Sửa
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                deleteRoom(
-                                  room
-                                )
-                              }
-                              disabled={
-                                deleting ===
-                                room.id
-                              }
-                              className="rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-                            >
-                              {deleting ===
-                              room.id
-                                ? "Đang xóa..."
-                                : "Xóa"}
-                            </button>
+                          <div className="mt-1 text-[11px] text-slate-400">
+                            {room.slug}
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  }
-                )
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <div className="text-slate-700">
+                        {getHotel(room.hotel_id)
+                          ?.name_vi ?? "—"}
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-4 text-slate-600">
+                      {room.size
+                        ? `${room.size} m²`
+                        : "—"}
+                    </td>
+
+                    <td className="px-5 py-4 text-slate-600">
+                      {room.max_guests} khách
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <div className="font-semibold text-slate-800">
+                        {formatMoney(
+                          Number(
+                            room.base_price_daily || 0
+                          )
+                        )}
+                      </div>
+
+                      <div className="mt-1 text-xs text-slate-400">
+                        VNĐ / đêm
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <div className="font-semibold text-slate-800">
+                        {formatMoney(
+                          Number(
+                            room.base_price_monthly || 0
+                          )
+                        )}
+                      </div>
+
+                      <div className="mt-1 text-xs text-slate-400">
+                        VNĐ / tháng
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <span className="rounded-lg bg-slate-100 px-3 py-1.5 font-semibold text-slate-800">
+                        {room.quantity}
+                      </span>
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleStatus(room)
+                        }
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${
+                          room.status === "active"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        {room.status === "active"
+                          ? "Đang bán"
+                          : "Ngừng bán"}
+                      </button>
+                    </td>
+
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openEdit(room)
+                          }
+                          className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                        >
+                          Sửa
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            deleteRoom(room)
+                          }
+                          disabled={
+                            deleting === room.id
+                          }
+                          className="rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {deleting === room.id
+                            ? "Đang xóa..."
+                            : "Xóa"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -912,9 +827,7 @@ export default function AdminRoomsPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field label="Khách sạn">
                     <select
-                      value={
-                        form.hotel_id
-                      }
+                      value={form.hotel_id}
                       onChange={(event) =>
                         updateForm(
                           "hotel_id",
@@ -927,18 +840,16 @@ export default function AdminRoomsPage() {
                         Chọn khách sạn
                       </option>
 
-                      {hotels.map(
-                        (hotel) => (
-                          <option
-                            key={hotel.id}
-                            value={String(
-                              hotel.id
-                            )}
-                          >
-                            {hotel.name_vi}
-                          </option>
-                        )
-                      )}
+                      {hotels.map((hotel) => (
+                        <option
+                          key={hotel.id}
+                          value={String(
+                            hotel.id
+                          )}
+                        >
+                          {hotel.name_vi}
+                        </option>
+                      ))}
                     </select>
                   </Field>
 
@@ -1004,9 +915,7 @@ export default function AdminRoomsPage() {
                     <input
                       type="number"
                       min="1"
-                      value={
-                        form.max_guests
-                      }
+                      value={form.max_guests}
                       onChange={(event) =>
                         updateForm(
                           "max_guests",
@@ -1017,29 +926,47 @@ export default function AdminRoomsPage() {
                     />
                   </Field>
 
-                  <Field
-                    label={selectedFormPriceLabel}
-                  >
+                  <Field label="Giá ngày / đêm (VNĐ)">
                     <input
                       type="number"
                       min="0"
                       value={
-                        form.base_price
+                        form.base_price_daily
                       }
                       onChange={(event) =>
                         updateForm(
-                          "base_price",
+                          "base_price_daily",
                           event.target.value
                         )
                       }
+                      placeholder="500000"
                       className={inputClass}
                     />
 
-                    <div className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
-                      Đơn vị giá:{" "}
-                      <span className="font-semibold text-slate-700">
-                        {selectedFormPriceUnit}
-                      </span>
+                    <div className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                      Giá dùng khi khách đặt theo ngày.
+                    </div>
+                  </Field>
+
+                  <Field label="Giá tháng (VNĐ)">
+                    <input
+                      type="number"
+                      min="0"
+                      value={
+                        form.base_price_monthly
+                      }
+                      onChange={(event) =>
+                        updateForm(
+                          "base_price_monthly",
+                          event.target.value
+                        )
+                      }
+                      placeholder="8000000"
+                      className={inputClass}
+                    />
+
+                    <div className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                      Giá dùng khi khách thuê theo tháng.
                     </div>
                   </Field>
 
@@ -1047,9 +974,7 @@ export default function AdminRoomsPage() {
                     <input
                       type="number"
                       min="0"
-                      value={
-                        form.quantity
-                      }
+                      value={form.quantity}
                       onChange={(event) =>
                         updateForm(
                           "quantity",
@@ -1065,41 +990,48 @@ export default function AdminRoomsPage() {
                   </Field>
                 </div>
 
-                {form.hotel_id && (
-                  <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                      Cách tính giá của khách sạn
-                    </div>
-
-                    <div className="mt-1 flex flex-wrap items-center gap-3">
-                      <span
-                        className={`text-base font-semibold ${
-                          selectedFormBusinessModel ===
-                          "monthly"
-                            ? "text-blue-700"
-                            : "text-emerald-700"
-                        }`}
-                      >
-                        {selectedFormBusinessModel ===
-                        "monthly"
-                          ? "Theo tháng"
-                          : "Theo ngày"}
-                      </span>
-
-                      <span className="text-sm text-slate-500">
-                        •
-                      </span>
-
-                      <span className="text-sm font-medium text-slate-700">
-                        {selectedFormPriceUnit}
-                      </span>
-                    </div>
-
-                    <p className="mt-2 text-xs text-slate-400">
-                      Cách tính giá được lấy tự động từ khách sạn và không thiết lập riêng cho từng phòng.
-                    </p>
+                <div className="mt-5 rounded-xl border border-sky-100 bg-sky-50 p-4">
+                  <div className="text-sm font-semibold text-sky-900">
+                    Giá phòng
                   </div>
-                )}
+
+                  <p className="mt-1 text-xs leading-5 text-sky-700">
+                    Mỗi loại phòng có thể bán đồng thời theo ngày
+                    và theo tháng. Hai mức giá được lưu riêng cho từng phòng.
+                  </p>
+
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-lg bg-white p-3">
+                      <div className="text-xs text-slate-500">
+                        Giá ngày
+                      </div>
+
+                      <div className="mt-1 font-semibold text-emerald-700">
+                        {formatMoney(
+                          Number(
+                            form.base_price_daily || 0
+                          )
+                        )}{" "}
+                        / đêm
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg bg-white p-3">
+                      <div className="text-xs text-slate-500">
+                        Giá tháng
+                      </div>
+
+                      <div className="mt-1 font-semibold text-blue-700">
+                        {formatMoney(
+                          Number(
+                            form.base_price_monthly || 0
+                          )
+                        )}{" "}
+                        / tháng
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </section>
 
               <section>
@@ -1110,9 +1042,7 @@ export default function AdminRoomsPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field label="Giường tiếng Việt">
                     <input
-                      value={
-                        form.beds_vi
-                      }
+                      value={form.beds_vi}
                       onChange={(event) =>
                         updateForm(
                           "beds_vi",
@@ -1126,9 +1056,7 @@ export default function AdminRoomsPage() {
 
                   <Field label="Giường tiếng Anh">
                     <input
-                      value={
-                        form.beds_en
-                      }
+                      value={form.beds_en}
                       onChange={(event) =>
                         updateForm(
                           "beds_en",
@@ -1190,9 +1118,7 @@ export default function AdminRoomsPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field label="Tiện nghi tiếng Việt">
                     <textarea
-                      value={
-                        form.amenities_vi
-                      }
+                      value={form.amenities_vi}
                       onChange={(event) =>
                         updateForm(
                           "amenities_vi",
@@ -1211,9 +1137,7 @@ export default function AdminRoomsPage() {
 
                   <Field label="Tiện nghi tiếng Anh">
                     <textarea
-                      value={
-                        form.amenities_en
-                      }
+                      value={form.amenities_en}
                       onChange={(event) =>
                         updateForm(
                           "amenities_en",
@@ -1254,9 +1178,7 @@ export default function AdminRoomsPage() {
 
                   <Field label="Trạng thái">
                     <select
-                      value={
-                        form.status
-                      }
+                      value={form.status}
                       onChange={(event) =>
                         updateForm(
                           "status",

@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
 type HotelStatus = "active" | "inactive";
@@ -100,6 +99,15 @@ type OtaForm = {
   sort_order: string;
 };
 
+type OtaPlatformForm = {
+  name: string;
+  slug: string;
+  website: string;
+  status: OtaStatus;
+  sort_order: string;
+  logo: string | null;
+};
+
 const EMPTY_FORM: HotelForm = {
   slug: "",
   name_vi: "",
@@ -132,6 +140,15 @@ const EMPTY_OTA_FORM: OtaForm = {
   sort_order: "0",
 };
 
+const EMPTY_OTA_PLATFORM_FORM: OtaPlatformForm = {
+  name: "",
+  slug: "",
+  website: "",
+  status: "active",
+  sort_order: "0",
+  logo: null,
+};
+
 export default function KhachSanPage() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,6 +167,38 @@ export default function KhachSanPage() {
   const [savingOta, setSavingOta] = useState(false);
   const [editingOtaId, setEditingOtaId] = useState<number | null>(null);
   const [otaForm, setOtaForm] = useState<OtaForm>(EMPTY_OTA_FORM);
+
+  const [
+    showOtaPlatformModal,
+    setShowOtaPlatformModal,
+  ] = useState(false);
+
+  const [
+    editingOtaPlatformId,
+    setEditingOtaPlatformId,
+  ] = useState<number | null>(null);
+
+  const [
+    otaPlatformForm,
+    setOtaPlatformForm,
+  ] = useState<OtaPlatformForm>(EMPTY_OTA_PLATFORM_FORM);
+
+  const [
+    otaPlatformFile,
+    setOtaPlatformFile,
+  ] = useState<File | null>(null);
+
+  const [
+    otaPlatformPreview,
+    setOtaPlatformPreview,
+  ] = useState<string | null>(null);
+
+  const [
+    savingOtaPlatform,
+    setSavingOtaPlatform,
+  ] = useState(false);
+
+  const otaLogoInputRef = useRef<HTMLInputElement | null>(null);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -195,7 +244,6 @@ export default function KhachSanPage() {
       const { data, error: loadError } = await supabase
         .from("ota_platforms")
         .select("*")
-        .eq("status", "active")
         .order("sort_order", { ascending: true })
         .order("id", { ascending: true });
 
@@ -319,7 +367,7 @@ export default function KhachSanPage() {
   }
 
   function closeModal() {
-    if (saving || savingOta) {
+    if (saving || savingOta || savingOtaPlatform) {
       return;
     }
 
@@ -351,6 +399,18 @@ export default function KhachSanPage() {
     value: OtaForm[K]
   ) {
     setOtaForm(function (previous) {
+      return {
+        ...previous,
+        [field]: value,
+      };
+    });
+  }
+
+  function updateOtaPlatformField<K extends keyof OtaPlatformForm>(
+    field: K,
+    value: OtaPlatformForm[K]
+  ) {
+    setOtaPlatformForm(function (previous) {
       return {
         ...previous,
         [field]: value,
@@ -738,6 +798,421 @@ export default function KhachSanPage() {
     }
   }
 
+  function openCreateOtaPlatformModal() {
+    setEditingOtaPlatformId(null);
+    setOtaPlatformForm(EMPTY_OTA_PLATFORM_FORM);
+    setOtaPlatformFile(null);
+    setOtaPlatformPreview(null);
+    setMessage("");
+    setError("");
+
+    if (otaLogoInputRef.current) {
+      otaLogoInputRef.current.value = "";
+    }
+
+    setShowOtaPlatformModal(true);
+  }
+
+  function openEditOtaPlatformModal(ota: OtaPlatform) {
+    setEditingOtaPlatformId(ota.id);
+
+    setOtaPlatformForm({
+      name: ota.name || "",
+      slug: ota.slug || "",
+      website: ota.website || "",
+      status: ota.status === "inactive" ? "inactive" : "active",
+      sort_order: String(ota.sort_order ?? 0),
+      logo: ota.logo || null,
+    });
+
+    setOtaPlatformFile(null);
+    setOtaPlatformPreview(ota.logo || null);
+    setMessage("");
+    setError("");
+
+    if (otaLogoInputRef.current) {
+      otaLogoInputRef.current.value = "";
+    }
+
+    setShowOtaPlatformModal(true);
+  }
+
+  function closeOtaPlatformModal() {
+    if (savingOtaPlatform) {
+      return;
+    }
+
+    setShowOtaPlatformModal(false);
+    setEditingOtaPlatformId(null);
+    setOtaPlatformForm(EMPTY_OTA_PLATFORM_FORM);
+    setOtaPlatformFile(null);
+    setOtaPlatformPreview(null);
+
+    if (otaLogoInputRef.current) {
+      otaLogoInputRef.current.value = "";
+    }
+  }
+
+  function slugify(value: string) {
+    return value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function handleOtaPlatformNameChange(value: string) {
+    setOtaPlatformForm(function (previous) {
+      return {
+        ...previous,
+        name: value,
+        slug:
+          editingOtaPlatformId === null
+            ? slugify(value)
+            : previous.slug,
+      };
+    });
+  }
+
+  function handleOtaLogoChange(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0] || null;
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setError("Logo OTA phải là file hình ảnh.");
+      event.target.value = "";
+      return;
+    }
+
+    const maxSize = 2 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      setError("Logo OTA không được lớn hơn 2MB.");
+      event.target.value = "";
+      return;
+    }
+
+    setError("");
+    setOtaPlatformFile(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setOtaPlatformPreview(previewUrl);
+  }
+
+  function getStoragePathFromPublicUrl(url: string | null) {
+    if (!url) {
+      return null;
+    }
+
+    const marker = "/storage/v1/object/public/website-media/";
+
+    const markerIndex = url.indexOf(marker);
+
+    if (markerIndex === -1) {
+      return null;
+    }
+
+    return decodeURIComponent(
+      url.substring(markerIndex + marker.length)
+    );
+  }
+
+  async function uploadOtaLogo(
+    file: File,
+    slug: string
+  ) {
+    const extensionFromName = file.name.includes(".")
+      ? file.name.split(".").pop()?.toLowerCase()
+      : "";
+
+    const extension =
+      extensionFromName ||
+      (file.type === "image/svg+xml"
+        ? "svg"
+        : file.type === "image/webp"
+        ? "webp"
+        : file.type === "image/png"
+        ? "png"
+        : "jpg");
+
+    const safeSlug = slugify(slug) || "ota";
+    const fileName =
+      safeSlug +
+      "-" +
+      Date.now() +
+      "-" +
+      Math.random().toString(36).slice(2, 8) +
+      "." +
+      extension;
+
+    const storagePath = "ota/" + fileName;
+
+    const { error: uploadError } = await supabase.storage
+      .from("website-media")
+      .upload(storagePath, file, {
+        cacheControl: "31536000",
+        upsert: false,
+        contentType: file.type || undefined,
+      });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data } = supabase.storage
+      .from("website-media")
+      .getPublicUrl(storagePath);
+
+    if (!data.publicUrl) {
+      throw new Error("Không lấy được Public URL của logo OTA.");
+    }
+
+    return data.publicUrl;
+  }
+
+  async function deleteOtaLogoByUrl(url: string | null) {
+    const storagePath = getStoragePathFromPublicUrl(url);
+
+    if (!storagePath) {
+      return;
+    }
+
+    const { error: deleteError } = await supabase.storage
+      .from("website-media")
+      .remove([storagePath]);
+
+    if (deleteError) {
+      console.warn(
+        "Không thể xóa logo cũ khỏi Storage:",
+        deleteError
+      );
+    }
+  }
+
+  async function handleSaveOtaPlatform() {
+    setMessage("");
+    setError("");
+
+    const name = otaPlatformForm.name.trim();
+    const slug = slugify(otaPlatformForm.slug);
+
+    if (!name) {
+      setError("Vui lòng nhập tên OTA.");
+      return;
+    }
+
+    if (!slug) {
+      setError("Vui lòng nhập slug OTA.");
+      return;
+    }
+
+    const sortOrder = Number(otaPlatformForm.sort_order);
+
+    if (!Number.isFinite(sortOrder)) {
+      setError("Thứ tự OTA không hợp lệ.");
+      return;
+    }
+
+    const website = otaPlatformForm.website.trim();
+
+    if (website) {
+      try {
+        new URL(website);
+      } catch {
+        setError("Website OTA không hợp lệ.");
+        return;
+      }
+    }
+
+    const duplicate = otaPlatforms.find(function (item) {
+      return (
+        item.slug.toLowerCase() === slug.toLowerCase() &&
+        item.id !== editingOtaPlatformId
+      );
+    });
+
+    if (duplicate) {
+      setError("Slug OTA này đã tồn tại.");
+      return;
+    }
+
+    setSavingOtaPlatform(true);
+
+    try {
+      let logoUrl = otaPlatformForm.logo;
+
+      if (otaPlatformFile) {
+        logoUrl = await uploadOtaLogo(
+          otaPlatformFile,
+          slug
+        );
+      }
+
+      const payload = {
+        name,
+        slug,
+        website: website || null,
+        status: otaPlatformForm.status,
+        sort_order: sortOrder,
+        logo: logoUrl || null,
+      };
+
+      let savedPlatform: OtaPlatform;
+
+      if (editingOtaPlatformId === null) {
+        const { data, error: insertError } = await supabase
+          .from("ota_platforms")
+          .insert(payload)
+          .select("*")
+          .single();
+
+        if (insertError) {
+          throw insertError;
+        }
+
+        savedPlatform = data as OtaPlatform;
+
+        setMessage("Đã thêm nền tảng " + name + ".");
+      } else {
+        const oldPlatform = otaPlatforms.find(function (item) {
+          return item.id === editingOtaPlatformId;
+        });
+
+        const { data, error: updateError } = await supabase
+          .from("ota_platforms")
+          .update(payload)
+          .eq("id", editingOtaPlatformId)
+          .select("*")
+          .single();
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        savedPlatform = data as OtaPlatform;
+
+        if (
+          otaPlatformFile &&
+          oldPlatform &&
+          oldPlatform.logo &&
+          oldPlatform.logo !== logoUrl
+        ) {
+          await deleteOtaLogoByUrl(oldPlatform.logo);
+        }
+
+        setMessage("Đã cập nhật nền tảng " + name + ".");
+      }
+
+      setOtaPlatforms(function (previous) {
+        const withoutCurrent = previous.filter(function (item) {
+          return item.id !== savedPlatform.id;
+        });
+
+        return [...withoutCurrent, savedPlatform].sort(
+          function (a, b) {
+            if (a.sort_order !== b.sort_order) {
+              return a.sort_order - b.sort_order;
+            }
+
+            return a.id - b.id;
+          }
+        );
+      });
+
+      closeOtaPlatformModal();
+    } catch (err: any) {
+      console.error("Save OTA platform error:", err);
+
+      if (err && err.code === "23505") {
+        setError("Tên hoặc slug OTA đã tồn tại.");
+      } else {
+        setError(
+          err && err.message
+            ? err.message
+            : "Không thể lưu nền tảng OTA."
+        );
+      }
+    } finally {
+      setSavingOtaPlatform(false);
+    }
+  }
+
+  async function handleDeleteOtaPlatform(ota: OtaPlatform) {
+    const usedChannels = await supabase
+      .from("hotel_ota_channels")
+      .select("id", { count: "exact", head: true })
+      .eq("ota_id", ota.id);
+
+    if (usedChannels.error) {
+      setError(
+        usedChannels.error.message ||
+          "Không thể kiểm tra OTA đang được sử dụng."
+      );
+      return;
+    }
+
+    const usageCount = usedChannels.count || 0;
+
+    if (usageCount > 0) {
+      setError(
+        ota.name +
+          " đang được sử dụng bởi " +
+          usageCount +
+          " cấu hình OTA của khách sạn. Hãy xóa các liên kết đó trước khi xóa nền tảng."
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Bạn có chắc muốn xóa nền tảng OTA "' +
+        ota.name +
+        '" không?'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setMessage("");
+    setError("");
+
+    try {
+      const { error: deleteError } = await supabase
+        .from("ota_platforms")
+        .delete()
+        .eq("id", ota.id);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      await deleteOtaLogoByUrl(ota.logo);
+
+      setOtaPlatforms(function (previous) {
+        return previous.filter(function (item) {
+          return item.id !== ota.id;
+        });
+      });
+
+      setMessage("Đã xóa nền tảng " + ota.name + ".");
+    } catch (err: any) {
+      console.error("Delete OTA platform error:", err);
+
+      setError(
+        err && err.message
+          ? err.message
+          : "Không thể xóa nền tảng OTA."
+      );
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-6">
       <div className="mx-auto max-w-7xl">
@@ -746,6 +1221,7 @@ export default function KhachSanPage() {
             <h1 className="text-2xl font-bold text-slate-900">
               Danh sách khách sạn
             </h1>
+
             <p className="mt-1 text-sm text-slate-500">
               Quản lý thông tin khách sạn, tiện nghi và OTA đang bán.
             </p>
@@ -780,18 +1256,23 @@ export default function KhachSanPage() {
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                     Khách sạn
                   </th>
+
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                     Slug
                   </th>
+
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                     Địa chỉ
                   </th>
+
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                     Mô hình
                   </th>
+
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                     Trạng thái
                   </th>
+
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">
                     Thao tác
                   </th>
@@ -897,6 +1378,165 @@ export default function KhachSanPage() {
             </table>
           </div>
         </div>
+
+        <section className="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">
+                Quản lý nền tảng OTA
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Quản lý logo, tên, website và trạng thái các nền tảng OTA dùng chung cho toàn hệ thống.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={openCreateOtaPlatformModal}
+              className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              + Thêm nền tảng OTA
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-[850px] w-full">
+              <thead className="bg-slate-50">
+                <tr className="border-b border-slate-200">
+                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    Logo
+                  </th>
+
+                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    OTA
+                  </th>
+
+                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    Website
+                  </th>
+
+                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    Trạng thái
+                  </th>
+
+                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    Thứ tự
+                  </th>
+
+                  <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {otaPlatforms.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-5 py-10 text-center text-sm text-slate-500"
+                    >
+                      Chưa có nền tảng OTA nào.
+                    </td>
+                  </tr>
+                ) : (
+                  otaPlatforms.map(function (ota) {
+                    return (
+                      <tr
+                        key={ota.id}
+                        className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50"
+                      >
+                        <td className="px-5 py-4">
+                          {ota.logo ? (
+                            <div className="flex h-12 w-20 items-center justify-center rounded-lg border border-slate-200 bg-white p-2">
+                              <img
+                                src={ota.logo}
+                                alt={ota.name}
+                                className="max-h-8 max-w-full object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex h-12 w-20 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-400">
+                              Chưa có logo
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <div className="font-semibold text-slate-900">
+                            {ota.name}
+                          </div>
+
+                          <div className="mt-1 text-xs text-slate-500">
+                            {ota.slug}
+                          </div>
+                        </td>
+
+                        <td className="px-5 py-4">
+                          {ota.website ? (
+                            <a
+                              href={ota.website}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="break-all text-sm text-blue-600 hover:underline"
+                            >
+                              {ota.website}
+                            </a>
+                          ) : (
+                            <span className="text-sm text-slate-400">
+                              —
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-4">
+                          {ota.status === "active" ? (
+                            <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                              Đang hoạt động
+                            </span>
+                          ) : (
+                            <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                              Tạm ngưng
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-4 text-sm text-slate-600">
+                          {ota.sort_order}
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={function () {
+                                openEditOtaPlatformModal(ota);
+                              }}
+                              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            >
+                              Sửa
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={function () {
+                                handleDeleteOtaPlatform(ota);
+                              }}
+                              className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                            >
+                              Xóa
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
 
       {showModal && (
@@ -951,6 +1591,7 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Tên khách sạn tiếng Việt *
                       </label>
+
                       <input
                         value={form.name_vi}
                         onChange={function (event) {
@@ -965,6 +1606,7 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Tên khách sạn tiếng Anh
                       </label>
+
                       <input
                         value={form.name_en}
                         onChange={function (event) {
@@ -979,6 +1621,7 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Slug *
                       </label>
+
                       <input
                         value={form.slug}
                         onChange={function (event) {
@@ -993,6 +1636,7 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Mô hình kinh doanh *
                       </label>
+
                       <select
                         value={form.business_model}
                         onChange={function (event) {
@@ -1012,6 +1656,7 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Trạng thái
                       </label>
+
                       <select
                         value={form.status}
                         onChange={function (event) {
@@ -1022,8 +1667,13 @@ export default function KhachSanPage() {
                         }}
                         className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       >
-                        <option value="active">Đang hoạt động</option>
-                        <option value="inactive">Tạm ngưng</option>
+                        <option value="active">
+                          Đang hoạt động
+                        </option>
+
+                        <option value="inactive">
+                          Tạm ngưng
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -1039,10 +1689,14 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Tên chủ khách sạn tiếng Việt
                       </label>
+
                       <input
                         value={form.owner_name_vi}
                         onChange={function (event) {
-                          updateField("owner_name_vi", event.target.value);
+                          updateField(
+                            "owner_name_vi",
+                            event.target.value
+                          );
                         }}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       />
@@ -1052,10 +1706,14 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Tên chủ khách sạn tiếng Anh
                       </label>
+
                       <input
                         value={form.owner_name_en}
                         onChange={function (event) {
-                          updateField("owner_name_en", event.target.value);
+                          updateField(
+                            "owner_name_en",
+                            event.target.value
+                          );
                         }}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       />
@@ -1065,10 +1723,14 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Số điện thoại
                       </label>
+
                       <input
                         value={form.contact_phone}
                         onChange={function (event) {
-                          updateField("contact_phone", event.target.value);
+                          updateField(
+                            "contact_phone",
+                            event.target.value
+                          );
                         }}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       />
@@ -1078,11 +1740,15 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Email
                       </label>
+
                       <input
                         type="email"
                         value={form.contact_email}
                         onChange={function (event) {
-                          updateField("contact_email", event.target.value);
+                          updateField(
+                            "contact_email",
+                            event.target.value
+                          );
                         }}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       />
@@ -1092,6 +1758,7 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Kênh liên lạc khác
                       </label>
+
                       <input
                         value={form.contact_messaging}
                         onChange={function (event) {
@@ -1117,10 +1784,14 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Địa chỉ tiếng Việt
                       </label>
+
                       <textarea
                         value={form.address_vi}
                         onChange={function (event) {
-                          updateField("address_vi", event.target.value);
+                          updateField(
+                            "address_vi",
+                            event.target.value
+                          );
                         }}
                         rows={3}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -1131,10 +1802,14 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Địa chỉ tiếng Anh
                       </label>
+
                       <textarea
                         value={form.address_en}
                         onChange={function (event) {
-                          updateField("address_en", event.target.value);
+                          updateField(
+                            "address_en",
+                            event.target.value
+                          );
                         }}
                         rows={3}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -1145,10 +1820,14 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Vĩ độ
                       </label>
+
                       <input
                         value={form.latitude}
                         onChange={function (event) {
-                          updateField("latitude", event.target.value);
+                          updateField(
+                            "latitude",
+                            event.target.value
+                          );
                         }}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         placeholder="10.759"
@@ -1159,10 +1838,14 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Kinh độ
                       </label>
+
                       <input
                         value={form.longitude}
                         onChange={function (event) {
-                          updateField("longitude", event.target.value);
+                          updateField(
+                            "longitude",
+                            event.target.value
+                          );
                         }}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         placeholder="106.695"
@@ -1173,10 +1856,14 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Google Maps URL
                       </label>
+
                       <input
                         value={form.map_url}
                         onChange={function (event) {
-                          updateField("map_url", event.target.value);
+                          updateField(
+                            "map_url",
+                            event.target.value
+                          );
                         }}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         placeholder="https://maps.google.com/..."
@@ -1218,6 +1905,7 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Mô tả tiếng Việt
                       </label>
+
                       <textarea
                         value={form.description_vi}
                         onChange={function (event) {
@@ -1235,6 +1923,7 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Mô tả tiếng Anh
                       </label>
+
                       <textarea
                         value={form.description_en}
                         onChange={function (event) {
@@ -1260,10 +1949,14 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Tiếng Việt
                       </label>
+
                       <textarea
                         value={form.nearby_vi}
                         onChange={function (event) {
-                          updateField("nearby_vi", event.target.value);
+                          updateField(
+                            "nearby_vi",
+                            event.target.value
+                          );
                         }}
                         rows={4}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -1275,10 +1968,14 @@ export default function KhachSanPage() {
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Tiếng Anh
                       </label>
+
                       <textarea
                         value={form.nearby_en}
                         onChange={function (event) {
-                          updateField("nearby_en", event.target.value);
+                          updateField(
+                            "nearby_en",
+                            event.target.value
+                          );
                         }}
                         rows={4}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -1297,10 +1994,14 @@ export default function KhachSanPage() {
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">
                       URL hình ảnh đại diện
                     </label>
+
                     <input
                       value={form.image}
                       onChange={function (event) {
-                        updateField("image", event.target.value);
+                        updateField(
+                          "image",
+                          event.target.value
+                        );
                       }}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       placeholder="https://..."
@@ -1401,18 +2102,24 @@ export default function KhachSanPage() {
                               }}
                               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             >
-                              <option value="">Chọn OTA</option>
+                              <option value="">
+                                Chọn OTA
+                              </option>
 
-                              {otaPlatforms.map(function (ota) {
-                                return (
-                                  <option
-                                    key={ota.id}
-                                    value={String(ota.id)}
-                                  >
-                                    {ota.name}
-                                  </option>
-                                );
-                              })}
+                              {otaPlatforms
+                                .filter(function (ota) {
+                                  return ota.status === "active";
+                                })
+                                .map(function (ota) {
+                                  return (
+                                    <option
+                                      key={ota.id}
+                                      value={String(ota.id)}
+                                    >
+                                      {ota.name}
+                                    </option>
+                                  );
+                                })}
                             </select>
                           </div>
 
@@ -1431,8 +2138,13 @@ export default function KhachSanPage() {
                               }}
                               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             >
-                              <option value="active">Đang bán</option>
-                              <option value="inactive">Tạm ngưng</option>
+                              <option value="active">
+                                Đang bán
+                              </option>
+
+                              <option value="inactive">
+                                Tạm ngưng
+                              </option>
                             </select>
                           </div>
 
@@ -1538,6 +2250,30 @@ export default function KhachSanPage() {
                                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                                     <div className="min-w-0">
                                       <div className="flex flex-wrap items-center gap-2">
+                                        {otaPlatforms.find(
+                                          function (platform) {
+                                            return (
+                                              platform.id ===
+                                              ota.ota_id
+                                            );
+                                          }
+                                        )?.logo && (
+                                          <img
+                                            src={
+                                              otaPlatforms.find(
+                                                function (platform) {
+                                                  return (
+                                                    platform.id ===
+                                                    ota.ota_id
+                                                  );
+                                                }
+                                              )?.logo || ""
+                                            }
+                                            alt=""
+                                            className="h-6 w-auto max-w-20 object-contain"
+                                          />
+                                        )}
+
                                         <h4 className="font-semibold text-slate-900">
                                           {getOtaName(ota.ota_id)}
                                         </h4>
@@ -1623,6 +2359,229 @@ export default function KhachSanPage() {
                   ? "Đang lưu..."
                   : editingHotelId === null
                   ? "Thêm khách sạn"
+                  : "Lưu thay đổi"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showOtaPlatformModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-3 md:p-6">
+          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
+                  {editingOtaPlatformId === null
+                    ? "Thêm nền tảng OTA"
+                    : "Chỉnh sửa nền tảng OTA"}
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Logo được lưu trong Supabase Storage →
+                  website-media/ota/
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeOtaPlatformModal}
+                disabled={savingOtaPlatform}
+                className="rounded-lg p-2 text-xl text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="overflow-y-auto px-5 py-5">
+              {error && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-5">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Tên OTA *
+                  </label>
+
+                  <input
+                    value={otaPlatformForm.name}
+                    onChange={function (event) {
+                      handleOtaPlatformNameChange(
+                        event.target.value
+                      );
+                    }}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    placeholder="Booking.com"
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                      Slug *
+                    </label>
+
+                    <input
+                      value={otaPlatformForm.slug}
+                      onChange={function (event) {
+                        updateOtaPlatformField(
+                          "slug",
+                          event.target.value
+                        );
+                      }}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      placeholder="booking"
+                    />
+
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      Dùng để nhận diện OTA trong hệ thống.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                      Thứ tự
+                    </label>
+
+                    <input
+                      type="number"
+                      value={otaPlatformForm.sort_order}
+                      onChange={function (event) {
+                        updateOtaPlatformField(
+                          "sort_order",
+                          event.target.value
+                        );
+                      }}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Website OTA
+                  </label>
+
+                  <input
+                    type="url"
+                    value={otaPlatformForm.website}
+                    onChange={function (event) {
+                      updateOtaPlatformField(
+                        "website",
+                        event.target.value
+                      );
+                    }}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    placeholder="https://www.booking.com/"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Trạng thái
+                  </label>
+
+                  <select
+                    value={otaPlatformForm.status}
+                    onChange={function (event) {
+                      updateOtaPlatformField(
+                        "status",
+                        event.target.value as OtaStatus
+                      );
+                    }}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value="active">
+                      Đang hoạt động
+                    </option>
+
+                    <option value="inactive">
+                      Tạm ngưng
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Logo OTA
+                  </label>
+
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                      <div className="flex h-24 w-32 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-3">
+                        {otaPlatformPreview ? (
+                          <img
+                            src={otaPlatformPreview}
+                            alt="Preview logo OTA"
+                            className="max-h-16 max-w-full object-contain"
+                          />
+                        ) : (
+                          <span className="text-xs text-slate-400">
+                            Chưa có logo
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <input
+                          ref={otaLogoInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                          onChange={handleOtaLogoChange}
+                          className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+                        />
+
+                        <p className="mt-2 text-xs leading-5 text-slate-500">
+                          PNG, JPG, WEBP hoặc SVG. Tối đa 2MB.
+                          <br />
+                          File sẽ được lưu tại:
+                          <span className="font-medium text-slate-700">
+                            {" "}
+                            website-media/ota/
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {otaPlatformForm.logo && !otaPlatformFile && (
+                  <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+                    <div className="text-xs font-medium text-slate-500">
+                      Logo hiện tại
+                    </div>
+
+                    <div className="mt-1 break-all text-xs text-blue-600">
+                      {otaPlatformForm.logo}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closeOtaPlatformModal}
+                disabled={savingOtaPlatform}
+                className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Hủy
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveOtaPlatform}
+                disabled={savingOtaPlatform}
+                className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {savingOtaPlatform
+                  ? "Đang lưu..."
+                  : editingOtaPlatformId === null
+                  ? "Thêm nền tảng"
                   : "Lưu thay đổi"}
               </button>
             </div>

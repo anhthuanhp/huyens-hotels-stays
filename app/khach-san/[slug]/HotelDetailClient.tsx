@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   BedDouble,
   Check,
   ChevronRight,
@@ -57,17 +56,6 @@ type RoomMedia = {
   public_url: string;
 };
 
-type HotelOTA = {
-  id: number;
-  name: string;
-  slug: string;
-  logo: string | null;
-  website: string | null;
-  listing_url: string | null;
-  external_hotel_id: string | null;
-  sort_order: number;
-};
-
 type HotelListItem = {
   id: number;
   slug: string;
@@ -79,7 +67,6 @@ type Props = {
   initialHotel: Hotel;
   initialRooms: Room[];
   initialRoomCovers: RoomMedia[];
-  initialOTAs: HotelOTA[];
   initialHotels: HotelListItem[];
 };
 
@@ -222,7 +209,6 @@ export default function HotelDetailClient({
   initialHotel,
   initialRooms,
   initialRoomCovers,
-  initialOTAs,
   initialHotels,
 }: Props) {
   const router = useRouter();
@@ -275,8 +261,7 @@ export default function HotelDetailClient({
         item.public_url &&
         !result[item.entity_id]
       ) {
-        result[item.entity_id] =
-          item.public_url;
+        result[item.entity_id] = item.public_url;
       }
     }
 
@@ -293,21 +278,6 @@ export default function HotelDetailClient({
       return status === "active";
     });
   }, [initialRooms]);
-
-  const activeOTAs = useMemo(() => {
-    return initialOTAs
-      .filter((ota) => {
-        return (
-          typeof ota.name === "string" &&
-          ota.name.trim().length > 0
-        );
-      })
-      .sort(
-        (a, b) =>
-          (a.sort_order ?? 0) -
-          (b.sort_order ?? 0)
-      );
-  }, [initialOTAs]);
 
   const hotelName =
     language === "vi"
@@ -376,17 +346,6 @@ export default function HotelDetailClient({
             <span className="text-sm font-medium text-slate-500">
               Hotels &amp; Stays
             </span>
-          </Link>
-
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            <ArrowLeft className="h-4 w-4" />
-
-            {language === "vi"
-              ? "Quay lại"
-              : "Back"}
           </Link>
         </div>
       </header>
@@ -689,77 +648,6 @@ export default function HotelDetailClient({
               )}
             </section>
 
-            {/* OTA */}
-            {activeOTAs.length > 0 && (
-              <section className="mt-12 border-t border-slate-200 pt-10">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-950">
-                  {language === "vi"
-                    ? "Đặt phòng qua các kênh"
-                    : "Book through our channels"}
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  {language === "vi"
-                    ? "Bạn cũng có thể đặt phòng qua các nền tảng đang được hỗ trợ."
-                    : "You can also book through the platforms below."}
-                </p>
-
-                <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {activeOTAs.map((ota) => {
-                    const href =
-                      ota.listing_url ||
-                      ota.website ||
-                      null;
-
-                    const content = (
-                      <>
-                        {ota.logo ? (
-                          <div className="relative h-10 w-24 shrink-0">
-                            <Image
-                              src={ota.logo}
-                              alt={ota.name}
-                              fill
-                              sizes="96px"
-                              className="object-contain object-left"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex h-10 w-24 shrink-0 items-center text-sm font-bold text-slate-700">
-                            {ota.name}
-                          </div>
-                        )}
-
-                        <ChevronRight className="ml-auto h-5 w-5 text-slate-400" />
-                      </>
-                    );
-
-                    if (!href) {
-                      return (
-                        <div
-                          key={ota.id}
-                          className="flex items-center rounded-xl border border-slate-200 bg-white p-4"
-                        >
-                          {content}
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <a
-                        key={ota.id}
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm"
-                      >
-                        {content}
-                      </a>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
             {/* MAP */}
             {mapUrl && (
               <section className="mt-12 border-t border-slate-200 pt-10">
@@ -795,7 +683,7 @@ export default function HotelDetailClient({
           </div>
 
           {/* SIDEBAR TÌM PHÒNG */}
-          <div className="order-first h-fit self-start lg:order-none lg:sticky lg:top-24 lg:h-fit lg:self-start">
+          <div className="order-last h-fit self-start lg:order-none lg:sticky lg:top-24 lg:h-fit lg:self-start">
             <HotelBookingSidebar
               hotel={{
                 id: initialHotel.id,

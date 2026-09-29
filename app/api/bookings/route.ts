@@ -1,1068 +1,647 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse } from "next/server";
 
-type BookingRoomInput = {
-roomSlug: string;
-quantity: number;
+import { supabase } from "../../lib/supabase";
+
+type StayType = "day" | "month";
+
+type AvailabilityRequest = {
+  hotelSlug?: unknown;
+  stayType?: unknown;
+  checkIn?: unknown;
+  checkOut?: unknown;
+  months?: unknown;
 };
 
-type BookingRequest = {
-hotelSlug: string;
-checkIn: string;
-checkOut: string;
-adults: number;
-children: number;
-fullName: string;
-email?: string;
-phone: string;
-note?: string;
-rooms: BookingRoomInput[];
+type RoomRow = {
+  id: number;
+  hotel_id: number;
+  slug: string;
+  name_vi: string | null;
+  name_en: string | null;
+  base_price_daily: number | string | null;
+  base_price_monthly: number | string | null;
+  quantity: number | string | null;
+  status: string;
 };
 
-function getServerSupabase() {
-const supabaseUrl =
-process.env.NEXT_PUBLIC_SUPABASE_URL;
+type BookingRoomRow = {
+  room_id: number | string | null;
+  quantity: number | string | null;
+};
 
-const secretKey =
-process.env.SUPABASE_SECRET_KEY;
+type BookingRow = {
+  id: number;
+  check_in: string;
+  check_out: string;
+  status: string;
+  booking_rooms: BookingRoomRow[] | null;
+};
 
-if (!supabaseUrl) {
-throw new Error(
-"Missing NEXT_PUBLIC_SUPABASE_URL"
-);
+function isValidDateString(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const date = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() + 1 === month &&
+    date.getDate() === day
+  );
 }
 
-if (!secretKey) {
-throw new Error(
-"Missing SUPABASE_SECRET_KEY"
-);
+function getTodayString(): string {
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
-return createClient(
-supabaseUrl,
-secretKey,
-{
-auth: {
-autoRefreshToken: false,
-persistSession: false,
-},
-}
-);
-}
+function addMonthsToDate(dateString: string, months: number): string {
+  const [year, month, day] = dateString
+    .split("-")
+    .map(Number);
 
-function isValidDate(
-value: string
-): boolean {
-if (
-!/^\d{4}-\d{2}-\d{2}$/.test(
-value
-)
-) {
-return false;
-}
-
-const parts =
-value.split("-");
-
-const year =
-Number(parts[0]);
-
-const month =
-Number(parts[1]);
-
-const day =
-Number(parts[2]);
-
-if (
-!Number.isInteger(year) ||
-!Number.isInteger(month) ||
-!Number.isInteger(day)
-) {
-return false;
-}
-
-if (
-month < 1 ||
-month > 12
-) {
-return false;
-}
-
-if (
-day < 1 ||
-day > 31
-) {
-return false;
-}
-
-const daysInMonth =
-new Date(
-Date.UTC(
-year,
-month,
-0
-)
-).getUTCDate();
-
-return (
-day <= daysInMonth
-);
-}
-
-function createBookingCode() {
-const now =
-new Date();
-
-const year =
-now.getFullYear();
-
-const month =
-String(
-now.getMonth() + 1
-).padStart(2, "0");
-
-const day =
-String(
-now.getDate()
-).padStart(2, "0");
-
-const random =
-Math.floor(
-100000 +
-Math.random() *
-900000
-);
-
-return `HY${year}${month}${day}${random}`;
-}
-
-function formatDateForTelegram(
-value: string
-) {
-if (
-!/^\d{4}-\d{2}-\d{2}$/.test(
-value
-)
-) {
-return value;
-}
-
-const [
-year,
-month,
-day,
-] = value.split("-");
-
-return `${day}/${month}/${year}`;
-}
-
-function formatMoney(
-value: number
-) {
-return new Intl.NumberFormat(
-"vi-VN"
-).format(
-Number(value) || 0
-) + "đ";
-}
-
-async function sendTelegramNotification(
-message: string
-) {
-const botToken =
-process.env.TELEGRAM_BOT_TOKEN;
-
-const chatId =
-process.env.TELEGRAM_CHAT_ID;
-
-if (
-!botToken ||
-!chatId
-) {
-console.warn(
-"Telegram notification skipped: missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID."
-);
-
-return false;
-
-}
-
-try {
-const response =
-await fetch(
-`https://api.telegram.org/bot${botToken}/sendMessage`,
-{
-method: "POST",
-
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-
-      body: JSON.stringify({
-        chat_id:
-          chatId,
-
-        text:
-          message,
-
-        disable_web_page_preview:
-          true,
-      }),
-
-      cache: "no-store",
-    }
+  const date = new Date(
+    year,
+    month - 1,
+    day
   );
 
-if (!response.ok) {
-  const errorText =
-    await response.text();
+  date.setMonth(date.getMonth() + months);
 
-  console.error(
-    "Telegram API error:",
-    errorText
-  );
+  const resultYear = date.getFullYear();
+  const resultMonth = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+  const resultDay = String(
+    date.getDate()
+  ).padStart(2, "0");
 
-  return false;
+  return `${resultYear}-${resultMonth}-${resultDay}`;
 }
 
-return true;
-
-} catch (error) {
-console.error(
-"Telegram notification error:",
-error
-);
-
-return false;
-
-}
+function normalizeStayType(
+  value: unknown
+): StayType {
+  return value === "month"
+    ? "month"
+    : "day";
 }
 
 export async function POST(
-request: Request
+  request: NextRequest
 ) {
-try {
-const body =
-(await request.json()) as BookingRequest;
+  try {
+    /*
+      ==========================================
+      1. ĐỌC REQUEST
+      ==========================================
+    */
 
-const hotelSlug =
-  String(
-    body.hotelSlug || ""
-  ).trim();
+    let body: AvailabilityRequest;
 
-const checkIn =
-  String(
-    body.checkIn || ""
-  ).trim();
-
-const checkOut =
-  String(
-    body.checkOut || ""
-  ).trim();
-
-const fullName =
-  String(
-    body.fullName || ""
-  ).trim();
-
-const email =
-  String(
-    body.email || ""
-  ).trim();
-
-const phone =
-  String(
-    body.phone || ""
-  ).trim();
-
-const note =
-  String(
-    body.note || ""
-  ).trim();
-
-/*
-  ==========================================
-  1. KIỂM TRA DỮ LIỆU
-  ==========================================
-*/
-
-if (!hotelSlug) {
-  return NextResponse.json(
-    {
-      error:
-        "Thiếu thông tin khách sạn.",
-    },
-    { status: 400 }
-  );
-}
-
-/*
-  DEBUG NGÀY
-*/
-
-const validCheckIn =
-  isValidDate(checkIn);
-
-const validCheckOut =
-  isValidDate(checkOut);
-
-console.log(
-  "DATE VALIDATION DEBUG:",
-  {
-    checkIn,
-    checkOut,
-    validCheckIn,
-    validCheckOut,
-  }
-);
-
-if (
-  !validCheckIn ||
-  !validCheckOut
-) {
-  return NextResponse.json(
-    {
-      error:
-        "Ngày nhận/trả phòng không hợp lệ.",
-    },
-    { status: 400 }
-  );
-}
-
-if (
-  checkOut <= checkIn
-) {
-  return NextResponse.json(
-    {
-      error:
-        "Ngày trả phòng phải sau ngày nhận phòng.",
-    },
-    { status: 400 }
-  );
-}
-
-if (!fullName) {
-  return NextResponse.json(
-    {
-      error:
-        "Vui lòng nhập họ tên.",
-    },
-    { status: 400 }
-  );
-}
-
-if (!phone) {
-  return NextResponse.json(
-    {
-      error:
-        "Vui lòng nhập số điện thoại.",
-    },
-    { status: 400 }
-  );
-}
-
-/*
-  ==========================================
-  2. KIỂM TRA KHÁCH
-  ==========================================
-*/
-
-const adults =
-  Number(body.adults);
-
-const children =
-  Number(body.children);
-
-if (
-  !Number.isInteger(
-    adults
-  ) ||
-  adults < 1
-) {
-  return NextResponse.json(
-    {
-      error:
-        "Số người lớn không hợp lệ.",
-    },
-    { status: 400 }
-  );
-}
-
-if (
-  !Number.isInteger(
-    children
-  ) ||
-  children < 0
-) {
-  return NextResponse.json(
-    {
-      error:
-        "Số trẻ em không hợp lệ.",
-    },
-    { status: 400 }
-  );
-}
-
-/*
-  ==========================================
-  3. KIỂM TRA PHÒNG
-  ==========================================
-*/
-
-if (
-  !Array.isArray(
-    body.rooms
-  ) ||
-  body.rooms.length === 0
-) {
-  return NextResponse.json(
-    {
-      error:
-        "Chưa chọn phòng.",
-    },
-    { status: 400 }
-  );
-}
-
-const rooms =
-  body.rooms.map(
-    (room) => ({
-      roomSlug:
-        String(
-          room?.roomSlug ||
-            ""
-        ).trim(),
-
-      quantity:
-        Number(
-          room?.quantity
-        ),
-    })
-  );
-
-for (
-  const room of rooms
-) {
-  if (
-    !room.roomSlug
-  ) {
-    return NextResponse.json(
-      {
-        error:
-          "Thiếu loại phòng.",
-      },
-      { status: 400 }
-    );
-  }
-
-  if (
-    !Number.isInteger(
-      room.quantity
-    ) ||
-    room.quantity < 1
-  ) {
-    return NextResponse.json(
-      {
-        error:
-          "Số lượng phòng không hợp lệ.",
-      },
-      { status: 400 }
-    );
-  }
-}
-
-/*
-  Không cho trùng roomSlug.
-*/
-
-const roomSlugs =
-  rooms.map(
-    (room) =>
-      room.roomSlug
-  );
-
-const uniqueRoomSlugs =
-  new Set(
-    roomSlugs
-  );
-
-if (
-  uniqueRoomSlugs.size !==
-  roomSlugs.length
-) {
-  return NextResponse.json(
-    {
-      error:
-        "Danh sách phòng bị trùng loại phòng.",
-    },
-    { status: 400 }
-  );
-}
-
-/*
-  ==========================================
-  4. SERVER SUPABASE
-  ==========================================
-*/
-
-const supabase =
-  getServerSupabase();
-
-/*
-  ==========================================
-  5. TÌM HOTEL
-  ==========================================
-*/
-
-const {
-  data: hotel,
-  error: hotelError,
-} =
-  await supabase
-    .from("hotels")
-    .select(
-      `
-        id,
-        slug,
-        name_vi,
-        name_en
-      `
-    )
-    .eq(
-      "slug",
-      hotelSlug
-    )
-    .eq(
-      "status",
-      "active"
-    )
-    .maybeSingle();
-
-if (hotelError) {
-  console.error(
-    "hotelError:",
-    hotelError
-  );
-
-  return NextResponse.json(
-    {
-      error:
-        "Không thể kiểm tra khách sạn.",
-    },
-    { status: 500 }
-  );
-}
-
-if (!hotel) {
-  return NextResponse.json(
-    {
-      error:
-        "Không tìm thấy khách sạn.",
-    },
-    { status: 404 }
-  );
-}
-
-/*
-  ==========================================
-  6. TẠO BOOKING CODE
-  ==========================================
-*/
-
-const bookingCode =
-  createBookingCode();
-
-/*
-  ==========================================
-  7. GỌI TRANSACTION ATOMIC
-  ==========================================
-*/
-
-const {
-  data,
-  error:
-    rpcError,
-} =
-  await supabase.rpc(
-    "create_booking_atomic",
-    {
-      p_booking_code:
-        bookingCode,
-
-      p_hotel_id:
-        Number(
-          hotel.id
-        ),
-
-      p_check_in:
-        checkIn,
-
-      p_check_out:
-        checkOut,
-
-      p_adults:
-        adults,
-
-      p_children:
-        children,
-
-      p_full_name:
-        fullName,
-
-      p_email:
-        email || null,
-
-      p_phone:
-        phone,
-
-      p_note:
-        note || null,
-
-      p_rooms:
-        rooms,
+    try {
+      body =
+        (await request.json()) as AvailabilityRequest;
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "Dữ liệu gửi lên không hợp lệ.",
+        },
+        { status: 400 }
+      );
     }
-  );
 
-if (rpcError) {
-  console.error(
-    "create_booking_atomic error:",
-    rpcError
-  );
+    const hotelSlug =
+      typeof body.hotelSlug === "string"
+        ? body.hotelSlug.trim()
+        : "";
 
-  const message =
-    rpcError.message ||
-    "";
+    const stayType =
+      normalizeStayType(body.stayType);
 
-  /*
-    PostgreSQL exception do
-    hết phòng.
-  */
+    const rawCheckIn =
+      typeof body.checkIn === "string"
+        ? body.checkIn.trim()
+        : "";
 
-  if (
-    message.includes(
-      "chỉ còn"
-    )
-  ) {
-    return NextResponse.json(
-      {
-        error:
-          message,
-      },
-      { status: 409 }
-    );
-  }
+    const rawCheckOut =
+      typeof body.checkOut === "string"
+        ? body.checkOut.trim()
+        : "";
 
-  /*
-    Lỗi sức chứa.
-  */
+    const rawMonths =
+      typeof body.months === "number"
+        ? body.months
+        : typeof body.months === "string"
+          ? Number(body.months)
+          : NaN;
 
-  if (
-    message.includes(
-      "phù hợp tối đa"
-    )
-  ) {
-    return NextResponse.json(
-      {
-        error:
-          message,
-      },
-      { status: 400 }
-    );
-  }
+    /*
+      ==========================================
+      2. XÁC ĐỊNH KHOẢNG THỜI GIAN
+      ==========================================
+    */
 
-  /*
-    Nếu PostgreSQL báo lỗi liên quan
-    đến ngày, trả nguyên message để
-    xác định chính xác lỗi.
-  */
+    let checkIn = "";
+    let checkOut = "";
+    let months: number | null = null;
 
-  if (
-    message
-      .toLowerCase()
-      .includes("date") ||
-    message
-      .toLowerCase()
-      .includes("check_in") ||
-    message
-      .toLowerCase()
-      .includes("check_out") ||
-    message
-      .toLowerCase()
-      .includes("ngày")
-  ) {
-    return NextResponse.json(
-      {
-        error:
-          `Lỗi dữ liệu ngày từ hệ thống đặt phòng: ${message}`,
-      },
-      { status: 400 }
-    );
-  }
+    if (!hotelSlug) {
+      return NextResponse.json(
+        {
+          error:
+            "Thiếu thông tin khách sạn.",
+        },
+        { status: 400 }
+      );
+    }
 
-  return NextResponse.json(
-    {
-      error:
-        message ||
-        "Không thể hoàn tất đặt phòng.",
-    },
-    { status: 500 }
-  );
-}
+    if (hotelSlug.length > 150) {
+      return NextResponse.json(
+        {
+          error:
+            "Thông tin khách sạn không hợp lệ.",
+        },
+        { status: 400 }
+      );
+    }
 
-if (
-  !data ||
-  data.success !== true ||
-  !data.booking
-) {
-  console.error(
-    "Invalid RPC response:",
-    data
-  );
+    /*
+      ------------------------------------------
+      THUÊ THEO NGÀY
+      ------------------------------------------
+    */
 
-  return NextResponse.json(
-    {
-      error:
-        "Không thể hoàn tất đặt phòng.",
-    },
-    { status: 500 }
-  );
-}
+    if (stayType === "day") {
+      checkIn = rawCheckIn;
+      checkOut = rawCheckOut;
 
-/*
-  ==========================================
-  8. LẤY BOOKING
-  ==========================================
-*/
-
-const booking =
-  data.booking as {
-    id: number;
-    bookingCode: string;
-    hotelSlug: string;
-    hotelNameVi: string;
-    hotelNameEn: string;
-    checkIn: string;
-    checkOut: string;
-    nights: number;
-    adults: number;
-    children: number;
-    fullName: string;
-    email: string;
-    phone: string;
-    note: string;
-    totalAmount: number;
-  };
-
-/*
-  ==========================================
-  9. LẤY CHI TIẾT PHÒNG
-  ==========================================
-*/
-
-const {
-  data:
-    bookingRooms,
-  error:
-    bookingRoomsError,
-} =
-  await supabase
-    .from("booking_rooms")
-    .select(
-      `
-        booking_id,
-        room_id,
-        quantity,
-        price_per_night
-      `
-    )
-    .eq(
-      "booking_id",
-      Number(
-        booking.id
-      )
-    )
-    .order(
-      "id",
-      {
-        ascending: true,
+      if (!checkIn || !checkOut) {
+        return NextResponse.json(
+          {
+            error:
+              "Thiếu ngày nhận phòng hoặc ngày trả phòng.",
+          },
+          { status: 400 }
+        );
       }
-    );
 
-if (
-  bookingRoomsError
-) {
-  console.error(
-    "bookingRoomsError:",
-    bookingRoomsError
-  );
+      if (
+        !isValidDateString(checkIn) ||
+        !isValidDateString(checkOut)
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Ngày nhận phòng hoặc ngày trả phòng không hợp lệ.",
+          },
+          { status: 400 }
+        );
+      }
 
-  /*
-    Booking đã tạo thành công,
-    không được xóa chỉ vì query
-    trả detail lỗi.
-  */
-
-  const telegramMessage =
-    [
-      "🔔 ĐẶT PHÒNG MỚI",
-      "",
-      `🏨 ${booking.hotelNameVi}`,
-      "",
-      `👤 Khách: ${booking.fullName}`,
-      `📞 SĐT: ${booking.phone}`,
-      booking.email
-        ? `📧 Email: ${booking.email}`
-        : "",
-      "",
-      `📅 Nhận phòng: ${formatDateForTelegram(
-        booking.checkIn
-      )}`,
-      `📅 Trả phòng: ${formatDateForTelegram(
-        booking.checkOut
-      )}`,
-      `🌙 Số đêm: ${booking.nights}`,
-      "",
-      `👥 Người lớn: ${booking.adults}`,
-      `👶 Trẻ em: ${booking.children}`,
-      "",
-      `💰 Tổng: ${formatMoney(
-        Number(
-          booking.totalAmount
-        ) || 0
-      )}`,
-      "",
-      `🔑 Mã đặt phòng: ${booking.bookingCode}`,
-      booking.note
-        ? `\n📝 Ghi chú: ${booking.note}`
-        : "",
-    ]
-      .filter(
-        Boolean
-      )
-      .join("\n");
-
-  await sendTelegramNotification(
-    telegramMessage
-  );
-
-  return NextResponse.json(
-    {
-      success: true,
-
-      booking: {
-        ...booking,
-
-        rooms: [],
-
-        totalAmount:
-          Number(
-            booking.totalAmount
-          ) || 0,
-      },
+      if (checkOut <= checkIn) {
+        return NextResponse.json(
+          {
+            error:
+              "Ngày trả phòng phải sau ngày nhận phòng.",
+          },
+          { status: 400 }
+        );
+      }
     }
-  );
-}
 
-/*
-  ==========================================
-  10. LẤY TÊN PHÒNG
-  ==========================================
-*/
+    /*
+      ------------------------------------------
+      THUÊ THEO THÁNG
+      ------------------------------------------
 
-const roomIds =
-  (bookingRooms || [])
-    .map(
-      (room) =>
-        Number(
-          room.room_id
-        )
-    )
-    .filter(
-      (id) =>
-        Number.isInteger(id)
-    );
+      Không yêu cầu checkIn/checkOut từ giao diện.
 
-let roomNames:
-  Record<
-    number,
-    string
-  > = {};
+      Khoảng kiểm tra:
+      hôm nay → hôm nay + số tháng
+    */
 
-if (
-  roomIds.length > 0
-) {
-  const {
-    data:
-      roomData,
-    error:
-      roomDataError,
-  } =
-    await supabase
+    if (stayType === "month") {
+      if (
+        !Number.isInteger(rawMonths) ||
+        rawMonths < 1 ||
+        rawMonths > 120
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Số tháng thuê không hợp lệ.",
+          },
+          { status: 400 }
+        );
+      }
+
+      months = rawMonths;
+
+      checkIn = getTodayString();
+
+      checkOut =
+        addMonthsToDate(
+          checkIn,
+          months
+        );
+    }
+
+    /*
+      ==========================================
+      3. TÌM ĐÚNG KHÁCH SẠN
+      ==========================================
+    */
+
+    const {
+      data: hotel,
+      error: hotelError,
+    } = await supabase
+      .from("hotels")
+      .select(
+        "id, slug, status"
+      )
+      .eq("slug", hotelSlug)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (hotelError) {
+      console.error(
+        "Availability hotel error:",
+        hotelError
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Không thể kiểm tra thông tin khách sạn.",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!hotel) {
+      return NextResponse.json(
+        {
+          error:
+            "Không tìm thấy khách sạn hoặc khách sạn không hoạt động.",
+        },
+        { status: 404 }
+      );
+    }
+
+    /*
+      ==========================================
+      4. LẤY PHÒNG CỦA KHÁCH SẠN
+      ==========================================
+
+      Giá mới:
+
+      base_price_daily
+      base_price_monthly
+    */
+
+    const {
+      data: roomRows,
+      error: roomError,
+    } = await supabase
       .from("rooms")
       .select(
         `
           id,
+          hotel_id,
+          slug,
           name_vi,
-          name_en
+          name_en,
+          base_price_daily,
+          base_price_monthly,
+          quantity,
+          status
         `
       )
-      .in(
-        "id",
-        roomIds
+      .eq("hotel_id", hotel.id)
+      .eq("status", "active")
+      .order("id", {
+        ascending: true,
+      });
+
+    if (roomError) {
+      console.error(
+        "Availability rooms error:",
+        roomError
       );
 
-  if (
-    roomDataError
-  ) {
-    console.error(
-      "roomDataError:",
-      roomDataError
-    );
-  } else {
-    roomNames =
-      Object.fromEntries(
-        (roomData || []).map(
-          (room) => [
-            Number(
-              room.id
-            ),
-            String(
-              room.name_vi ||
-                room.name_en ||
-                `Phòng #${room.id}`
-            ),
-          ]
-        )
+      return NextResponse.json(
+        {
+          error:
+            "Không thể tải danh sách phòng.",
+        },
+        { status: 500 }
       );
-  }
-}
+    }
 
-/*
-  ==========================================
-  11. GỬI THÔNG BÁO TELEGRAM
-  ==========================================
-*/
+    const rooms =
+      (roomRows ?? []) as RoomRow[];
 
-const roomLines =
-  (bookingRooms || [])
-    .map(
+    if (rooms.length === 0) {
+      return NextResponse.json({
+        hotel: {
+          id: Number(hotel.id),
+          slug: hotel.slug,
+        },
+
+        stayType,
+
+        checkIn,
+        checkOut,
+
+        months,
+
+        rooms: [],
+      });
+    }
+
+    /*
+      ==========================================
+      5. LẤY BOOKING ĐANG GIỮ PHÒNG
+      ==========================================
+
+      Chỉ confirmed giữ phòng.
+
+      Điều kiện giao nhau:
+
+      booking.check_in < requested.check_out
+      booking.check_out > requested.check_in
+    */
+
+    const {
+      data: bookingRows,
+      error: bookingError,
+    } = await supabase
+      .from("bookings")
+      .select(
+        `
+          id,
+          check_in,
+          check_out,
+          status,
+          booking_rooms (
+            room_id,
+            quantity
+          )
+        `
+      )
+      .eq("hotel_id", hotel.id)
+      .eq("status", "confirmed")
+      .lt(
+        "check_in",
+        checkOut
+      )
+      .gt(
+        "check_out",
+        checkIn
+      );
+
+    if (bookingError) {
+      console.error(
+        "Availability booking error:",
+        bookingError
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Không thể kiểm tra các đơn đặt phòng.",
+        },
+        { status: 500 }
+      );
+    }
+
+    const bookings =
+      (bookingRows ?? []) as BookingRow[];
+
+    /*
+      ==========================================
+      6. TÍNH SỐ PHÒNG ĐÃ ĐẶT
+      ==========================================
+    */
+
+    const bookedByRoom: Record<
+      number,
+      number
+    > = {};
+
+    for (const booking of bookings) {
+      if (
+        booking.status !==
+        "confirmed"
+      ) {
+        continue;
+      }
+
+      const bookingRooms =
+        booking.booking_rooms ?? [];
+
+      for (const bookingRoom of bookingRooms) {
+        const roomId = Number(
+          bookingRoom.room_id
+        );
+
+        const quantity = Number(
+          bookingRoom.quantity
+        );
+
+        if (
+          !Number.isInteger(roomId) ||
+          roomId <= 0
+        ) {
+          continue;
+        }
+
+        if (
+          !Number.isFinite(quantity) ||
+          quantity <= 0
+        ) {
+          continue;
+        }
+
+        const safeQuantity =
+          Math.floor(quantity);
+
+        if (safeQuantity <= 0) {
+          continue;
+        }
+
+        bookedByRoom[roomId] =
+          (bookedByRoom[roomId] ?? 0) +
+          safeQuantity;
+      }
+    }
+
+    /*
+      ==========================================
+      7. TÍNH AVAILABLE
+      ==========================================
+    */
+
+    const result = rooms.map(
       (room) => {
-        const roomId =
-          Number(
-            room.room_id
+        const rawTotalQuantity =
+          Number(room.quantity);
+
+        const totalQuantity =
+          Number.isFinite(
+            rawTotalQuantity
+          ) &&
+          rawTotalQuantity > 0
+            ? Math.floor(
+                rawTotalQuantity
+              )
+            : 0;
+
+        const bookedQuantity =
+          Math.max(
+            0,
+            bookedByRoom[
+              Number(room.id)
+            ] ?? 0
           );
 
-        const roomName =
-          roomNames[
-            roomId
-          ] ||
-          `Phòng #${roomId}`;
+        const availableQuantity =
+          Math.max(
+            totalQuantity -
+              bookedQuantity,
+            0
+          );
 
-        const quantity =
+        /*
+          Giá ngày.
+        */
+
+        const rawDailyPrice =
           Number(
-            room.quantity
-          ) || 0;
+            room.base_price_daily
+          );
 
-        const price =
+        const basePriceDaily =
+          Number.isFinite(
+            rawDailyPrice
+          ) &&
+          rawDailyPrice >= 0
+            ? rawDailyPrice
+            : 0;
+
+        /*
+          Giá tháng.
+        */
+
+        const rawMonthlyPrice =
           Number(
-            room.price_per_night
-          ) || 0;
+            room.base_price_monthly
+          );
 
-        return `🛏 ${roomName} × ${quantity}\n   ${formatMoney(
-          price
-        )}/đêm`;
+        const basePriceMonthly =
+          Number.isFinite(
+            rawMonthlyPrice
+          ) &&
+          rawMonthlyPrice >= 0
+            ? rawMonthlyPrice
+            : 0;
+
+        /*
+          Giá đang áp dụng theo hình thức ở.
+        */
+
+        const basePrice =
+          stayType === "month"
+            ? basePriceMonthly
+            : basePriceDaily;
+
+        return {
+          roomId:
+            Number(room.id),
+
+          roomSlug:
+            room.slug,
+
+          hotelId:
+            Number(hotel.id),
+
+          hotelSlug:
+            hotel.slug,
+
+          nameVi:
+            room.name_vi,
+
+          nameEn:
+            room.name_en,
+
+          basePrice,
+
+          basePriceDaily,
+
+          basePriceMonthly,
+
+          totalQuantity,
+
+          bookedQuantity,
+
+          availableQuantity,
+        };
       }
-    )
-    .join("\n");
+    );
 
-const telegramMessage =
-  [
-    "🔔 ĐẶT PHÒNG MỚI",
-    "",
-    `🏨 ${booking.hotelNameVi}`,
-    "",
-    `👤 Khách: ${booking.fullName}`,
-    `📞 SĐT: ${booking.phone}`,
-    booking.email
-      ? `📧 Email: ${booking.email}`
-      : "",
-    "",
-    `📅 Nhận phòng: ${formatDateForTelegram(
-      booking.checkIn
-    )}`,
-    `📅 Trả phòng: ${formatDateForTelegram(
-      booking.checkOut
-    )}`,
-    `🌙 Số đêm: ${booking.nights}`,
-    "",
-    `👥 Người lớn: ${booking.adults}`,
-    `👶 Trẻ em: ${booking.children}`,
-    "",
-    "🛏 PHÒNG:",
-    roomLines ||
-      "Không có thông tin phòng.",
-    "",
-    `💰 Tổng: ${formatMoney(
-      Number(
-        booking.totalAmount
-      ) || 0
-    )}`,
-    "",
-    `🔑 Mã đặt phòng: ${booking.bookingCode}`,
-    booking.note
-      ? `\n📝 Ghi chú: ${booking.note}`
-      : "",
-  ]
-    .filter(
-      Boolean
-    )
-    .join("\n");
+    /*
+      ==========================================
+      8. TRẢ KẾT QUẢ
+      ==========================================
+    */
 
-await sendTelegramNotification(
-  telegramMessage
-);
+    return NextResponse.json(
+      {
+        hotel: {
+          id: Number(hotel.id),
+          slug: hotel.slug,
+        },
 
-/*
-  ==========================================
-  12. TRẢ KẾT QUẢ
-  ==========================================
-*/
+        stayType,
 
-return NextResponse.json({
-  success: true,
+        checkIn,
+        checkOut,
 
-  booking: {
-    ...booking,
+        months,
 
-    id: Number(
-      booking.id
-    ),
+        rooms: result,
+      },
+      {
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Availability API error:",
+      error
+    );
 
-    rooms:
-      bookingRooms ||
-      [],
-
-    totalAmount:
-      Number(
-        booking.totalAmount
-      ) || 0,
-  },
-});
-
-} catch (error) {
-console.error(
-"POST /api/bookings error:",
-error
-);
-
-return NextResponse.json(
-  {
-    error:
-      "Có lỗi xảy ra khi tạo đặt phòng.",
-  },
-  { status: 500 }
-);
-
-}
+    return NextResponse.json(
+      {
+        error:
+          "Không thể kiểm tra tình trạng phòng.",
+      },
+      { status: 500 }
+    );
+  }
 }
