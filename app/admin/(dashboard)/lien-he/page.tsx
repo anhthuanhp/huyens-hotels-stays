@@ -1,723 +1,355 @@
-"use client";
+﻿import { FormEvent, useState } from "react";
+import Link from "next/link";
 
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "../../../lib/supabase";
+type Language = "vi" | "en";
 
-type ContactMessage = {
-  id: number;
-  name: string;
-  phone: string;
-  email: string | null;
-  message: string;
-  language: "vi" | "en";
-  status: "new" | "read" | "processing" | "completed";
-  created_at: string;
+type FormData = {
+name: string;
+phone: string;
+email: string;
+message: string;
 };
 
-type FilterStatus =
-  | "all"
-  | "new"
-  | "read"
-  | "processing"
-  | "completed";
+const initialForm: FormData = {
+name: "",
+phone: "",
+email: "",
+message: "",
+};
 
-export default function AdminLienHePage() {
-  const [messages, setMessages] = useState<ContactMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedMessage, setSelectedMessage] =
-    useState<ContactMessage | null>(null);
+export default function LienHePage() {
+const [language, setLanguage] = useState<Language>("vi");
+const [form, setForm] = useState<FormData>(initialForm);
+const [sending, setSending] = useState(false);
+const [success, setSuccess] = useState("");
+const [error, setError] = useState("");
 
-  const [filter, setFilter] =
-    useState<FilterStatus>("all");
+const isVi = language === "vi";
 
-  const [search, setSearch] = useState("");
-  const [updating, setUpdating] = useState(false);
+const updateField = (field: keyof FormData, value: string) => {
+setForm((prev) => ({
+...prev,
+[field]: value,
+}));
+};
 
-  useEffect(() => {
-    loadMessages();
-  }, []);
+const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+event.preventDefault();
 
-  const loadMessages = async () => {
-    setLoading(true);
+setSuccess("");
+setError("");
 
-    const { data, error } = await supabase
-      .from("contact_messages")
-      .select(
-        "id, name, phone, email, message, language, status, created_at"
-      )
-      .order("created_at", {
-        ascending: false,
-      });
+if (!form.name.trim() || !form.phone.trim() || !form.message.trim()) {
+  setError(
+    isVi
+      ? "Vui lòng nhập họ tên, số điện thoại và nội dung cần hỗ trợ."
+      : "Please enter your name, phone number and message."
+  );
+  return;
+}
 
-    if (error) {
-      console.error(
-        "Lỗi tải liên hệ:",
-        error
-      );
+setSending(true);
 
-      setMessages([]);
-      setLoading(false);
-      return;
-    }
+try {
+  const response = await fetch("/api/contact", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim() || null,
+      message: form.message.trim(),
+      language,
+    }),
+  });
 
-    setMessages(
-      (data ?? []) as ContactMessage[]
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(
+      result.message ||
+        (isVi
+          ? "Không thể gửi thông tin."
+          : "Unable to send your message.")
     );
+  }
 
-    setLoading(false);
-  };
+  setForm(initialForm);
 
-  const filteredMessages = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+  setSuccess(
+    isVi
+      ? "Tin nhắn của bạn đã được gửi. Huyen's Hotels & Stays sẽ liên hệ lại sớm nhất."
+      : "Your message has been sent. Huyen's Hotels & Stays will contact you soon."
+  );
+} catch (err) {
+  console.error("Contact form error:", err);
 
-    return messages.filter((item) => {
-      const matchesStatus =
-        filter === "all" ||
-        item.status === filter;
+  setError(
+    err instanceof Error
+      ? err.message
+      : isVi
+        ? "Không thể gửi tin nhắn lúc này. Vui lòng thử lại."
+        : "Unable to send your message. Please try again."
+  );
+} finally {
+  setSending(false);
+}
 
-      if (!matchesStatus) {
-        return false;
-      }
+};
 
-      if (!keyword) {
-        return true;
-      }
+return (
+<main className="min-h-screen bg-neutral-50">
+<section className="border-b border-neutral-200 bg-white">
+<div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+<div className="mb-8">
+<Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-600 transition hover:text-sky-600" >
+<span aria-hidden="true">←</span>
+{isVi ? "Trở về trang chủ" : "Back to home"}
+</Link>
+</div>
 
-      return (
-        item.name.toLowerCase().includes(keyword) ||
-        item.phone.toLowerCase().includes(keyword) ||
-        (item.email ?? "")
-          .toLowerCase()
-          .includes(keyword) ||
-        item.message.toLowerCase().includes(keyword)
-      );
-    });
-  }, [messages, filter, search]);
+      <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
+            Huyen's Hotels & Stays
+          </p>
 
-  const newCount = messages.filter(
-    (item) => item.status === "new"
-  ).length;
+          <h1 className="text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+            {isVi ? "Liên hệ" : "Contact us"}
+          </h1>
 
-  const readCount = messages.filter(
-    (item) => item.status === "read"
-  ).length;
+          <p className="mt-3 max-w-2xl text-base leading-7 text-neutral-600">
+            {isVi
+              ? "Bạn cần hỗ trợ đặt phòng, tìm phòng phù hợp hoặc muốn biết thêm thông tin về các điểm lưu trú của Huyen's? Hãy liên hệ với chúng tôi."
+              : "Need help with a booking, looking for a suitable room, or want to learn more about Huyen's stays? Get in touch with us."}
+          </p>
+        </div>
 
-  const processingCount = messages.filter(
-    (item) => item.status === "processing"
-  ).length;
-
-  const completedCount = messages.filter(
-    (item) => item.status === "completed"
-  ).length;
-
-  const formatDateTime = (value: string) => {
-    return new Intl.DateTimeFormat(
-      "vi-VN",
-      {
-        dateStyle: "short",
-        timeStyle: "short",
-      }
-    ).format(new Date(value));
-  };
-
-  const updateStatus = async (
-    id: number,
-    status: ContactMessage["status"]
-  ) => {
-    setUpdating(true);
-
-    const { error } = await supabase
-      .from("contact_messages")
-      .update({
-        status,
-      })
-      .eq("id", id);
-
-    if (error) {
-      console.error(
-        "Lỗi cập nhật trạng thái:",
-        error
-      );
-
-      setUpdating(false);
-      return;
-    }
-
-    setMessages((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status,
-            }
-          : item
-      )
-    );
-
-    setSelectedMessage((current) =>
-      current && current.id === id
-        ? {
-            ...current,
-            status,
-          }
-        : current
-    );
-
-    setUpdating(false);
-  };
-
-  const openMessage = async (
-    item: ContactMessage
-  ) => {
-    setSelectedMessage(item);
-
-    if (item.status === "new") {
-      await updateStatus(item.id, "read");
-    }
-  };
-
-  const closeMessage = () => {
-    setSelectedMessage(null);
-  };
-
-  return (
-    <div>
-      {/* HEADER */}
-      <div className="mb-8">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-              Liên hệ
-            </h1>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Quản lý thông tin khách hàng gửi từ website.
-            </p>
-          </div>
+        <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 p-1">
+          <button
+            type="button"
+            onClick={() => setLanguage("vi")}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              language === "vi"
+                ? "bg-sky-500 text-white"
+                : "text-neutral-600 hover:bg-white"
+            }`}
+          >
+            VI
+          </button>
 
           <button
             type="button"
-            onClick={loadMessages}
-            disabled={loading}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            onClick={() => setLanguage("en")}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              language === "en"
+                ? "bg-sky-500 text-white"
+                : "text-neutral-600 hover:bg-white"
+            }`}
           >
-            {loading
-              ? "Đang tải..."
-              : "Làm mới"}
+            EN
           </button>
         </div>
       </div>
+    </div>
+  </section>
 
-      {/* SUMMARY */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard
-          label="Tin mới"
-          value={newCount}
-          active={filter === "new"}
-          onClick={() => setFilter("new")}
-          highlight
-        />
+  <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+    <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="rounded-3xl border border-sky-100 bg-sky-50 p-7 shadow-sm sm:p-9">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-600">
+          {isVi ? "Thông tin liên hệ" : "Contact information"}
+        </p>
 
-        <SummaryCard
-          label="Đã xem"
-          value={readCount}
-          active={filter === "read"}
-          onClick={() => setFilter("read")}
-        />
+        <h2 className="mt-3 text-2xl font-bold text-neutral-900">
+          {isVi
+            ? "Chúng tôi luôn sẵn sàng hỗ trợ bạn"
+            : "We are here to help"}
+        </h2>
 
-        <SummaryCard
-          label="Đang xử lý"
-          value={processingCount}
-          active={filter === "processing"}
-          onClick={() =>
-            setFilter("processing")
-          }
-        />
+        <p className="mt-4 leading-7 text-neutral-600">
+          {isVi
+            ? "Liên hệ trực tiếp với Huyen's Hotels & Stays để được hỗ trợ nhanh về phòng nghỉ, đặt phòng và thông tin lưu trú."
+            : "Contact Huyen's Hotels & Stays directly for help with rooms, bookings and accommodation information."}
+        </p>
 
-        <SummaryCard
-          label="Hoàn tất"
-          value={completedCount}
-          active={filter === "completed"}
-          onClick={() =>
-            setFilter("completed")
-          }
-        />
+        <div className="mt-8 space-y-4">
+          <a
+            href="tel:0902095669"
+            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
+          >
+            <div className="text-sm text-neutral-500">Hotline</div>
+            <div className="mt-1 text-lg font-semibold text-neutral-900">
+              0902 095 669
+            </div>
+          </a>
+
+          <a
+            href="https://zalo.me/0902095669"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
+          >
+            <div className="text-sm text-neutral-500">Zalo</div>
+            <div className="mt-1 text-lg font-semibold text-neutral-900">
+              0902 095 669
+            </div>
+          </a>
+
+          <a
+            href="https://wa.me/84902095669"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
+          >
+            <div className="text-sm text-neutral-500">WhatsApp</div>
+            <div className="mt-1 text-lg font-semibold text-neutral-900">
+              +84 902 095 669
+            </div>
+          </a>
+
+          <a
+            href="mailto:buihongnhung83@gmail.com"
+            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
+          >
+            <div className="text-sm text-neutral-500">Email</div>
+            <div className="mt-1 break-all text-lg font-semibold text-neutral-900">
+              buihongnhung83@gmail.com
+            </div>
+          </a>
+        </div>
+
+        <div className="mt-8">
+          <Link
+            href="/tim-phong"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-sky-500 px-5 py-3.5 font-semibold text-white transition hover:bg-sky-600"
+          >
+            {isVi ? "Đặt phòng trực tiếp" : "Book directly"}
+          </Link>
+        </div>
       </div>
 
-      {/* LIST */}
-      <div className="mt-8 rounded-2xl border border-slate-200 bg-white">
-        {/* TOOLBAR */}
-        <div className="border-b border-slate-200 p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            {/* FILTER */}
-            <div className="flex flex-wrap gap-2">
-              <FilterButton
-                active={filter === "all"}
-                onClick={() =>
-                  setFilter("all")
-                }
-              >
-                Tất cả
-              </FilterButton>
+      <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-sm sm:p-9">
+        <h2 className="text-2xl font-bold text-neutral-900">
+          {isVi ? "Gửi yêu cầu cho chúng tôi" : "Send us a message"}
+        </h2>
 
-              <FilterButton
-                active={filter === "new"}
-                onClick={() =>
-                  setFilter("new")
-                }
-              >
-                Mới
-              </FilterButton>
+        <p className="mt-2 text-sm leading-6 text-neutral-500">
+          {isVi
+            ? "Điền thông tin bên dưới, đội ngũ Huyen's Hotels & Stays sẽ tiếp nhận và liên hệ lại."
+            : "Fill in the form below and the Huyen's Hotels & Stays team will get back to you."}
+        </p>
 
-              <FilterButton
-                active={filter === "read"}
-                onClick={() =>
-                  setFilter("read")
-                }
-              >
-                Đã xem
-              </FilterButton>
+        <form onSubmit={handleSubmit} className="mt-7 space-y-5">
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-neutral-800">
+              {isVi ? "Họ và tên" : "Full name"}{" "}
+              <span className="text-red-500">*</span>
+            </label>
 
-              <FilterButton
-                active={
-                  filter === "processing"
-                }
-                onClick={() =>
-                  setFilter("processing")
-                }
-              >
-                Đang xử lý
-              </FilterButton>
-
-              <FilterButton
-                active={
-                  filter === "completed"
-                }
-                onClick={() =>
-                  setFilter("completed")
-                }
-              >
-                Hoàn tất
-              </FilterButton>
-            </div>
-
-            {/* SEARCH */}
             <input
-              type="search"
-              value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
+              type="text"
+              value={form.name}
+              onChange={(event) =>
+                updateField("name", event.target.value)
               }
-              placeholder="Tìm tên, điện thoại, email..."
-              className="h-10 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 lg:w-80"
+              placeholder={isVi ? "Nhập họ và tên" : "Your full name"}
+              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
             />
           </div>
-        </div>
 
-        {/* TABLE */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-              <tr>
-                <th className="px-6 py-4">
-                  Khách hàng
-                </th>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                {isVi ? "Số điện thoại" : "Phone number"}{" "}
+                <span className="text-red-500">*</span>
+              </label>
 
-                <th className="px-6 py-4">
-                  Điện thoại
-                </th>
-
-                <th className="px-6 py-4">
-                  Email
-                </th>
-
-                <th className="px-6 py-4">
-                  Nội dung
-                </th>
-
-                <th className="px-6 py-4">
-                  Thời gian
-                </th>
-
-                <th className="px-6 py-4">
-                  Trạng thái
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-12 text-center text-slate-400"
-                  >
-                    Đang tải dữ liệu...
-                  </td>
-                </tr>
-              ) : filteredMessages.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-12 text-center text-slate-400"
-                  >
-                    Không có liên hệ nào.
-                  </td>
-                </tr>
-              ) : (
-                filteredMessages.map(
-                  (item) => (
-                    <tr
-                      key={item.id}
-                      onClick={() =>
-                        openMessage(item)
-                      }
-                      className={`cursor-pointer transition hover:bg-slate-50 ${
-                        item.status === "new"
-                          ? "bg-sky-50/40"
-                          : ""
-                      }`}
-                    >
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-slate-900">
-                          {item.name}
-                        </div>
-
-                        <div className="mt-1 text-xs text-slate-400">
-                          #{item.id}
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <a
-                          href={`tel:${item.phone}`}
-                          onClick={(e) =>
-                            e.stopPropagation()
-                          }
-                          className="text-slate-700 hover:text-sky-600"
-                        >
-                          {item.phone}
-                        </a>
-                      </td>
-
-                      <td className="px-6 py-4 text-slate-600">
-                        {item.email || "—"}
-                      </td>
-
-                      <td className="max-w-[260px] px-6 py-4">
-                        <div className="truncate text-slate-600">
-                          {item.message}
-                        </div>
-                      </td>
-
-                      <td className="whitespace-nowrap px-6 py-4 text-slate-500">
-                        {formatDateTime(
-                          item.created_at
-                        )}
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <StatusBadge
-                          status={item.status}
-                        />
-                      </td>
-                    </tr>
-                  )
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* DETAIL MODAL */}
-      {selectedMessage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
-              closeMessage();
-            }
-          }}
-        >
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-            {/* MODAL HEADER */}
-            <div className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-900">
-                  Thông tin liên hệ
-                </h2>
-
-                <p className="mt-1 text-xs text-slate-400">
-                  Mã liên hệ #{selectedMessage.id}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={closeMessage}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                aria-label="Đóng"
-              >
-                ×
-              </button>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={(event) =>
+                  updateField("phone", event.target.value)
+                }
+                placeholder={
+                  isVi ? "Nhập số điện thoại" : "Your phone number"
+                }
+                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              />
             </div>
 
-            {/* MODAL BODY */}
-            <div className="space-y-6 p-6">
-              <div className="grid gap-5 sm:grid-cols-2">
-                <InfoItem
-                  label="Họ và tên"
-                  value={selectedMessage.name}
-                />
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                Email
+              </label>
 
-                <InfoItem
-                  label="Điện thoại"
-                  value={selectedMessage.phone}
-                  href={`tel:${selectedMessage.phone}`}
-                />
-
-                <InfoItem
-                  label="Email"
-                  value={
-                    selectedMessage.email ||
-                    "Không cung cấp"
-                  }
-                  href={
-                    selectedMessage.email
-                      ? `mailto:${selectedMessage.email}`
-                      : undefined
-                  }
-                />
-
-                <InfoItem
-                  label="Ngôn ngữ"
-                  value={
-                    selectedMessage.language ===
-                    "en"
-                      ? "English"
-                      : "Tiếng Việt"
-                  }
-                />
-
-                <InfoItem
-                  label="Thời gian"
-                  value={formatDateTime(
-                    selectedMessage.created_at
-                  )}
-                />
-              </div>
-
-              {/* MESSAGE */}
-              <div>
-                <div className="mb-2 text-sm font-medium text-slate-700">
-                  Nội dung liên hệ
-                </div>
-
-                <div className="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
-                  {selectedMessage.message}
-                </div>
-              </div>
-
-              {/* STATUS */}
-              <div>
-                <div className="mb-2 text-sm font-medium text-slate-700">
-                  Trạng thái
-                </div>
-
-                <select
-                  value={selectedMessage.status}
-                  onChange={(e) =>
-                    updateStatus(
-                      selectedMessage.id,
-                      e.target.value as ContactMessage["status"]
-                    )
-                  }
-                  disabled={updating}
-                  className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-                >
-                  <option value="new">
-                    Mới
-                  </option>
-
-                  <option value="read">
-                    Đã xem
-                  </option>
-
-                  <option value="processing">
-                    Đang xử lý
-                  </option>
-
-                  <option value="completed">
-                    Hoàn tất
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            {/* MODAL FOOTER */}
-            <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
-              <button
-                type="button"
-                onClick={closeMessage}
-                className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                Đóng
-              </button>
-
-              <a
-                href={`tel:${selectedMessage.phone}`}
-                className="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-700"
-              >
-                Gọi khách
-              </a>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) =>
+                  updateField("email", event.target.value)
+                }
+                placeholder={
+                  isVi ? "Email của bạn" : "Your email address"
+                }
+                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              />
             </div>
           </div>
-        </div>
-      )}
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-neutral-800">
+              {isVi ? "Nội dung cần hỗ trợ" : "Message"}{" "}
+              <span className="text-red-500">*</span>
+            </label>
+
+            <textarea
+              value={form.message}
+              onChange={(event) =>
+                updateField("message", event.target.value)
+              }
+              rows={7}
+              placeholder={
+                isVi
+                  ? "Ví dụ: Tôi muốn hỏi về phòng, giá phòng hoặc đặt phòng..."
+                  : "For example: I would like to ask about rooms, rates or booking..."
+              }
+              className="w-full resize-y rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+            />
+          </div>
+
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm leading-6 text-green-700">
+              {success}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={sending}
+            className="w-full rounded-xl bg-sky-500 px-5 py-3.5 font-semibold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {sending
+              ? isVi
+                ? "Đang gửi..."
+                : "Sending..."
+              : isVi
+                ? "Gửi liên hệ"
+                : "Send message"}
+          </button>
+        </form>
+      </div>
     </div>
-  );
-}
+  </section>
+</main>
 
-function SummaryCard({
-  label,
-  value,
-  active,
-  onClick,
-  highlight = false,
-}: {
-  label: string;
-  value: number;
-  active: boolean;
-  onClick: () => void;
-  highlight?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-2xl border bg-white p-6 text-left transition hover:border-slate-300 hover:shadow-sm ${
-        active
-          ? "border-slate-900 ring-1 ring-slate-900"
-          : "border-slate-200"
-      }`}
-    >
-      <div
-        className={`text-sm ${
-          highlight && value > 0
-            ? "font-medium text-sky-600"
-            : "text-slate-500"
-        }`}
-      >
-        {label}
-      </div>
-
-      <div className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-        {value}
-      </div>
-    </button>
-  );
-}
-
-function FilterButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
-        active
-          ? "bg-slate-900 text-white"
-          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function StatusBadge({
-  status,
-}: {
-  status: ContactMessage["status"];
-}) {
-  const config: Record<
-    ContactMessage["status"],
-    {
-      label: string;
-      className: string;
-    }
-  > = {
-    new: {
-      label: "Mới",
-      className:
-        "bg-sky-50 text-sky-700",
-    },
-
-    read: {
-      label: "Đã xem",
-      className:
-        "bg-slate-100 text-slate-600",
-    },
-
-    processing: {
-      label: "Đang xử lý",
-      className:
-        "bg-amber-50 text-amber-700",
-    },
-
-    completed: {
-      label: "Hoàn tất",
-      className:
-        "bg-emerald-50 text-emerald-700",
-    },
-  };
-
-  const item = config[status];
-
-  return (
-    <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${item.className}`}
-    >
-      {item.label}
-    </span>
-  );
-}
-
-function InfoItem({
-  label,
-  value,
-  href,
-}: {
-  label: string;
-  value: string;
-  href?: string;
-}) {
-  return (
-    <div>
-      <div className="text-xs font-medium uppercase tracking-wide text-slate-400">
-        {label}
-      </div>
-
-      {href ? (
-        <a
-          href={href}
-          className="mt-1 block text-sm font-medium text-slate-800 hover:text-sky-600"
-        >
-          {value}
-        </a>
-      ) : (
-        <div className="mt-1 text-sm font-medium text-slate-800">
-          {value}
-        </div>
-      )}
-    </div>
-  );
+);
 }

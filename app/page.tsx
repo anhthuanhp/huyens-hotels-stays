@@ -1,38 +1,29 @@
 import type { Metadata } from "next";
-
-import Link from "next/link";
-
-import { createClient } from "@supabase/supabase-js";
+import { cache } from "react";
+import {
+  createClient,
+  type SupabaseClient,
+} from "@supabase/supabase-js";
 
 import HomeClient from "./HomeClient";
 
-// =========================================================
-// HOME CACHE
-// =========================================================
-
 export const revalidate = 60;
 
-export const dynamic = "force-static";
-
-// =========================================================
-// SEO
-// =========================================================
-
-const SITE_URL =
+const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://huyenhotels.com";
+  "https://huyenhotels.com"
+).replace(/\/+$/, "");
 
 const SITE_NAME = "Huyen's Hotels & Stays";
 
 const SEO_TITLE =
-  "Khách sạn, Guesthouse & Homestay TP.HCM | Huyen's Hotels & Stays";
+  "Khách sạn, Homestay TP.HCM | Huyen's Hotels & Stays";
 
 const SEO_DESCRIPTION =
   "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại TP.HCM. Khám phá phòng nghỉ tiện nghi, vị trí thuận tiện và đặt phòng trực tiếp.";
 
-// =========================================================
-// TYPES
-// =========================================================
+const FALLBACK_OG_IMAGE =
+  `${SITE_URL}/hero/hero-1.webp`;
 
 type Hotel = {
   id: number;
@@ -55,16 +46,7 @@ type HeroSlide = {
   description_en: string | null;
 };
 
-type HotelMedia = {
-  entity_id: number;
-  public_url: string;
-};
-
-// =========================================================
-// OTA TYPES
-// =========================================================
-
-type HotelOTAChannelRow = {
+type OTAChannelRow = {
   id: number;
   hotel_id: number;
   ota_id: number | null;
@@ -93,26 +75,33 @@ type HotelOTA = {
   sort_order: number;
 };
 
-// =========================================================
-// SUPABASE CLIENT
-// =========================================================
+/*
+ * Supabase server client.
+ *
+ * persistSession=false vì trang Home không cần session Supabase.
+ */
+let supabaseClient: SupabaseClient | null = null;
 
-function getSupabaseClient() {
-  const supabaseUrl =
+function getSupabase(): SupabaseClient {
+  if (supabaseClient) {
+    return supabaseClient;
+  }
+
+  const url =
     process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-  const supabaseKey =
+  const key =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  if (!supabaseUrl || !supabaseKey) {
+  if (!url || !key) {
     throw new Error(
-      "Thiáº¿u biáº¿n mÃ´i trÆ°á»ng Supabase: NEXT_PUBLIC_SUPABASE_URL hoáº·c NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      "Thiếu biến môi trường Supabase: NEXT_PUBLIC_SUPABASE_URL hoặc NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
     );
   }
 
-  return createClient(
-    supabaseUrl,
-    supabaseKey,
+  supabaseClient = createClient(
+    url,
+    key,
     {
       auth: {
         persistSession: false,
@@ -121,123 +110,92 @@ function getSupabaseClient() {
       },
     }
   );
+
+  return supabaseClient;
 }
 
-// =========================================================
-// HERO SLIDES
-// =========================================================
+/* =========================================================
+   HERO
+========================================================= */
 
-async function getHeroSlides(
-  supabase: ReturnType<typeof getSupabaseClient>
-): Promise<HeroSlide[]> {
-  const {
-    data,
-    error,
-  } = await supabase
-    .from("hero_slides")
-    .select(
-      `
-        id,
-        position,
-        image_url,
-        title_vi,
-        title_en,
-        description_vi,
-        description_en
-      `
-    )
-    .eq("status", "active")
-    .order("position", {
-      ascending: true,
-    });
+const getHeroSlides = cache(
+  async (): Promise<HeroSlide[]> => {
+    const { data, error } =
+      await getSupabase()
+        .from("hero_slides")
+        .select(
+          "id, position, image_url, title_vi, title_en, description_vi, description_en"
+        )
+        .eq("status", "active")
+        .order("position", {
+          ascending: true,
+        });
+
+    if (error) {
+      console.error(
+        "Lỗi lấy Hero từ Supabase:",
+        error
+      );
+
+      return [];
+    }
+
+    return (data ??
+      []) as HeroSlide[];
+  }
+);
+
+/* =========================================================
+   HOTELS
+========================================================= */
+
+async function getHotels(): Promise<
+  Hotel[]
+> {
+  const { data, error } =
+    await getSupabase()
+      .from("hotels")
+      .select(
+        "id, slug, name_vi, name_en, address_vi, address_en, description_vi, description_en"
+      )
+      .eq("status", "active")
+      .order("id", {
+        ascending: true,
+      });
 
   if (error) {
     console.error(
-      "Lá»—i láº¥y Hero tá»« Supabase:",
+      "Lỗi lấy danh sách khách sạn:",
       error
     );
 
-    return [];
+    throw new Error(
+      `Không tải được danh sách nơi lưu trú: ${error.message}`
+    );
   }
 
-  return (data ?? []) as HeroSlide[];
+  return (data ??
+    []) as Hotel[];
 }
 
-// =========================================================
-// HOMEPAGE DATA
-// =========================================================
+/* =========================================================
+   HOTEL COVERS
+========================================================= */
 
-async function getHomepageData() {
-  const supabase = getSupabaseClient();
-
-  // -------------------------------------------------------
-  // HERO
-  // -------------------------------------------------------
-
-  const heroSlides =
-    await getHeroSlides(supabase);
-
-  // -------------------------------------------------------
-  // HOTELS
-  // -------------------------------------------------------
-
-  const {
-    data: hotelsData,
-    error: hotelError,
-  } = await supabase
-    .from("hotels")
-    .select(
-      `
-        id,
-        slug,
-        name_vi,
-        name_en,
-        address_vi,
-        address_en,
-        description_vi,
-        description_en
-      `
-    )
-    .eq("status", "active")
-    .order("id", {
-      ascending: true,
-    });
-
-  if (hotelError) {
-    console.error(
-      "Lá»—i láº¥y danh sÃ¡ch khÃ¡ch sáº¡n:",
-      hotelError
-    );
-
-    throw new Error(
-      `KhÃ´ng táº£i Ä‘Æ°á»£c danh sÃ¡ch nÆ¡i lÆ°u trÃº: ${hotelError.message}`
-    );
-  }
-
-  const hotels =
-    (hotelsData ?? []) as Hotel[];
-
-  // -------------------------------------------------------
-  // HOTEL COVERS
-  // -------------------------------------------------------
-
-  const hotelCovers: Record<
+async function getHotelCovers(
+  hotelIds: number[]
+): Promise<Record<number, string>> {
+  const covers: Record<
     number,
     string
   > = {};
 
-  const hotelIds = hotels
-    .map((hotel) => hotel.id)
-    .filter(
-      (id): id is number =>
-        Number.isFinite(id)
-    );
+  if (hotelIds.length === 0) {
+    return covers;
+  }
 
-  if (hotelIds.length > 0) {
-    const {
-      data: mediaData,
-      error: mediaError,
-    } = await supabase
+  const { data, error } =
+    await getSupabase()
       .from("media")
       .select(
         "entity_id, public_url"
@@ -245,184 +203,252 @@ async function getHomepageData() {
       .eq("entity_type", "hotel")
       .eq("is_cover", true)
       .eq("status", "active")
-      .in("entity_id", hotelIds);
-
-    if (mediaError) {
-      console.error(
-        "Lá»—i láº¥y áº£nh cover khÃ¡ch sáº¡n:",
-        mediaError
+      .in(
+        "entity_id",
+        hotelIds
       );
-    } else if (mediaData) {
-      for (const item of mediaData as HotelMedia[]) {
-        if (
-          Number.isFinite(item.entity_id) &&
-          typeof item.public_url === "string" &&
-          item.public_url.trim()
-        ) {
-          hotelCovers[item.entity_id] =
-            item.public_url;
-        }
-      }
+
+  if (error) {
+    console.error(
+      "Lỗi lấy ảnh cover khách sạn:",
+      error
+    );
+
+    return covers;
+  }
+
+  for (const item of data ?? []) {
+    if (
+      Number.isFinite(
+        Number(item.entity_id)
+      ) &&
+      typeof item.public_url ===
+        "string" &&
+      item.public_url.trim()
+    ) {
+      covers[
+        Number(item.entity_id)
+      ] = item.public_url;
     }
   }
 
-  // -------------------------------------------------------
-  // HOTEL OTAs
-  // -------------------------------------------------------
+  return covers;
+}
 
-  const hotelOTAs: Record<
+/* =========================================================
+   OTA
+   OTA VẪN ĐƯỢC HIỂN THỊ TRÊN HOME
+========================================================= */
+
+async function getHotelOTAs(
+  hotelIds: number[]
+): Promise<
+  Record<number, HotelOTA[]>
+> {
+  const result: Record<
     number,
     HotelOTA[]
   > = {};
 
-  if (hotelIds.length > 0) {
-    const {
-      data: otaChannelsData,
-      error: otaChannelsError,
-    } = await supabase
+  if (hotelIds.length === 0) {
+    return result;
+  }
+
+  const supabase = getSupabase();
+
+  const { data, error } =
+    await supabase
       .from("hotel_ota_channels")
       .select(
-        `
-          id,
-          hotel_id,
-          ota_id,
-          listing_url,
-          external_hotel_id,
-          sort_order,
-          status
-        `
+        "id, hotel_id, ota_id, listing_url, external_hotel_id, sort_order, status"
       )
-      .in("hotel_id", hotelIds)
+      .in(
+        "hotel_id",
+        hotelIds
+      )
       .order("sort_order", {
         ascending: true,
       });
 
-    if (otaChannelsError) {
+  if (error) {
+    console.error(
+      "Lỗi lấy OTA của khách sạn:",
+      error
+    );
+
+    return result;
+  }
+
+  const rows =
+    ((data ?? []) as OTAChannelRow[])
+      .filter(
+        (row) =>
+          row.status
+            ?.trim()
+            .toLowerCase() ===
+          "active"
+      );
+
+  const platformIds =
+    Array.from(
+      new Set(
+        rows
+          .map(
+            (row) =>
+              row.ota_id
+          )
+          .filter(
+            (
+              id
+            ): id is number =>
+              typeof id ===
+              "number"
+          )
+      )
+    );
+
+  const platformMap =
+    new Map<
+      number,
+      OTAPlatform
+    >();
+
+  if (
+    platformIds.length > 0
+  ) {
+    const {
+      data: platforms,
+      error:
+        platformsError,
+    } = await supabase
+      .from("ota_platforms")
+      .select(
+        "id, name, slug, logo, website"
+      )
+      .in(
+        "id",
+        platformIds
+      );
+
+    if (platformsError) {
       console.error(
-        "Lá»—i láº¥y OTA cá»§a khÃ¡ch sáº¡n:",
-        otaChannelsError
+        "Lỗi lấy thông tin nền tảng OTA:",
+        platformsError
       );
     } else {
-      const otaRows: HotelOTAChannelRow[] =
-        (otaChannelsData ?? [])
-          .filter(
-            (row) =>
-              typeof row.status === "string" &&
-              row.status.trim().toLowerCase() ===
-                "active"
-          )
-          .map((row) => ({
-            id: row.id,
-            hotel_id: row.hotel_id,
-            ota_id: row.ota_id,
-            listing_url: row.listing_url,
-            external_hotel_id:
-              row.external_hotel_id,
-            sort_order: row.sort_order,
-            status: row.status,
-          }));
-
-      const platformIds = Array.from(
-        new Set(
-          otaRows
-            .map((row) => row.ota_id)
-            .filter(
-              (id): id is number =>
-                typeof id === "number" &&
-                Number.isFinite(id)
-            )
-        )
-      );
-
-      let platforms: OTAPlatform[] = [];
-
-      if (platformIds.length > 0) {
-        const {
-          data: platformsData,
-          error: platformsError,
-        } = await supabase
-          .from("ota_platforms")
-          .select(
-            `
-              id,
-              name,
-              slug,
-              logo,
-              website
-            `
-          )
-          .in("id", platformIds);
-
-        if (platformsError) {
-          console.error(
-            "Lá»—i láº¥y thÃ´ng tin ná»n táº£ng OTA:",
-            platformsError
-          );
-        } else {
-          platforms =
-            (platformsData ?? []) as OTAPlatform[];
-        }
-      }
-
-      const platformMap =
-        new Map<number, OTAPlatform>();
-
-      for (const platform of platforms) {
+      for (const platform of
+        (platforms ??
+          []) as OTAPlatform[]) {
         platformMap.set(
           platform.id,
           platform
         );
       }
-
-      for (const row of otaRows) {
-        const platform =
-          row.ota_id !== null
-            ? platformMap.get(row.ota_id)
-            : undefined;
-
-        const name =
-          platform?.name ||
-          (row.ota_id !== null
-            ? `OTA ${row.ota_id}`
-            : "OTA");
-
-        const ota: HotelOTA = {
-          id: row.id,
-          name,
-          slug: platform?.slug || "",
-          logo: platform?.logo || null,
-          website:
-            platform?.website || null,
-          listing_url:
-            row.listing_url || null,
-          external_hotel_id:
-            row.external_hotel_id || null,
-          sort_order:
-            typeof row.sort_order === "number"
-              ? row.sort_order
-              : 0,
-        };
-
-        if (!hotelOTAs[row.hotel_id]) {
-          hotelOTAs[row.hotel_id] = [];
-        }
-
-        hotelOTAs[row.hotel_id].push(
-          ota
-        );
-      }
-
-      for (const hotelId of Object.keys(
-        hotelOTAs
-      )) {
-        hotelOTAs[Number(hotelId)].sort(
-          (a, b) =>
-            (a.sort_order ?? 0) -
-            (b.sort_order ?? 0)
-        );
-      }
     }
   }
+
+  /*
+   * hotel_ota_channels đã được DB sắp xếp theo sort_order.
+   */
+  for (const row of rows) {
+    const platform =
+      row.ota_id !== null
+        ? platformMap.get(
+            row.ota_id
+          )
+        : undefined;
+
+    const ota: HotelOTA = {
+      id: row.id,
+
+      name:
+        platform?.name ||
+        (row.ota_id !== null
+          ? `OTA ${row.ota_id}`
+          : "OTA"),
+
+      slug:
+        platform?.slug || "",
+
+      logo:
+        platform?.logo || null,
+
+      website:
+        platform?.website ||
+        null,
+
+      listing_url:
+        row.listing_url ||
+        null,
+
+      external_hotel_id:
+        row.external_hotel_id ||
+        null,
+
+      sort_order:
+        typeof row.sort_order ===
+        "number"
+          ? row.sort_order
+          : 0,
+    };
+
+    (
+      result[row.hotel_id] ??=
+        []
+    ).push(ota);
+  }
+
+  return result;
+}
+
+/* =========================================================
+   HOMEPAGE DATA
+========================================================= */
+
+async function getHomepageData() {
+  /*
+   * Các query độc lập chạy song song.
+   */
+  const [
+    heroSlides,
+    hotels,
+  ] = await Promise.all([
+    getHeroSlides(),
+    getHotels(),
+  ]);
+
+  const hotelIds =
+    hotels.map(
+      (hotel) =>
+        hotel.id
+    );
+
+  /*
+   * Cover + OTA cũng chạy song song.
+   */
+  const [
+    hotelCovers,
+    hotelOTAs,
+  ] =
+    hotelIds.length > 0
+      ? await Promise.all([
+          getHotelCovers(
+            hotelIds
+          ),
+          getHotelOTAs(
+            hotelIds
+          ),
+        ])
+      : [
+          {} as Record<
+            number,
+            string
+          >,
+          {} as Record<
+            number,
+            HotelOTA[]
+          >,
+        ];
 
   return {
     heroSlides,
@@ -432,77 +458,40 @@ async function getHomepageData() {
   };
 }
 
-// =========================================================
-// SEO METADATA
-// =========================================================
+/* =========================================================
+   METADATA
+========================================================= */
 
 export async function generateMetadata(): Promise<Metadata> {
-  const canonicalUrl =
-    SITE_URL.replace(/\/+$/, "");
+  const heroSlides =
+    await getHeroSlides();
 
-  // -------------------------------------------------------
-  // HERO IMAGE FOR OPEN GRAPH / SOCIAL SHARING
-  // -------------------------------------------------------
-
-  let heroImageUrl =
-    `${canonicalUrl}/hero/hero-1.webp`;
-
-  try {
-    const supabase =
-      getSupabaseClient();
-
-    const {
-      data: heroData,
-      error: heroError,
-    } = await supabase
-      .from("hero_slides")
-      .select("image_url")
-      .eq("status", "active")
-      .order("position", {
-        ascending: true,
-      })
-      .limit(1)
-      .maybeSingle();
-
-    if (
-      !heroError &&
-      heroData?.image_url
-    ) {
-      heroImageUrl =
-        heroData.image_url;
-    }
-  } catch (error) {
-    console.error(
-      "Lá»—i láº¥y Hero image cho SEO:",
-      error
-    );
-  }
+  const ogImage =
+    heroSlides[0]
+      ?.image_url ||
+    FALLBACK_OG_IMAGE;
 
   return {
-    metadataBase: new URL(canonicalUrl),
+    metadataBase:
+      new URL(SITE_URL),
 
-    title: SEO_TITLE,
+    /*
+     * absolute để không bị layout template nối thương hiệu
+     * thêm một lần nữa.
+     */
+    title: {
+      absolute: SEO_TITLE,
+    },
 
-    description: SEO_DESCRIPTION,
+    description:
+      SEO_DESCRIPTION,
 
-    keywords: [
-      "khÃ¡ch sáº¡n TP.HCM",
-      "khÃ¡ch sáº¡n Há»“ ChÃ­ Minh",
-      "khÃ¡ch sáº¡n trung tÃ¢m TP.HCM",
-      "guesthouse TP.HCM",
-      "homestay TP.HCM",
-      "khÃ¡ch sáº¡n Quáº­n 1",
-      "guesthouse Quáº­n 1",
-      "homestay Quáº­n 1",
-      "nhÃ  nghá»‰ TP.HCM",
-      "Ä‘áº·t phÃ²ng khÃ¡ch sáº¡n TP.HCM",
-      "Ä‘áº·t phÃ²ng Quáº­n 1",
-      "phÃ²ng khÃ¡ch sáº¡n TP.HCM",
-      "Huyen's Hotels & Stays",
-    ],
-
+    /*
+     * Chỉ Home mới canonical về SITE_URL.
+     * Các trang con tự khai báo canonical riêng.
+     */
     alternates: {
-      canonical: canonicalUrl,
+      canonical: SITE_URL,
     },
 
     robots: {
@@ -512,27 +501,28 @@ export async function generateMetadata(): Promise<Metadata> {
       googleBot: {
         index: true,
         follow: true,
-        "max-image-preview": "large",
+        "max-image-preview":
+          "large",
         "max-snippet": -1,
-        "max-video-preview": -1,
+        "max-video-preview":
+          -1,
       },
     },
 
     openGraph: {
       type: "website",
       locale: "vi_VN",
-      url: canonicalUrl,
+      url: SITE_URL,
       siteName: SITE_NAME,
       title: SEO_TITLE,
-      description: SEO_DESCRIPTION,
+      description:
+        SEO_DESCRIPTION,
 
       images: [
         {
-          url: heroImageUrl,
-          width: 1600,
-          height: 900,
+          url: ogImage,
           alt:
-            "Huyen's Hotels & Stays - KhÃ¡ch sáº¡n, guesthouse vÃ  homestay táº¡i TP.HCM",
+            "Huyen's Hotels & Stays - Khách sạn, guesthouse và homestay tại TP.HCM",
         },
       ],
     },
@@ -540,144 +530,108 @@ export async function generateMetadata(): Promise<Metadata> {
     twitter: {
       card: "summary_large_image",
       title: SEO_TITLE,
-      description: SEO_DESCRIPTION,
-      images: [heroImageUrl],
+      description:
+        SEO_DESCRIPTION,
+      images: [ogImage],
     },
   };
 }
 
-// =========================================================
-// HOME PAGE
-// =========================================================
+/* =========================================================
+   STRUCTURED DATA
+========================================================= */
 
-export default async function HomePage() {
-  let data: Awaited<
-    ReturnType<typeof getHomepageData>
-  >;
-
-  try {
-    data =
-      await getHomepageData();
-  } catch (error) {
-    console.error(
-      "Lá»—i Trang Chá»§:",
-      error
-    );
-
-    return (
-      <main className="flex min-h-screen items-center justify-center px-6">
-        <div className="max-w-md text-center">
-          <h2 className="mb-2 text-xl font-semibold text-neutral-900">
-            KhÃ´ng thá»ƒ táº£i trang
-          </h2>
-
-          <p className="mb-6 text-neutral-500">
-            ÄÃ£ xáº£y ra lá»—i khi láº¥y dá»¯ liá»‡u.
-            Vui lÃ²ng táº£i láº¡i trang sau Ã­t phÃºt.
-          </p>
-
-          <Link
-            href="/"
-            className="inline-flex rounded-lg bg-sky-500 px-6 py-2 font-medium text-white transition hover:bg-sky-600"
-          >
-            Táº£i láº¡i
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
-  const {
-    heroSlides,
-    hotels,
-    hotelCovers,
-    hotelOTAs,
-  } = data;
-
-  const canonicalUrl =
-    SITE_URL.replace(/\/+$/, "");
-
-  // =======================================================
-  // STRUCTURED DATA
-  // =======================================================
-
-  const structuredData = {
-    "@context": "https://schema.org",
+function buildStructuredData(
+  hotels: Hotel[],
+  hotelCovers: Record<
+    number,
+    string
+  >
+) {
+  return {
+    "@context":
+      "https://schema.org",
 
     "@graph": [
-      // ---------------------------------------------------
-      // ORGANIZATION
-      // ---------------------------------------------------
-
       {
-        "@type": "Organization",
+        "@type":
+          "Organization",
 
-        "@id": `${canonicalUrl}/#organization`,
+        "@id":
+          `${SITE_URL}/#organization`,
 
         name: SITE_NAME,
 
-        url: canonicalUrl,
+        url: SITE_URL,
 
-        description: SEO_DESCRIPTION,
+        description:
+          SEO_DESCRIPTION,
       },
 
-      // ---------------------------------------------------
-      // WEBSITE
-      // ---------------------------------------------------
-
       {
-        "@type": "WebSite",
+        "@type":
+          "WebSite",
 
-        "@id": `${canonicalUrl}/#website`,
+        "@id":
+          `${SITE_URL}/#website`,
 
-        url: canonicalUrl,
+        url: SITE_URL,
 
         name: SITE_NAME,
 
-        description: SEO_DESCRIPTION,
+        description:
+          SEO_DESCRIPTION,
 
         publisher: {
-          "@id": `${canonicalUrl}/#organization`,
+          "@id":
+            `${SITE_URL}/#organization`,
         },
 
-        inLanguage: "vi-VN",
+        inLanguage:
+          "vi-VN",
       },
 
-      // ---------------------------------------------------
-      // HOTEL LIST
-      // ---------------------------------------------------
-
       {
-        "@type": "ItemList",
+        "@type":
+          "ItemList",
 
-        "@id": `${canonicalUrl}/#hotel-list`,
+        "@id":
+          `${SITE_URL}/#hotel-list`,
 
         name:
-          "KhÃ¡ch sáº¡n vÃ  nÆ¡i lÆ°u trÃº táº¡i TP.HCM",
+          "Khách sạn và nơi lưu trú tại TP.HCM",
 
-        itemListElement: hotels.map(
-          (hotel, index) => {
-            const hotelUrl =
-              `${canonicalUrl}/khach-san/${hotel.slug}`;
+        itemListElement:
+          hotels.map(
+            (
+              hotel,
+              index
+            ) => ({
+              "@type":
+                "ListItem",
 
-            const item: Record<
-              string,
-              unknown
-            > = {
-              "@type": "ListItem",
-
-              position: index + 1,
+              position:
+                index + 1,
 
               item: {
-                "@type": "Hotel",
+                "@type":
+                  "Hotel",
 
-                name: hotel.name_vi,
+                name:
+                  hotel.name_vi,
 
                 description:
                   hotel.description_vi ||
                   undefined,
 
-                url: hotelUrl,
+                url:
+                  `${SITE_URL}/khach-san/${hotel.slug}`,
+
+                image:
+                  hotelCovers[
+                    hotel.id
+                  ] ||
+                  undefined,
 
                 address: {
                   "@type":
@@ -688,7 +642,7 @@ export default async function HomePage() {
                     undefined,
 
                   addressLocality:
-                    "Há»“ ChÃ­ Minh",
+                    "Hồ Chí Minh",
 
                   addressRegion:
                     "TP.HCM",
@@ -697,25 +651,40 @@ export default async function HomePage() {
                     "VN",
                 },
               },
-            };
-
-            const cover =
-              hotelCovers[hotel.id];
-
-            if (cover) {
-              (
-                item.item as {
-                  image?: string;
-                }
-              ).image = cover;
-            }
-
-            return item;
-          }
-        ),
+            })
+          ),
       },
     ],
   };
+}
+
+/*
+ * Escape "<" để dữ liệu từ DB không thể
+ * kết thúc thẻ script JSON-LD sớm.
+ */
+function toSafeJsonLd(
+  data: unknown
+) {
+  return JSON.stringify(
+    data
+  ).replace(
+    /</g,
+    "\\u003c"
+  );
+}
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+export default async function HomePage() {
+  const {
+    heroSlides,
+    hotels,
+    hotelCovers,
+    hotelOTAs,
+  } =
+    await getHomepageData();
 
   return (
     <>
@@ -723,17 +692,26 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html:
-            JSON.stringify(
-              structuredData
+            toSafeJsonLd(
+              buildStructuredData(
+                hotels,
+                hotelCovers
+              )
             ),
         }}
       />
 
       <HomeClient
-        heroSlides={heroSlides}
+        heroSlides={
+          heroSlides
+        }
         hotels={hotels}
-        hotelCovers={hotelCovers}
-        hotelOTAs={hotelOTAs}
+        hotelCovers={
+          hotelCovers
+        }
+        hotelOTAs={
+          hotelOTAs
+        }
       />
     </>
   );
