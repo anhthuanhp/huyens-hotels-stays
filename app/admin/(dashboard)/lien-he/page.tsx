@@ -1,357 +1,703 @@
-﻿"use client";
+﻿
+"use client";
 
-import { FormEvent, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { supabase } from "../../../lib/supabase";
 
-type Language = "vi" | "en";
+type ContactStatus = "new" | "read";
 
-type FormData = {
-name: string;
-phone: string;
-email: string;
-message: string;
+type ContactMessage = {
+  id: number;
+  name: string;
+  phone: string;
+  email: string | null;
+  message: string;
+  language: "vi" | "en";
+  status: string;
+  created_at: string;
 };
 
-const initialForm: FormData = {
-name: "",
-phone: "",
-email: "",
-message: "",
-};
+type FilterType = "all" | "new" | "read";
 
-export default function LienHePage() {
-const [language, setLanguage] = useState<Language>("vi");
-const [form, setForm] = useState<FormData>(initialForm);
-const [sending, setSending] = useState(false);
-const [success, setSuccess] = useState("");
-const [error, setError] = useState("");
+function formatDate(dateString: string) {
+  const date = new Date(dateString);
 
-const isVi = language === "vi";
+  if (Number.isNaN(date.getTime())) {
+    return dateString;
+  }
 
-const updateField = (field: keyof FormData, value: string) => {
-setForm((prev) => ({
-...prev,
-[field]: value,
-}));
-};
-
-const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-event.preventDefault();
-
-setSuccess("");
-setError("");
-
-if (!form.name.trim() || !form.phone.trim() || !form.message.trim()) {
-  setError(
-    isVi
-      ? "Vui lòng nhập họ tên, số điện thoại và nội dung cần hỗ trợ."
-      : "Please enter your name, phone number and message."
-  );
-  return;
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
-setSending(true);
+function getStatus(status: string): ContactStatus {
+  return status === "new" ? "new" : "read";
+}
 
-try {
-  const response = await fetch("/api/contact", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      email: form.email.trim() || null,
-      message: form.message.trim(),
-      language,
-    }),
-  });
+function StatusBadge({ status }: { status: string }) {
+  const currentStatus = getStatus(status);
 
-  const result = await response.json();
-
-  if (!response.ok || !result.success) {
-    throw new Error(
-      result.message ||
-        (isVi
-          ? "Không thể gửi thông tin."
-          : "Unable to send your message.")
+  if (currentStatus === "new") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+        Chưa đọc
+      </span>
     );
   }
 
-  setForm(initialForm);
-
-  setSuccess(
-    isVi
-      ? "Tin nhắn của bạn đã được gửi. Huyen's Hotels & Stays sẽ liên hệ lại sớm nhất."
-      : "Your message has been sent. Huyen's Hotels & Stays will contact you soon."
+  return (
+    <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+      Đã đọc
+    </span>
   );
-} catch (err) {
-  console.error("Contact form error:", err);
-
-  setError(
-    err instanceof Error
-      ? err.message
-      : isVi
-        ? "Không thể gửi tin nhắn lúc này. Vui lòng thử lại."
-        : "Unable to send your message. Please try again."
-  );
-} finally {
-  setSending(false);
 }
 
-};
+export default function LienHePage() {
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+  const [filter, setFilter] = useState<FilterType>("all");
+  const [selectedMessage, setSelectedMessage] =
+    useState<ContactMessage | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
-return (
-<main className="min-h-screen bg-neutral-50">
-<section className="border-b border-neutral-200 bg-white">
-<div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-<div className="mb-8">
-<Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-600 transition hover:text-sky-600" >
-<span aria-hidden="true">←</span>
-{isVi ? "Trở về trang chủ" : "Back to home"}
-</Link>
-</div>
+  const loadMessages = useCallback(async () => {
+    setError("");
 
-      <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
-            Huyen's Hotels & Stays
-          </p>
+    const { data, error: queryError } = await supabase
+      .from("contact_messages")
+      .select(
+        "id, name, phone, email, message, language, status, created_at"
+      )
+      .order("created_at", { ascending: false });
 
-          <h1 className="text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
-            {isVi ? "Liên hệ" : "Contact us"}
-          </h1>
+    if (queryError) {
+      console.error("Load contact messages error:", queryError);
+      setError("Không thể tải danh sách tin nhắn.");
+      setMessages([]);
+      return;
+    }
 
-          <p className="mt-3 max-w-2xl text-base leading-7 text-neutral-600">
-            {isVi
-              ? "Bạn cần hỗ trợ đặt phòng, tìm phòng phù hợp hoặc muốn biết thêm thông tin về các điểm lưu trú của Huyen's? Hãy liên hệ với chúng tôi."
-              : "Need help with a booking, looking for a suitable room, or want to learn more about Huyen's stays? Get in touch with us."}
-          </p>
-        </div>
+    setMessages((data ?? []) as ContactMessage[]);
+  }, []);
 
-        <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 p-1">
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      setLoading(true);
+
+      if (mounted) {
+        await loadMessages();
+        setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [loadMessages]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadMessages();
+    setRefreshing(false);
+  };
+
+  const markAsRead = async (message: ContactMessage) => {
+    if (getStatus(message.status) === "read") {
+      return;
+    }
+
+    setUpdatingId(message.id);
+
+    const { error: updateError } = await supabase
+      .from("contact_messages")
+      .update({ status: "read" })
+      .eq("id", message.id);
+
+    if (updateError) {
+      console.error("Mark contact message as read error:", updateError);
+      setError("Không thể cập nhật trạng thái tin nhắn.");
+      setUpdatingId(null);
+      return;
+    }
+
+    setMessages((current) =>
+      current.map((item) =>
+        item.id === message.id
+          ? {
+              ...item,
+              status: "read",
+            }
+          : item
+      )
+    );
+
+    setSelectedMessage((current) =>
+      current && current.id === message.id
+        ? {
+            ...current,
+            status: "read",
+          }
+        : current
+    );
+
+    setUpdatingId(null);
+  };
+
+  const openMessage = async (message: ContactMessage) => {
+    setSelectedMessage(message);
+
+    if (getStatus(message.status) === "new") {
+      await markAsRead(message);
+    }
+  };
+
+  const deleteMessage = async (message: ContactMessage) => {
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn xóa tin nhắn của "${message.name}" không?\n\nThao tác này không thể hoàn tác.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingId(message.id);
+    setError("");
+
+    const { error: deleteError } = await supabase
+      .from("contact_messages")
+      .delete()
+      .eq("id", message.id);
+
+    if (deleteError) {
+      console.error("Delete contact message error:", deleteError);
+      setError(
+        `Không thể xóa tin nhắn: ${deleteError.message || "Lỗi không xác định."}`
+      );
+      setDeletingId(null);
+      return;
+    }
+
+    setMessages((current) =>
+      current.filter((item) => item.id !== message.id)
+    );
+
+    setSelectedMessage((current) =>
+      current?.id === message.id ? null : current
+    );
+
+    setDeletingId(null);
+  };
+
+  const filteredMessages = useMemo(() => {
+    if (filter === "new") {
+      return messages.filter((message) => getStatus(message.status) === "new");
+    }
+
+    if (filter === "read") {
+      return messages.filter(
+        (message) => getStatus(message.status) === "read"
+      );
+    }
+
+    return messages;
+  }, [messages, filter]);
+
+  const unreadCount = useMemo(
+    () =>
+      messages.filter((message) => getStatus(message.status) === "new").length,
+    [messages]
+  );
+
+  const readCount = messages.length - unreadCount;
+
+  return (
+    <div className="min-h-full bg-neutral-50 p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-7xl">
+        {/* Header */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
+              Liên hệ
+            </h1>
+
+            <p className="mt-1 text-sm text-neutral-500">
+              Danh sách tin nhắn khách gửi từ trang website.
+            </p>
+          </div>
+
           <button
             type="button"
-            onClick={() => setLanguage("vi")}
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {refreshing ? "Đang tải..." : "↻ Tải lại"}
+          </button>
+        </div>
+
+        {/* Summary */}
+        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <div className="text-sm font-medium text-neutral-500">
+              Tổng tin nhắn
+            </div>
+
+            <div className="mt-2 text-3xl font-bold text-neutral-900">
+              {messages.length}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+            <div className="text-sm font-medium text-amber-700">
+              Chưa đọc
+            </div>
+
+            <div className="mt-2 text-3xl font-bold text-amber-800">
+              {unreadCount}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+            <div className="text-sm font-medium text-emerald-700">
+              Đã đọc
+            </div>
+
+            <div className="mt-2 text-3xl font-bold text-emerald-800">
+              {readCount}
+            </div>
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="mb-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              language === "vi"
+              filter === "all"
                 ? "bg-sky-500 text-white"
-                : "text-neutral-600 hover:bg-white"
+                : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
             }`}
           >
-            VI
+            Tất cả ({messages.length})
           </button>
 
           <button
             type="button"
-            onClick={() => setLanguage("en")}
+            onClick={() => setFilter("new")}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              language === "en"
-                ? "bg-sky-500 text-white"
-                : "text-neutral-600 hover:bg-white"
+              filter === "new"
+                ? "bg-amber-500 text-white"
+                : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
             }`}
           >
-            EN
+            Chưa đọc ({unreadCount})
           </button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-    <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-      <div className="rounded-3xl border border-sky-100 bg-sky-50 p-7 shadow-sm sm:p-9">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-600">
-          {isVi ? "Thông tin liên hệ" : "Contact information"}
-        </p>
-
-        <h2 className="mt-3 text-2xl font-bold text-neutral-900">
-          {isVi
-            ? "Chúng tôi luôn sẵn sàng hỗ trợ bạn"
-            : "We are here to help"}
-        </h2>
-
-        <p className="mt-4 leading-7 text-neutral-600">
-          {isVi
-            ? "Liên hệ trực tiếp với Huyen's Hotels & Stays để được hỗ trợ nhanh về phòng nghỉ, đặt phòng và thông tin lưu trú."
-            : "Contact Huyen's Hotels & Stays directly for help with rooms, bookings and accommodation information."}
-        </p>
-
-        <div className="mt-8 space-y-4">
-          <a
-            href="tel:0902095669"
-            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
-          >
-            <div className="text-sm text-neutral-500">Hotline</div>
-            <div className="mt-1 text-lg font-semibold text-neutral-900">
-              0902 095 669
-            </div>
-          </a>
-
-          <a
-            href="https://zalo.me/0902095669"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
-          >
-            <div className="text-sm text-neutral-500">Zalo</div>
-            <div className="mt-1 text-lg font-semibold text-neutral-900">
-              0902 095 669
-            </div>
-          </a>
-
-          <a
-            href="https://wa.me/84902095669"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
-          >
-            <div className="text-sm text-neutral-500">WhatsApp</div>
-            <div className="mt-1 text-lg font-semibold text-neutral-900">
-              +84 902 095 669
-            </div>
-          </a>
-
-          <a
-            href="mailto:buihongnhung83@gmail.com"
-            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
-          >
-            <div className="text-sm text-neutral-500">Email</div>
-            <div className="mt-1 break-all text-lg font-semibold text-neutral-900">
-              buihongnhung83@gmail.com
-            </div>
-          </a>
-        </div>
-
-        <div className="mt-8">
-          <Link
-            href="/tim-phong"
-            className="inline-flex w-full items-center justify-center rounded-xl bg-sky-500 px-5 py-3.5 font-semibold text-white transition hover:bg-sky-600"
-          >
-            {isVi ? "Đặt phòng trực tiếp" : "Book directly"}
-          </Link>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-sm sm:p-9">
-        <h2 className="text-2xl font-bold text-neutral-900">
-          {isVi ? "Gửi yêu cầu cho chúng tôi" : "Send us a message"}
-        </h2>
-
-        <p className="mt-2 text-sm leading-6 text-neutral-500">
-          {isVi
-            ? "Điền thông tin bên dưới, đội ngũ Huyen's Hotels & Stays sẽ tiếp nhận và liên hệ lại."
-            : "Fill in the form below and the Huyen's Hotels & Stays team will get back to you."}
-        </p>
-
-        <form onSubmit={handleSubmit} className="mt-7 space-y-5">
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-800">
-              {isVi ? "Họ và tên" : "Full name"}{" "}
-              <span className="text-red-500">*</span>
-            </label>
-
-            <input
-              type="text"
-              value={form.name}
-              onChange={(event) =>
-                updateField("name", event.target.value)
-              }
-              placeholder={isVi ? "Nhập họ và tên" : "Your full name"}
-              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-            />
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-800">
-                {isVi ? "Số điện thoại" : "Phone number"}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(event) =>
-                  updateField("phone", event.target.value)
-                }
-                placeholder={
-                  isVi ? "Nhập số điện thoại" : "Your phone number"
-                }
-                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-800">
-                Email
-              </label>
-
-              <input
-                type="email"
-                value={form.email}
-                onChange={(event) =>
-                  updateField("email", event.target.value)
-                }
-                placeholder={
-                  isVi ? "Email của bạn" : "Your email address"
-                }
-                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-800">
-              {isVi ? "Nội dung cần hỗ trợ" : "Message"}{" "}
-              <span className="text-red-500">*</span>
-            </label>
-
-            <textarea
-              value={form.message}
-              onChange={(event) =>
-                updateField("message", event.target.value)
-              }
-              rows={7}
-              placeholder={
-                isVi
-                  ? "Ví dụ: Tôi muốn hỏi về phòng, giá phòng hoặc đặt phòng..."
-                  : "For example: I would like to ask about rooms, rates or booking..."
-              }
-              className="w-full resize-y rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-            />
-          </div>
-
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm leading-6 text-green-700">
-              {success}
-            </div>
-          )}
 
           <button
-            type="submit"
-            disabled={sending}
-            className="w-full rounded-xl bg-sky-500 px-5 py-3.5 font-semibold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+            type="button"
+            onClick={() => setFilter("read")}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              filter === "read"
+                ? "bg-emerald-500 text-white"
+                : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
+            }`}
           >
-            {sending
-              ? isVi
-                ? "Đang gửi..."
-                : "Sending..."
-              : isVi
-                ? "Gửi liên hệ"
-                : "Send message"}
+            Đã đọc ({readCount})
           </button>
-        </form>
-      </div>
-    </div>
-  </section>
-</main>
+        </div>
 
-);
+        {/* Message list */}
+        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          {loading ? (
+            <div className="px-6 py-16 text-center text-sm text-neutral-500">
+              Đang tải tin nhắn...
+            </div>
+          ) : filteredMessages.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <div className="text-4xl">✉</div>
+
+              <h2 className="mt-4 text-lg font-semibold text-neutral-900">
+                Không có tin nhắn
+              </h2>
+
+              <p className="mt-1 text-sm text-neutral-500">
+                {filter === "new"
+                  ? "Hiện không có tin nhắn chưa đọc."
+                  : filter === "read"
+                    ? "Hiện không có tin nhắn đã đọc."
+                    : "Chưa có khách gửi tin nhắn."}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop */}
+              <div className="hidden overflow-x-auto lg:block">
+                <table className="w-full min-w-[900px]">
+                  <thead>
+                    <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
+                      <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Khách hàng
+                      </th>
+
+                      <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Liên hệ
+                      </th>
+
+                      <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Nội dung
+                      </th>
+
+                      <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Thời gian
+                      </th>
+
+                      <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Trạng thái
+                      </th>
+
+                      <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Thao tác
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {filteredMessages.map((message) => {
+                      const isNew = getStatus(message.status) === "new";
+
+                      return (
+                        <tr
+                          key={message.id}
+                          className={`border-b border-neutral-100 transition hover:bg-neutral-50 ${
+                            isNew ? "bg-amber-50/30" : "bg-white"
+                          }`}
+                        >
+                          <td className="px-5 py-4 align-top">
+                            <button
+                              type="button"
+                              onClick={() => openMessage(message)}
+                              className="text-left"
+                            >
+                              <div className="font-semibold text-neutral-900 hover:text-sky-600">
+                                {message.name}
+                              </div>
+
+                              <div className="mt-1 text-xs text-neutral-500">
+                                {message.language === "en"
+                                  ? "English"
+                                  : "Tiếng Việt"}
+                              </div>
+                            </button>
+                          </td>
+
+                          <td className="px-5 py-4 align-top">
+                            <div className="text-sm font-medium text-neutral-800">
+                              {message.phone}
+                            </div>
+
+                            {message.email && (
+                              <div className="mt-1 max-w-[220px] truncate text-xs text-neutral-500">
+                                {message.email}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="max-w-[360px] px-5 py-4 align-top">
+                            <button
+                              type="button"
+                              onClick={() => openMessage(message)}
+                              className="block w-full text-left"
+                            >
+                              <div
+                                className={`line-clamp-2 text-sm leading-6 ${
+                                  isNew
+                                    ? "font-semibold text-neutral-900"
+                                    : "text-neutral-600"
+                                }`}
+                              >
+                                {message.message}
+                              </div>
+
+                              <span className="mt-1 inline-block text-xs font-semibold text-sky-600">
+                                Xem chi tiết →
+                              </span>
+                            </button>
+                          </td>
+
+                          <td className="whitespace-nowrap px-5 py-4 align-top text-sm text-neutral-500">
+                            {formatDate(message.created_at)}
+                          </td>
+
+                          <td className="px-5 py-4 align-top">
+                            <StatusBadge status={message.status} />
+                          </td>
+
+                          <td className="px-5 py-4 align-top">
+                            <div className="flex justify-end gap-2">
+                              {isNew && (
+                                <button
+                                  type="button"
+                                  onClick={() => markAsRead(message)}
+                                  disabled={updatingId === message.id}
+                                  className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {updatingId === message.id
+                                    ? "Đang cập nhật..."
+                                    : "Đã đọc"}
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => deleteMessage(message)}
+                                disabled={deletingId === message.id}
+                                className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {deletingId === message.id
+                                  ? "Đang xóa..."
+                                  : "Xóa"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile */}
+              <div className="divide-y divide-neutral-100 lg:hidden">
+                {filteredMessages.map((message) => {
+                  const isNew = getStatus(message.status) === "new";
+
+                  return (
+                    <div
+                      key={message.id}
+                      className={`p-4 sm:p-5 ${
+                        isNew ? "bg-amber-50/40" : "bg-white"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => openMessage(message)}
+                        className="w-full text-left"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-semibold text-neutral-900">
+                              {message.name}
+                            </div>
+
+                            <div className="mt-1 text-sm text-neutral-600">
+                              {message.phone}
+                            </div>
+                          </div>
+
+                          <StatusBadge status={message.status} />
+                        </div>
+
+                        <div className="mt-3 line-clamp-3 text-sm leading-6 text-neutral-600">
+                          {message.message}
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <span className="text-xs text-neutral-400">
+                            {formatDate(message.created_at)}
+                          </span>
+
+                          <span className="text-xs font-semibold text-sky-600">
+                            Xem chi tiết →
+                          </span>
+                        </div>
+                      </button>
+
+                      <div className="mt-4 flex gap-2">
+                        {isNew && (
+                          <button
+                            type="button"
+                            onClick={() => markAsRead(message)}
+                            disabled={updatingId === message.id}
+                            className="flex-1 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {updatingId === message.id
+                              ? "Đang cập nhật..."
+                              : "Đánh dấu đã đọc"}
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => deleteMessage(message)}
+                          disabled={deletingId === message.id}
+                          className="rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {deletingId === message.id ? "Đang xóa..." : "Xóa"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Detail modal */}
+      {selectedMessage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setSelectedMessage(null);
+            }
+          }}
+        >
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-neutral-200 px-6 py-5">
+              <div>
+                <h2 className="text-xl font-bold text-neutral-900">
+                  Chi tiết tin nhắn
+                </h2>
+
+                <p className="mt-1 text-sm text-neutral-500">
+                  {formatDate(selectedMessage.created_at)}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedMessage(null)}
+                className="rounded-lg px-3 py-2 text-xl text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+                aria-label="Đóng"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="max-h-[65vh] overflow-y-auto px-6 py-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl bg-neutral-50 p-4">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                    Họ tên
+                  </div>
+
+                  <div className="mt-1 font-semibold text-neutral-900">
+                    {selectedMessage.name}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-neutral-50 p-4">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                    Trạng thái
+                  </div>
+
+                  <div className="mt-2">
+                    <StatusBadge status={selectedMessage.status} />
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-neutral-50 p-4">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                    Số điện thoại
+                  </div>
+
+                  <a
+                    href={`tel:${selectedMessage.phone}`}
+                    className="mt-1 block font-semibold text-sky-600 hover:underline"
+                  >
+                    {selectedMessage.phone}
+                  </a>
+                </div>
+
+                <div className="rounded-xl bg-neutral-50 p-4">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                    Email
+                  </div>
+
+                  {selectedMessage.email ? (
+                    <a
+                      href={`mailto:${selectedMessage.email}`}
+                      className="mt-1 block break-all font-semibold text-sky-600 hover:underline"
+                    >
+                      {selectedMessage.email}
+                    </a>
+                  ) : (
+                    <div className="mt-1 text-neutral-400">
+                      Không cung cấp
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  Nội dung
+                </div>
+
+                <div className="whitespace-pre-wrap rounded-xl border border-neutral-200 bg-white p-5 text-sm leading-7 text-neutral-700">
+                  {selectedMessage.message}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-neutral-200 bg-neutral-50 px-6 py-4 sm:flex-row sm:justify-end">
+              {getStatus(selectedMessage.status) === "new" && (
+                <button
+                  type="button"
+                  onClick={() => markAsRead(selectedMessage)}
+                  disabled={updatingId === selectedMessage.id}
+                  className="rounded-xl border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {updatingId === selectedMessage.id
+                    ? "Đang cập nhật..."
+                    : "Đánh dấu đã đọc"}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => deleteMessage(selectedMessage)}
+                disabled={deletingId === selectedMessage.id}
+                className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {deletingId === selectedMessage.id
+                  ? "Đang xóa..."
+                  : "Xóa tin nhắn"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedMessage(null)}
+                className="rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

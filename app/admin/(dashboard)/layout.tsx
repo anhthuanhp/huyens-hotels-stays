@@ -11,58 +11,18 @@ type AdminDashboardLayoutProps = {
 };
 
 const menuItems = [
-  {
-    href: "/admin",
-    label: "Tổng quan",
-  },
-  {
-    href: "/admin/thong-ke",
-    label: "Thống kê truy cập",
-  },
-  {
-    href: "/admin/dat-phong",
-    label: "Đặt phòng",
-  },
-  {
-    href: "/admin/lien-he",
-    label: "Tin nhắn khách hàng",
-  },
-  {
-    href: "/admin/phong",
-    label: "Quản lý phòng",
-  },
-  {
-    href: "/admin/hinh-anh",
-    label: "Quản lý hình ảnh",
-  },
-  {
-    href: "/admin/khach-san",
-    label: "Quản lý khách sạn",
-  },
-  {
-    href: "/admin/tien-nghi",
-    label: "Quản lý tiện nghi",
-  },
-  {
-    href: "/admin/chinh-sach",
-    label: "Quản lý chính sách",
-  },
-  {
-    href: "/admin/dich-vu",
-    label: "Quản lý dịch vụ",
-  },
-  {
-    href: "/admin/uu-dai",
-    label: "Quản lý ưu đãi",
-  },
-  {
-    href: "/admin/trai-nghiem",
-    label: "Hình ảnh hoạt động",
-  },
-  {
-    href: "/admin/viet-blog",
-    label: "Viết Blog",
-  },
+  { href: "/admin", label: "Tổng quan" },
+  { href: "/admin/thong-ke", label: "Thống kê truy cập" },
+  { href: "/admin/dat-phong", label: "Đặt phòng" },
+  { href: "/admin/lien-he", label: "Tin nhắn khách hàng" },
+  { href: "/admin/danh-gia", label: "Đánh giá khách hàng" },
+  { href: "/admin/phong", label: "Quản lý phòng" },
+  { href: "/admin/hinh-anh", label: "Quản lý hình ảnh" },
+  { href: "/admin/khach-san", label: "Quản lý khách sạn" },
+  { href: "/admin/tien-nghi", label: "Quản lý tiện nghi" },
+  { href: "/admin/chinh-sach", label: "Quản lý chính sách" },
+  { href: "/admin/trai-nghiem", label: "Hình ảnh hoạt động" },
+  { href: "/admin/viet-blog", label: "Viết Blog" },
 ];
 
 export default function AdminDashboardLayout({
@@ -71,38 +31,45 @@ export default function AdminDashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  const [checking, setChecking] = useState(true);
-  const [email, setEmail] = useState("");
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [email, setEmail] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    const checkAuth = async () => {
+    const checkSession = async () => {
       const { data, error } = await supabase.auth.getSession();
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       if (error || !data.session) {
         router.replace("/admin/login");
         return;
       }
 
-      setEmail(data.session.user.email ?? "");
-      setChecking(false);
+      setEmail(data.session.user.email ?? null);
+      setCheckingAuth(false);
     };
 
-    checkAuth();
+    checkSession();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) {
+        return;
+      }
+
       if (!session) {
         router.replace("/admin/login");
         return;
       }
 
-      setEmail(session.user.email ?? "");
-      setChecking(false);
+      setEmail(session.user.email ?? null);
+      setCheckingAuth(false);
     });
 
     return () => {
@@ -114,100 +81,121 @@ export default function AdminDashboardLayout({
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.replace("/admin/login");
-    router.refresh();
   };
 
-  if (checking) {
+  if (checkingAuth) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100">
-        <div className="text-sm text-slate-500">
-          Đang kiểm tra quyền truy cập...
+      <div className="flex min-h-screen items-center justify-center bg-neutral-100">
+        <div className="text-sm text-neutral-500">
+          Đang kiểm tra đăng nhập...
         </div>
-      </main>
+      </div>
     );
   }
 
+  const isActive = (href: string) => {
+    if (href === "/admin") {
+      return pathname === "/admin";
+    }
+
+    return pathname.startsWith(href);
+  };
+
   return (
-    <div className="flex min-h-screen bg-slate-100">
-      <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
-        <div className="border-b border-slate-200 px-6 py-5">
-          <div className="text-xl font-semibold tracking-tight text-slate-900">
-            Huyen&apos;s
-          </div>
-
-          <div className="mt-1 text-xs text-slate-500">
-            Hotels &amp; Stays
-          </div>
-
-          <div className="mt-3 inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
-            ADMIN
-          </div>
-        </div>
-
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <div className="space-y-1">
-            {menuItems.map((item) => {
-              const active =
-                item.href === "/admin"
-                  ? pathname === "/admin"
-                  : pathname.startsWith(item.href);
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`block rounded-xl px-4 py-3 text-sm transition ${
-                    active
-                      ? "bg-slate-900 font-medium text-white"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-
-        <div className="border-t border-slate-200 p-4">
-          <div className="mb-3 truncate text-xs text-slate-500">
-            {email}
-          </div>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Đăng xuất
-          </button>
-        </div>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-8">
-          <div>
-            <div className="text-sm font-semibold text-slate-900">
-              Huyen&apos;s Hotels &amp; Stays
+    <div className="min-h-screen bg-neutral-100">
+      <div className="flex min-h-screen">
+        <aside
+          className={`fixed inset-y-0 left-0 z-50 w-72 transform border-r border-neutral-200 bg-white transition-transform duration-200 lg:static lg:translate-x-0 ${
+            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="flex h-full flex-col">
+            <div className="border-b border-neutral-200 px-6 py-5">
+              <Link
+                href="/admin"
+                className="block"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <div className="text-lg font-bold tracking-[0.18em] text-neutral-900">
+                  HUYEN’S
+                </div>
+                <div className="mt-0.5 text-xs text-neutral-500">
+                  Hotels & Stays
+                </div>
+              </Link>
             </div>
 
-            <div className="text-xs text-slate-500">
-              Hệ thống quản trị
+            <nav className="flex-1 overflow-y-auto px-3 py-4">
+              <div className="space-y-1">
+                {menuItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block rounded-xl px-4 py-3 text-sm font-medium transition ${
+                      isActive(item.href)
+                        ? "bg-neutral-900 text-white"
+                        : "text-neutral-700 hover:bg-neutral-100"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+
+            <div className="border-t border-neutral-200 p-4">
+              <div className="mb-3 truncate px-2 text-xs text-neutral-500">
+                {email}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
+              >
+                Đăng xuất
+              </button>
             </div>
           </div>
+        </aside>
 
+        {mobileMenuOpen && (
           <button
             type="button"
-            onClick={handleLogout}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 lg:hidden"
-          >
-            Đăng xuất
-          </button>
-        </header>
+            aria-label="Đóng menu"
+            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          />
+        )}
 
-        <main className="flex-1 p-4 lg:p-8">
-          {children}
-        </main>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur">
+            <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                className="rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 lg:hidden"
+              >
+                Menu
+              </button>
+
+              <div className="hidden text-sm font-medium text-neutral-800 lg:block">
+                Quản trị Huyen’s Hotels & Stays
+              </div>
+
+              <Link
+                href="/"
+                target="_blank"
+                className="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-100"
+              >
+                Xem website
+              </Link>
+            </div>
+          </header>
+
+          <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        </div>
       </div>
     </div>
   );

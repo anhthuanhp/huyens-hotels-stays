@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -15,6 +16,7 @@ import {
 import BookingSearch from "./components/BookingSearch";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import { supabase } from "./lib/supabase";
 
 type Language = "vi" | "en";
 
@@ -48,6 +50,21 @@ type HotelOTA = {
   listing_url: string | null;
   external_hotel_id: string | null;
   sort_order: number;
+};
+
+type CustomerReview = {
+  id: number;
+  hotel_id: number | null;
+  guest_name: string;
+  rating: number;
+  review_vi: string;
+  review_en: string | null;
+  guest_country: string | null;
+  source: string;
+  is_published: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 };
 
 type HomeClientProps = {
@@ -96,49 +113,6 @@ const amenities = [
     titleVi: "Dọn phòng",
     titleEn: "Housekeeping",
     icon: BrushCleaning,
-  },
-] as const;
-
-const customerReviews = [
-  {
-    id: 1,
-    nameVi: "Khách hàng",
-    nameEn: "Guest",
-    reviewVi:
-      "Không gian sạch sẽ, vị trí thuận tiện và quá trình nhận phòng rất nhanh chóng.",
-    reviewEn:
-      "The room was clean, the location was convenient and check-in was very smooth.",
-    rating: 5,
-  },
-  {
-    id: 2,
-    nameVi: "Khách hàng",
-    nameEn: "Guest",
-    reviewVi:
-      "Phòng thoải mái, riêng tư và phù hợp cho chuyến đi ngắn ngày.",
-    reviewEn:
-      "The room was comfortable and private, perfect for a short stay.",
-    rating: 5,
-  },
-  {
-    id: 3,
-    nameVi: "Khách hàng",
-    nameEn: "Guest",
-    reviewVi:
-      "Nhân viên hỗ trợ nhiệt tình. Tôi sẽ cân nhắc quay lại trong những chuyến đi tiếp theo.",
-    reviewEn:
-      "The support was friendly and helpful. I would consider staying again on my next trip.",
-    rating: 5,
-  },
-  {
-    id: 4,
-    nameVi: "Khách hàng",
-    nameEn: "Guest",
-    reviewVi:
-      "Không gian yên tĩnh, phòng đầy đủ tiện nghi và mọi thứ đều rất thuận tiện.",
-    reviewEn:
-      "The space was quiet, the room had everything we needed and the stay was very convenient.",
-    rating: 5,
   },
 ] as const;
 
@@ -234,6 +208,10 @@ export default function HomeClient({
   const [pickedHotelId, setPickedHotelId] =
     useState<number | null>(null);
 
+  const [customerReviews, setCustomerReviews] = useState<
+    CustomerReview[]
+  >([]);
+
   const isVi = language === "vi";
 
   /*
@@ -275,6 +253,60 @@ export default function HomeClient({
         "language-change",
         handleLanguageChange
       );
+    };
+  }, []);
+
+  /*
+   * Lấy nhận xét khách hàng từ Supabase.
+   *
+   * Chỉ hiển thị những nhận xét:
+   * - is_published = true
+   * - được sắp xếp theo sort_order
+   *
+   * Không giới hạn số lượng ở đây.
+   * Giao diện phía dưới sẽ tạo thanh trượt ngang.
+   */
+  useEffect(() => {
+    let mounted = true;
+
+    const loadCustomerReviews = async () => {
+      const { data, error } = await supabase
+        .from("customer_reviews")
+        .select(
+          "id, hotel_id, guest_name, rating, review_vi, review_en, guest_country, source, is_published, sort_order, created_at, updated_at"
+        )
+        .eq("is_published", true)
+        .order("sort_order", {
+          ascending: true,
+        })
+        .order("created_at", {
+          ascending: false,
+        });
+
+      if (error) {
+        console.error(
+          "Load customer reviews error:",
+          error
+        );
+
+        if (mounted) {
+          setCustomerReviews([]);
+        }
+
+        return;
+      }
+
+      if (mounted) {
+        setCustomerReviews(
+          (data ?? []) as CustomerReview[]
+        );
+      }
+    };
+
+    loadCustomerReviews();
+
+    return () => {
+      mounted = false;
     };
   }, []);
 
@@ -1067,48 +1099,98 @@ export default function HomeClient({
               </h2>
             </div>
 
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {customerReviews.map(
-                (review) => (
-                  <article
-                    key={
-                      review.id
+            {customerReviews.length === 0 ? (
+              <div className="mt-10 rounded-xl border border-dashed border-neutral-200 bg-white p-8 text-center">
+                <p className="text-sm text-neutral-500">
+                  {isVi
+                    ? "Chưa có nhận xét nào."
+                    : "No reviews yet."}
+                </p>
+              </div>
+            ) : (
+              <div className="relative mt-10">
+                <div
+                  className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-neutral-300 scrollbar-track-transparent"
+                  aria-label={
+                    isVi
+                      ? "Danh sách đánh giá của khách hàng"
+                      : "Customer reviews"
+                  }
+                >
+                  {customerReviews.map(
+                    (review) => {
+                      const reviewText = isVi
+                        ? review.review_vi
+                        : review.review_en?.trim() ||
+                          review.review_vi;
+
+                      const rating = Math.max(
+                        1,
+                        Math.min(
+                          5,
+                          Number(review.rating) || 5
+                        )
+                      );
+
+                      return (
+                        <article
+                          key={
+                            review.id
+                          }
+                          className="w-[85%] shrink-0 snap-start rounded-xl bg-white p-6 shadow-sm sm:w-[calc((100%-16px)/2)] lg:w-[calc((100%-48px)/4)]"
+                        >
+                          <div
+                            className="text-amber-400"
+                            role="img"
+                            aria-label={
+                              isVi
+                                ? `${rating} trên 5 sao`
+                                : `${rating} out of 5 stars`
+                            }
+                          >
+                            {"★".repeat(
+                              rating
+                            )}
+                          </div>
+
+                          <p className="mt-4 text-sm leading-relaxed text-neutral-600">
+                            &quot;
+                            {
+                              reviewText
+                            }
+                            &quot;
+                          </p>
+
+                          <div className="mt-4 border-t border-neutral-50 pt-4">
+                            <p className="text-sm font-semibold text-neutral-900">
+                              {
+                                review.guest_name
+                              }
+                            </p>
+
+                            {review.guest_country && (
+                              <p className="mt-1 text-xs text-neutral-400">
+                                {
+                                  review.guest_country
+                                }
+                              </p>
+                            )}
+                          </div>
+                        </article>
+                      );
                     }
-                    className="rounded-xl bg-white p-6 shadow-sm"
-                  >
-                    <div
-                      className="text-amber-400"
-                      role="img"
-                      aria-label={
-                        isVi
-                          ? `${review.rating} trên 5 sao`
-                          : `${review.rating} out of 5 stars`
-                      }
-                    >
-                      {"★".repeat(
-                        review.rating
-                      )}
-                    </div>
+                  )}
+                </div>
 
-                    <p className="mt-4 text-sm leading-relaxed text-neutral-600">
-                      &quot;
-                      {isVi
-                        ? review.reviewVi
-                        : review.reviewEn}
-                      &quot;
-                    </p>
-
-                    <div className="mt-4 border-t border-neutral-50 pt-4">
-                      <p className="text-sm font-semibold">
-                        {isVi
-                          ? review.nameVi
-                          : review.nameEn}
-                      </p>
-                    </div>
-                  </article>
-                )
-              )}
-            </div>
+                {customerReviews.length > 4 && (
+                  <p className="mt-2 text-center text-xs text-neutral-400">
+                    {isVi
+                      ? "Kéo sang để xem thêm đánh giá →"
+                      : "Scroll horizontally to see more reviews →"}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </section>
       </div>
