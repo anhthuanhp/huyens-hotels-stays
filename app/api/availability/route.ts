@@ -5,6 +5,8 @@ import { supabase } from "../../lib/supabase";
 
 type AvailabilityRequest = {
   hotelSlug?: unknown;
+  stayType?: unknown;
+  months?: unknown;
   checkIn?: unknown;
   checkOut?: unknown;
 };
@@ -15,7 +17,8 @@ type RoomRow = {
   slug: string;
   name_vi: string | null;
   name_en: string | null;
-  base_price: number | string | null;
+  base_price_daily: number | string | null;
+  base_price_monthly: number | string | null;
   quantity: number | string | null;
   status: string;
 };
@@ -27,8 +30,9 @@ type BookingRoomRow = {
 
 type BookingRow = {
   id: number;
-  check_in: string;
-  check_out: string;
+  stay_type: "day" | "month";
+  check_in: string | null;
+  check_out: string | null;
   status: string;
   booking_rooms: BookingRoomRow[] | null;
 };
@@ -79,15 +83,21 @@ export async function POST(request: NextRequest) {
         ? body.hotelSlug.trim()
         : "";
 
-    const checkIn =
-      typeof body.checkIn === "string"
-        ? body.checkIn.trim()
-        : "";
+    const stayType = body.stayType === "month" ? "month" : "day";
+    const months = Number(body.months);
+    const checkIn = typeof body.checkIn === "string" ? body.checkIn.trim() : "";
+    const checkOut = typeof body.checkOut === "string" ? body.checkOut.trim() : "";
 
-    const checkOut =
-      typeof body.checkOut === "string"
-        ? body.checkOut.trim()
-        : "";
+    if (stayType === "month") {
+      if (!Number.isInteger(months) || months < 1 || months > 60) {
+        return NextResponse.json({ error: "Số tháng thuê không hợp lệ." }, { status: 400 });
+      }
+    } else if (
+      !checkIn || !checkOut || !isValidDateString(checkIn) ||
+      !isValidDateString(checkOut) || checkOut <= checkIn
+    ) {
+      return NextResponse.json({ error: "Ngày nhận/trả phòng không hợp lệ." }, { status: 400 });
+    }
 
     /*
       ==========================================
@@ -95,14 +105,8 @@ export async function POST(request: NextRequest) {
       ==========================================
     */
 
-    if (!hotelSlug || !checkIn || !checkOut) {
-      return NextResponse.json(
-        {
-          error:
-            "Thiếu khách sạn, ngày nhận phòng hoặc ngày trả phòng.",
-        },
-        { status: 400 }
-      );
+    if (!hotelSlug) {
+      return NextResponse.json({ error: "Thiếu thông tin khách sạn." }, { status: 400 });
     }
 
     /*
@@ -117,34 +121,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    /*
-      Ngày phải có dạng YYYY-MM-DD.
-    */
-    if (
-      !isValidDateString(checkIn) ||
-      !isValidDateString(checkOut)
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Ngày nhận phòng hoặc ngày trả phòng không hợp lệ.",
-        },
-        { status: 400 }
-      );
-    }
-
-    /*
-      Không cho trả phòng trước hoặc bằng ngày nhận phòng.
-    */
-    if (checkOut <= checkIn) {
-      return NextResponse.json(
-        {
-          error:
-            "Ngày trả phòng phải sau ngày nhận phòng.",
-        },
-        { status: 400 }
-      );
-    }
 
     /*
       ==========================================
@@ -210,7 +186,8 @@ export async function POST(request: NextRequest) {
           slug,
           name_vi,
           name_en,
-          base_price,
+          base_price_daily,
+          base_price_monthly,
           quantity,
           status
         `
@@ -283,27 +260,31 @@ export async function POST(request: NextRequest) {
       ...
     */
 
-    const {
-      data: bookingRows,
-      error: bookingError,
-    } = await supabase
+    let bookingQuery = supabase
       .from("bookings")
-      .select(
-        `
-          id,
-          check_in,
-          check_out,
-          status,
-          booking_rooms (
-            room_id,
-            quantity
-          )
-        `
-      )
+      .select(`
+        id,
+        stay_type,
+        check_in,
+        check_out,
+        status,
+        booking_rooms (
+          room_id,
+          quantity
+        )
+      `)
       .eq("hotel_id", hotel.id)
-      .eq("status", "confirmed")
-      .lt("check_in", checkOut)
-      .gt("check_out", checkIn);
+      .eq("status", "confirmed");
+
+    if (stayType === "month") {
+      bookingQuery = bookingQuery.eq("stay_type", "month");
+    } else {
+      bookingQuery = bookingQuery.or(
+        `stay_type.eq.month,and(stay_type.eq.day,check_in.lt.${checkOut},check_out.gt.${checkIn})`
+      );
+    }
+
+    const { data: bookingRows, error: bookingError } = await bookingQuery;
 
     if (bookingError) {
       console.error(
@@ -438,8 +419,11 @@ export async function POST(request: NextRequest) {
         Giá phòng.
       */
 
-      const rawBasePrice =
-        Number(room.base_price);
+      const rawBasePrice = Number(
+        stayType === "month"
+          ? room.base_price_monthly
+          : room.base_price_daily
+      );
 
       const basePrice =
         Number.isFinite(rawBasePrice) &&
@@ -461,6 +445,10 @@ export async function POST(request: NextRequest) {
         nameEn: room.name_en,
 
         basePrice,
+
+        basePriceDaily: Number(room.base_price_daily) || 0,
+
+        basePriceMonthly: Number(room.base_price_monthly) || 0,
 
         totalQuantity,
 

@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import { cache } from "react";
 import BlogDetailClient from "./BlogDetailClient";
 
 type BlogPost = {
@@ -36,9 +37,9 @@ function getSupabaseServerClient() {
   );
 }
 
-async function getPost(
+const getPost = cache(async (
   slug: string
-): Promise<BlogPost | null> {
+): Promise<BlogPost | null> => {
   const supabase =
     getSupabaseServerClient();
 
@@ -77,7 +78,7 @@ async function getPost(
   }
 
   return data as BlogPost | null;
-}
+});
 
 function getImageUrl(
   image: string | null,

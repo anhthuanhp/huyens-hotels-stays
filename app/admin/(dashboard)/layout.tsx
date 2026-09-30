@@ -11,13 +11,12 @@ type AdminDashboardLayoutProps = {
 };
 
 const menuItems = [
-  { href: "/admin", label: "Tổng quan" },
   { href: "/admin/thong-ke", label: "Thống kê truy cập" },
   { href: "/admin/dat-phong", label: "Đặt phòng" },
   { href: "/admin/lien-he", label: "Tin nhắn khách hàng" },
   { href: "/admin/danh-gia", label: "Đánh giá khách hàng" },
   { href: "/admin/phong", label: "Quản lý phòng" },
-  { href: "/admin/hinh-anh", label: "Quản lý hình ảnh" },
+  { href: "/admin/hinh-anh", label: "Hình ảnh" },
   { href: "/admin/khach-san", label: "Quản lý khách sạn" },
   { href: "/admin/tien-nghi", label: "Quản lý tiện nghi" },
   { href: "/admin/chinh-sach", label: "Quản lý chính sách" },
@@ -93,13 +92,8 @@ export default function AdminDashboardLayout({
     );
   }
 
-  const isActive = (href: string) => {
-    if (href === "/admin") {
-      return pathname === "/admin";
-    }
-
-    return pathname.startsWith(href);
-  };
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
 
   return (
     <div className="min-h-screen bg-neutral-100">
@@ -112,7 +106,7 @@ export default function AdminDashboardLayout({
           <div className="flex h-full flex-col">
             <div className="border-b border-neutral-200 px-6 py-5">
               <Link
-                href="/admin"
+                href="/admin/hinh-anh"
                 className="block"
                 onClick={() => setMobileMenuOpen(false)}
               >

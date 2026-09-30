@@ -131,8 +131,7 @@ function createHotelStructuredData(
   hotel: Hotel,
   rooms: ClientRoom[]
 ): Record<string, unknown> {
-  const baseUrl =
-    "https://huyenhotels.com";
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://huyenhotels.com").replace(/\/+$/, "");
 
   const hotelName =
     hotel.name_vi ||
@@ -538,9 +537,7 @@ export default async function HotelDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html:
-            JSON.stringify(
-              structuredData
-            ),
+            JSON.stringify(structuredData).replace(/</g, "\\u003c"),
         }}
       />
 

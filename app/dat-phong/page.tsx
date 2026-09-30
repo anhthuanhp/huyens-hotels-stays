@@ -930,6 +930,11 @@ function BookingPageContent() {
                   ? "Thông tin đặt phòng của bạn đã được ghi nhận."
                   : "Your booking request has been successfully received."}
               </p>
+              <p className="mt-2 text-slate-500">
+                {language === "vi"
+                  ? "Chúng tôi sẽ liên hệ với bạn sớm nhất."
+                  : "We will contact you as soon as possible."}
+              </p>
             </div>
 
             <div className="mb-6 rounded-2xl bg-slate-50 p-5 text-center">

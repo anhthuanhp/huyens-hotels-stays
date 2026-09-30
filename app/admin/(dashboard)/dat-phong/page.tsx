@@ -9,8 +9,10 @@ type Booking = {
 id: number;
 booking_code: string;
 hotel_id: number;
-check_in: string;
-check_out: string;
+check_in: string | null;
+check_out: string | null;
+stay_type: "day" | "month";
+months: number | null;
 adults: number;
 children: number;
 full_name: string;
@@ -34,7 +36,8 @@ id: number;
 booking_id: number;
 room_id: number;
 quantity: number;
-price_per_night: number;
+price_per_night: number | null;
+price_per_month: number | null;
 rooms:
 | {
 id: number;
@@ -103,6 +106,8 @@ const [bookingsResult, hotelsResult, bookingRoomsResult] =
         hotel_id,
         check_in,
         check_out,
+        stay_type,
+        months,
         adults,
         children,
         full_name,
@@ -136,6 +141,7 @@ const [bookingsResult, hotelsResult, bookingRoomsResult] =
         room_id,
         quantity,
         price_per_night,
+        price_per_month,
         rooms (
           id,
           slug,
@@ -289,6 +295,7 @@ const { data, error } = await supabase
     room_id,
     quantity,
     price_per_night,
+    price_per_month,
     rooms (
       id,
       slug,
@@ -393,11 +400,14 @@ if (deletingBooking) {
 return;
 }
 
+const stayDescription = booking.stay_type === "month"
+  ? `Thời hạn: ${booking.months ?? 0} tháng`
+  : `Check-in: ${formatDate(booking.check_in)}\nCheck-out: ${formatDate(booking.check_out)}`;
+
 const confirmed = window.confirm(
   `Bạn có chắc chắn muốn XÓA booking ${booking.booking_code}?\n\n` +
     `Khách: ${booking.full_name}\n` +
-    `Check-in: ${formatDate(booking.check_in)}\n` +
-    `Check-out: ${formatDate(booking.check_out)}\n\n` +
+    `${stayDescription}\n\n` +
     `Thao tác này sẽ xóa booking và toàn bộ chi tiết phòng đã đặt. Không thể hoàn tác.`
 );
 
@@ -478,9 +488,9 @@ try {
 
 };
 
-const formatDate = (date: string) => {
+const formatDate = (date: string | null) => {
 if (!date) {
-return "";
+return "—";
 }
 
 return new Intl.DateTimeFormat("vi-VN").format(
@@ -506,8 +516,8 @@ return new Intl.NumberFormat("vi-VN").format(value) + " đ";
 };
 
 const getNights = (
-checkIn: string,
-checkOut: string
+checkIn: string | null,
+checkOut: string | null
 ) => {
 if (!checkIn || !checkOut) {
 return 0;
@@ -553,11 +563,16 @@ booking.check_out
 );
 
 return booking.booking_rooms.reduce(
-  (total, item) =>
-    total +
-    Number(item.quantity || 0) *
-      Number(item.price_per_night || 0) *
-      nights,
+  (total, item) => {
+    const unitPrice = booking.stay_type === "month"
+      ? Number(item.price_per_month ?? item.price_per_night ?? 0)
+      : Number(item.price_per_night ?? 0);
+    const duration = booking.stay_type === "month"
+      ? Number(booking.months ?? 0)
+      : nights;
+
+    return total + Number(item.quantity || 0) * unitPrice * duration;
+  },
   0
 );
 
@@ -817,26 +832,19 @@ return (
                   </td>
 
                   <td className="px-5 py-4">
-                    <div className="text-slate-700">
-                      {formatDate(
-                        booking.check_in
-                      )}
-                    </div>
-
-                    <div className="text-xs text-slate-400">
-                      đến{" "}
-                      {formatDate(
-                        booking.check_out
-                      )}
-                    </div>
-
-                    <div className="mt-1 text-xs font-medium text-sky-600">
-                      {getNights(
-                        booking.check_in,
-                        booking.check_out
-                      )}{" "}
-                      đêm
-                    </div>
+                    {booking.stay_type === "month" ? (
+                      <div className="font-medium text-sky-700">
+                        {booking.months ?? 0} tháng thuê
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-slate-700">{formatDate(booking.check_in)}</div>
+                        <div className="text-xs text-slate-400">đến {formatDate(booking.check_out)}</div>
+                        <div className="mt-1 text-xs font-medium text-sky-600">
+                          {getNights(booking.check_in, booking.check_out)} ngày
+                        </div>
+                      </>
+                    )}
                   </td>
 
                   <td className="px-5 py-4">
@@ -977,27 +985,16 @@ return (
                 selectedBooking.hotels
                   ?.name_vi ?? "—",
               ],
-              [
-                "Check-in",
-                formatDate(
-                  selectedBooking.check_in
-                ),
-              ],
-              [
-                "Check-out",
-                formatDate(
-                  selectedBooking.check_out
-                ),
-              ],
-              [
-                "Số đêm",
-                String(
-                  getNights(
-                    selectedBooking.check_in,
-                    selectedBooking.check_out
-                  )
-                ),
-              ],
+              ...(selectedBooking.stay_type === "month"
+                ? [
+                    ["Hình thức", "Thuê theo tháng"] as [string, string],
+                    ["Thời gian ở", `${selectedBooking.months ?? 0} tháng`] as [string, string],
+                  ]
+                : [
+                    ["Ngày nhận phòng", formatDate(selectedBooking.check_in)] as [string, string],
+                    ["Ngày trả phòng", formatDate(selectedBooking.check_out)] as [string, string],
+                    ["Thời gian ở", `${getNights(selectedBooking.check_in, selectedBooking.check_out)} ngày`] as [string, string],
+                  ]),
               [
                 "Tổng số phòng",
                 String(
@@ -1061,11 +1058,11 @@ return (
                         </th>
 
                         <th className="px-4 py-3 text-right">
-                          Giá/đêm
+                          {selectedBooking.stay_type === "month" ? "Giá/tháng" : "Giá/ngày"}
                         </th>
 
                         <th className="px-4 py-3 text-center">
-                          Số đêm
+                          {selectedBooking.stay_type === "month" ? "Số tháng" : "Số ngày"}
                         </th>
 
                         <th className="px-4 py-3 text-right">
@@ -1083,16 +1080,13 @@ return (
                               selectedBooking.check_out
                             );
 
-                          const subtotal =
-                            Number(
-                              item.quantity ||
-                                0
-                            ) *
-                            Number(
-                              item.price_per_night ||
-                                0
-                            ) *
-                            nights;
+                          const unitPrice = selectedBooking.stay_type === "month"
+                            ? Number(item.price_per_month ?? item.price_per_night ?? 0)
+                            : Number(item.price_per_night ?? 0);
+                          const duration = selectedBooking.stay_type === "month"
+                            ? Number(selectedBooking.months ?? 0)
+                            : nights;
+                          const subtotal = Number(item.quantity || 0) * unitPrice * duration;
 
                           return (
                             <tr
@@ -1125,14 +1119,12 @@ return (
 
                               <td className="px-4 py-4 text-right">
                                 {formatMoney(
-                                  Number(
-                                    item.price_per_night
-                                  )
+                                  unitPrice
                                 )}
                               </td>
 
                               <td className="px-4 py-4 text-center">
-                                {nights}
+                                {duration}
                               </td>
 
                               <td className="px-4 py-4 text-right font-medium text-slate-800">

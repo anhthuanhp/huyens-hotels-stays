@@ -72,7 +72,14 @@ type HotelOTA = {
   website: string | null;
   listing_url: string | null;
   external_hotel_id: string | null;
-  sort_order: number;
+};
+type CustomerReview = {
+  id: number;
+  guest_name: string;
+  rating: number;
+  review_vi: string;
+  review_en: string | null;
+  guest_country: string | null;
 };
 
 /*
@@ -182,6 +189,23 @@ async function getHotels(): Promise<
    HOTEL COVERS
 ========================================================= */
 
+async function getCustomerReviews(): Promise<CustomerReview[]> {
+  const { data, error } = await getSupabase()
+    .from("customer_reviews")
+    .select(
+      "id, guest_name, rating, review_vi, review_en, guest_country"
+    )
+    .eq("is_published", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Lỗi lấy nhận xét khách hàng:", error);
+    return [];
+  }
+
+  return (data ?? []) as CustomerReview[];
+}
 async function getHotelCovers(
   hotelIds: number[]
 ): Promise<Record<number, string>> {
@@ -409,12 +433,10 @@ async function getHomepageData() {
   /*
    * Các query độc lập chạy song song.
    */
-  const [
-    heroSlides,
-    hotels,
-  ] = await Promise.all([
+  const [heroSlides, hotels, customerReviews] = await Promise.all([
     getHeroSlides(),
     getHotels(),
+    getCustomerReviews(),
   ]);
 
   const hotelIds =
@@ -455,6 +477,7 @@ async function getHomepageData() {
     hotels,
     hotelCovers,
     hotelOTAs,
+    customerReviews,
   };
 }
 
@@ -683,8 +706,8 @@ export default async function HomePage() {
     hotels,
     hotelCovers,
     hotelOTAs,
-  } =
-    await getHomepageData();
+    customerReviews,
+  } = await getHomepageData();
 
   return (
     <>
@@ -702,16 +725,11 @@ export default async function HomePage() {
       />
 
       <HomeClient
-        heroSlides={
-          heroSlides
-        }
+        heroSlides={heroSlides}
         hotels={hotels}
-        hotelCovers={
-          hotelCovers
-        }
-        hotelOTAs={
-          hotelOTAs
-        }
+        hotelCovers={hotelCovers}
+        hotelOTAs={hotelOTAs}
+        customerReviews={customerReviews}
       />
     </>
   );

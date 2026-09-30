@@ -2,10 +2,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ConditionalHeader from "./components/ConditionalHeader";
-import ContactFloat from "./components/ContactFloat";
-import AIAssistant from "./components/AIAssistant";
 import VisitorTracker from "./components/VisitorTracker";
+import BackToTopButton from "./components/BackToTopButton";
+import LazyWidgets from "./components/LazyWidgets";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,15 +32,12 @@ const defaultTitle =
   "Huyen's Hotels & Stays | Khách sạn & lưu trú tại TP.HCM";
 
 const defaultDescription =
-  "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại TP.HCM. Không gian lưu trú tiện nghi, vị trí thuận thuận tiện và đặt phòng trực tiếp.";
+  "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại TP.HCM. Không gian lưu trú tiện nghi, vị trí thuận tiện và đặt phòng trực tiếp.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
-  title: {
-    default: defaultTitle,
-    template: "%s | Huyen's Hotels & Stays",
-  },
+  title: defaultTitle,
 
   description: defaultDescription,
 
@@ -64,10 +60,6 @@ export const metadata: Metadata = {
     telephone: true,
     address: true,
     email: true,
-  },
-
-  alternates: {
-    canonical: siteUrl,
   },
 
   openGraph: {
@@ -120,16 +112,13 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-white text-neutral-900 font-sans">
         <VisitorTracker />
-
-        <ConditionalHeader />
+        <BackToTopButton />
 
         <main className="flex-1">
           {children}
         </main>
 
-        <ContactFloat />
-
-        <AIAssistant />
+        <LazyWidgets />
       </body>
     </html>
   );

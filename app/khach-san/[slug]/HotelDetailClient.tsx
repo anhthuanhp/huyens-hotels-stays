@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import {
   BedDouble,
   Check,
-  ChevronRight,
   MapPin,
   Maximize2,
   Users,
@@ -325,6 +324,17 @@ export default function HotelDetailClient({
 
     params.set("room", room.slug);
 
+    const stayType =
+      initialHotel.business_model?.trim().toLowerCase() === "monthly"
+        ? "month"
+        : "day";
+
+    params.set("stayType", stayType);
+
+    if (stayType === "month") {
+      params.set("months", "1");
+    }
+
     router.push(
       `/tim-phong?${params.toString()}`
     );
@@ -342,33 +352,19 @@ export default function HotelDetailClient({
             <span className="text-lg font-bold tracking-wide text-slate-900">
               HUYEN&apos;S
             </span>
-
-            <span className="text-sm font-medium text-slate-500">
-              Hotels &amp; Stays
-            </span>
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+          >
+            <span aria-hidden="true">←</span>
+            {language === "vi" ? "Quay về trang chủ" : "Back to home"}
           </Link>
         </div>
       </header>
 
       {/* PAGE */}
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {/* BREADCRUMB */}
-        <nav className="mb-5 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-          <Link
-            href="/"
-            className="transition hover:text-slate-900"
-          >
-            {language === "vi"
-              ? "Trang chủ"
-              : "Home"}
-          </Link>
-
-          <ChevronRight className="h-4 w-4" />
-
-          <span className="font-medium text-slate-900">
-            {hotelName}
-          </span>
-        </nav>
 
         {/* HOTEL + SIDEBAR */}
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 type LayoutProps = {
@@ -304,10 +305,10 @@ function createRoomKeywords(
   return Array.from(keywords);
 }
 
-async function getRoomSEOData(
+const getRoomSEOData = cache(async (
   slug: string,
   roomSlug: string
-) {
+) => {
   if (!supabaseUrl || !supabaseKey) {
     return null;
   }
@@ -371,7 +372,7 @@ async function getRoomSEOData(
     room: room as RoomSEO,
     media: (media ?? []) as MediaSEO[],
   };
-}
+});
 
 function createBreadcrumbStructuredData(
   hotel: HotelSEO,

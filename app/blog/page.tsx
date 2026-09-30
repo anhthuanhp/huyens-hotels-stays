@@ -68,7 +68,7 @@ async function getPosts(): Promise<BlogPost[]> {
 }
 
 export const metadata: Metadata = {
-  title: "Blog du lịch TP.HCM",
+  title: "Blog du lịch TP.HCM | Huyen's Hotels & Stays",
   description:
     "Khám phá kinh nghiệm du lịch TP.HCM, ẩm thực, cuộc sống địa phương và những kinh nghiệm lưu trú hữu ích từ Huyen's Hotels & Stays.",
 

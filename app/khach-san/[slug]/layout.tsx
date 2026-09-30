@@ -212,7 +212,7 @@ export async function generateMetadata({
 
   if (!supabaseUrl || !supabaseKey) {
     return {
-      title: "Khách sạn",
+      title: `Khách sạn | ${siteName}`,
       description:
         "Khách sạn, guesthouse và homestay tại TP. Hồ Chí Minh. Đặt phòng trực tiếp tại Huyen's Hotels & Stays.",
       alternates: {
@@ -230,7 +230,7 @@ export async function generateMetadata({
 
   if (!hotel) {
     return {
-      title: "Không tìm thấy khách sạn",
+      title: `Không tìm thấy khách sạn | ${siteName}`,
       description:
         "Không tìm thấy thông tin cơ sở lưu trú này.",
       alternates: {
@@ -255,14 +255,11 @@ export async function generateMetadata({
     createDescription(hotel);
 
   /*
-   * Root layout có title template:
-   *
-   * "%s | Huyen's Hotels & Stays"
-   *
-   * Vì vậy ở đây chỉ trả về title chính.
+   * Root layout không áp dụng title template, vì các route
+   * tự khai báo title hoàn chỉnh cùng thương hiệu.
    */
 
-  let title = nameVi;
+  let title = `${nameVi} | ${siteName}`;
 
   /*
    * Nếu có địa chỉ, thêm khu vực/ngữ cảnh
@@ -278,11 +275,9 @@ export async function generateMetadata({
         : address;
 
     const candidate =
-      `${nameVi} | ${shortAddress}`;
+      `${nameVi} | ${shortAddress} | ${siteName}`;
 
-    if (
-      `${candidate} | ${siteName}`.length <= 65
-    ) {
+    if (candidate.length <= 65) {
       title = candidate;
     }
   }

@@ -132,6 +132,9 @@ function TimPhongContent() {
   const hotelSlug =
     searchParams.get("hotel") || "";
 
+  const roomToPreselect =
+    searchParams.get("room") || "";
+
   const stayTypeParam =
     searchParams.get("stayType");
 
@@ -170,21 +173,7 @@ function TimPhongContent() {
     adults + children;
 
   const [language, setLanguage] =
-    useState<Language>(() => {
-      if (typeof window === "undefined") {
-        return "vi";
-      }
-
-      const saved =
-        window.localStorage.getItem(
-          "huyen-language"
-        );
-
-      return saved === "vi" ||
-        saved === "en"
-        ? saved
-        : "vi";
-    });
+    useState<Language>("vi");
 
   const [hotels, setHotels] =
     useState<Hotel[]>([]);
@@ -209,6 +198,8 @@ function TimPhongContent() {
 
   const [selectedRooms, setSelectedRooms] =
     useState<SelectedRoomMap>({});
+
+  const autoSelectedRoomRef = useRef("");
 
   const [loading, setLoading] =
     useState(true);
@@ -324,31 +315,27 @@ function TimPhongContent() {
     Đồng bộ ngôn ngữ.
   */
   useEffect(() => {
-    const handleLanguageChange = () => {
-      const current =
-        window.localStorage.getItem(
-          "huyen-language"
-        );
-
-      if (
-        current === "vi" ||
-        current === "en"
-      ) {
-        setLanguage(current);
+    const readSavedLanguage = () => {
+      try {
+        const saved = window.localStorage.getItem("huyen-language");
+        if (saved === "vi" || saved === "en") setLanguage(saved);
+      } catch {
+        // Keep Vietnamese when browser storage is unavailable.
       }
     };
 
-    window.addEventListener(
-      "language-change",
-      handleLanguageChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        "language-change",
-        handleLanguageChange
-      );
+    const handleLanguageChange = (event: Event) => {
+      const customEvent = event as CustomEvent<Language>;
+      if (customEvent.detail === "vi" || customEvent.detail === "en") {
+        setLanguage(customEvent.detail);
+      } else {
+        readSavedLanguage();
+      }
     };
+
+    readSavedLanguage();
+    window.addEventListener("language-change", handleLanguageChange);
+    return () => window.removeEventListener("language-change", handleLanguageChange);
   }, []);
 
   /*
@@ -594,6 +581,7 @@ function TimPhongContent() {
     }
 
     let cancelled = false;
+    const controller = new AbortController();
 
     setLoadingAvailability(true);
     setAvailabilityError("");
@@ -624,6 +612,7 @@ function TimPhongContent() {
                   }
             ),
             cache: "no-store",
+            signal: controller.signal,
           }
         );
 
@@ -669,6 +658,7 @@ function TimPhongContent() {
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [
     stayType,
@@ -711,6 +701,26 @@ function TimPhongContent() {
     return map;
   }, [roomMedia]);
 
+  const availabilityByRoomId = useMemo(
+    () => new Map<number, AvailabilityRoom>(
+      availabilityRooms.map((item): [number, AvailabilityRoom] => [
+        item.roomId,
+        item,
+      ])
+    ),
+    [availabilityRooms]
+  );
+
+  const amenitiesByRoomId = useMemo(() => {
+    const map = new Map<number, RoomAmenity[]>();
+    for (const amenity of roomAmenities) {
+      const items = map.get(amenity.room_id) ?? [];
+      items.push(amenity);
+      map.set(amenity.room_id, items);
+    }
+    return map;
+  }, [roomAmenities]);
+
   /*
     Danh sách phòng phù hợp.
 
@@ -729,21 +739,13 @@ function TimPhongContent() {
       return rooms
         .map((room) => {
           const availability =
-            availabilityRooms.find(
-              (item) =>
-                item.roomId ===
-                room.id
-            );
+            availabilityByRoomId.get(room.id);
 
           const cover =
             roomCoverMap[room.id];
 
           const amenities =
-            roomAmenities.filter(
-              (item) =>
-                item.room_id ===
-                room.id
-            );
+            amenitiesByRoomId.get(room.id) ?? [];
 
           const totalQuantity =
             Math.max(
@@ -852,12 +854,44 @@ function TimPhongContent() {
       rooms,
       hotel,
       totalGuests,
-      availabilityRooms,
+      availabilityByRoomId,
       roomCoverMap,
-      roomAmenities,
+      amenitiesByRoomId,
       language,
       stayType,
     ]);
+
+  useEffect(() => {
+    if (
+      !roomToPreselect ||
+      autoSelectedRoomRef.current === roomToPreselect
+    ) {
+      return;
+    }
+
+    const requestedRoom = availableRooms.find(
+      (room) => room.slug === roomToPreselect
+    );
+
+    if (!requestedRoom || requestedRoom.availableQuantity < 1) {
+      return;
+    }
+
+    autoSelectedRoomRef.current = roomToPreselect;
+    setSelectedRooms((previous) => {
+      if (previous[roomToPreselect]) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        [roomToPreselect]: Math.min(
+          requestedRooms,
+          requestedRoom.availableQuantity
+        ),
+      };
+    });
+  }, [availableRooms, roomToPreselect, requestedRooms]);
 
   const nights = useMemo(
     () =>
@@ -2112,7 +2146,6 @@ function TimPhongContent() {
                                   room.imageAlt
                                 }
                                 fill
-                                unoptimized
                                 sizes="(max-width: 1024px) 100vw, 360px"
                                 className="object-cover"
                               />

@@ -16,7 +16,6 @@ import {
 import BookingSearch from "./components/BookingSearch";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import { supabase } from "./lib/supabase";
 
 type Language = "vi" | "en";
 
@@ -49,22 +48,15 @@ type HotelOTA = {
   website: string | null;
   listing_url: string | null;
   external_hotel_id: string | null;
-  sort_order: number;
 };
 
 type CustomerReview = {
   id: number;
-  hotel_id: number | null;
   guest_name: string;
   rating: number;
   review_vi: string;
   review_en: string | null;
   guest_country: string | null;
-  source: string;
-  is_published: boolean;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
 };
 
 type HomeClientProps = {
@@ -72,6 +64,7 @@ type HomeClientProps = {
   hotels: Hotel[];
   hotelCovers: Record<number, string>;
   hotelOTAs: Record<number, HotelOTA[]>;
+  customerReviews: CustomerReview[];
 };
 
 declare global {
@@ -198,6 +191,7 @@ export default function HomeClient({
   hotels,
   hotelCovers,
   hotelOTAs,
+  customerReviews,
 }: HomeClientProps) {
   /*
    * Luôn render "vi" ở lần render đầu tiên để server và client
@@ -207,10 +201,6 @@ export default function HomeClient({
 
   const [pickedHotelId, setPickedHotelId] =
     useState<number | null>(null);
-
-  const [customerReviews, setCustomerReviews] = useState<
-    CustomerReview[]
-  >([]);
 
   const isVi = language === "vi";
 
@@ -253,60 +243,6 @@ export default function HomeClient({
         "language-change",
         handleLanguageChange
       );
-    };
-  }, []);
-
-  /*
-   * Lấy nhận xét khách hàng từ Supabase.
-   *
-   * Chỉ hiển thị những nhận xét:
-   * - is_published = true
-   * - được sắp xếp theo sort_order
-   *
-   * Không giới hạn số lượng ở đây.
-   * Giao diện phía dưới sẽ tạo thanh trượt ngang.
-   */
-  useEffect(() => {
-    let mounted = true;
-
-    const loadCustomerReviews = async () => {
-      const { data, error } = await supabase
-        .from("customer_reviews")
-        .select(
-          "id, hotel_id, guest_name, rating, review_vi, review_en, guest_country, source, is_published, sort_order, created_at, updated_at"
-        )
-        .eq("is_published", true)
-        .order("sort_order", {
-          ascending: true,
-        })
-        .order("created_at", {
-          ascending: false,
-        });
-
-      if (error) {
-        console.error(
-          "Load customer reviews error:",
-          error
-        );
-
-        if (mounted) {
-          setCustomerReviews([]);
-        }
-
-        return;
-      }
-
-      if (mounted) {
-        setCustomerReviews(
-          (data ?? []) as CustomerReview[]
-        );
-      }
-    };
-
-    loadCustomerReviews();
-
-    return () => {
-      mounted = false;
     };
   }, []);
 
@@ -533,9 +469,7 @@ export default function HomeClient({
                                 : ""
                             }
                             fill
-                            priority={
-                              isFirst
-                            }
+                            preload={isFirst}
                             quality={80}
                             sizes="(max-width: 640px) 100vw, (max-width: 1280px) calc(100vw - 32px), 1280px"
                             className="object-cover"

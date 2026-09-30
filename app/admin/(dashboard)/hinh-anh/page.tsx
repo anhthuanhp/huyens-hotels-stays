@@ -78,7 +78,39 @@ type HeroDraft = {
 
 const HERO_BUCKET = "hero-images";
 const HERO_MAX_SIZE = 300 * 1024;
+const IMAGE_MAX_SIZE = 2 * 1024 * 1024;
 const HERO_MAX_COUNT = 4;
+async function validateWebpFile(
+  file: File,
+  maxSize: number
+): Promise<string | null> {
+  if (
+    file.type !== "image/webp" ||
+    !file.name.toLowerCase().endsWith(".webp")
+  ) {
+    return "Chỉ chấp nhận hình ảnh WebP có đuôi .webp.";
+  }
+
+  if (file.size > maxSize) {
+    return `Ảnh vượt quá giới hạn ${(maxSize / 1024).toFixed(0)} KB. Dung lượng hiện tại: ${(file.size / 1024).toFixed(1)} KB.`;
+  }
+
+  try {
+    const header = new Uint8Array(
+      await file.slice(0, 12).arrayBuffer()
+    );
+    const riff = String.fromCharCode(...header.slice(0, 4));
+    const webp = String.fromCharCode(...header.slice(8, 12));
+
+    if (header.length < 12 || riff !== "RIFF" || webp !== "WEBP") {
+      return "Nội dung file không phải ảnh WebP hợp lệ.";
+    }
+  } catch {
+    return "Không thể đọc file hình ảnh này.";
+  }
+
+  return null;
+}
 
 export default function HinhAnhPage() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -300,7 +332,7 @@ export default function HinhAnhPage() {
     setHeroLoading(false);
   }
 
-  function handleHeroFileChange(
+  async function handleHeroFileChange(
     event: ChangeEvent<HTMLInputElement>
   ) {
     const file = event.target.files?.[0];
@@ -312,19 +344,9 @@ export default function HinhAnhPage() {
     setHeroError("");
     setHeroMessage("");
 
-    if (file.type !== "image/webp") {
-      setHeroError(
-        "Hero chỉ chấp nhận file WebP (.webp)."
-      );
-      return;
-    }
-
-    if (file.size > HERO_MAX_SIZE) {
-      setHeroError(
-        `Ảnh Hero không được vượt quá 300 KB. File hiện tại: ${(
-          file.size / 1024
-        ).toFixed(1)} KB.`
-      );
+    const validationError = await validateWebpFile(file, HERO_MAX_SIZE);
+    if (validationError) {
+      setHeroError(validationError);
       return;
     }
 
@@ -497,19 +519,9 @@ export default function HinhAnhPage() {
     slide: HeroSlide,
     file: File
   ) {
-    if (file.type !== "image/webp") {
-      setHeroError(
-        "Ảnh Hero chỉ được thay bằng file WebP."
-      );
-      return;
-    }
-
-    if (file.size > HERO_MAX_SIZE) {
-      setHeroError(
-        `Ảnh Hero không được vượt quá 300 KB. File hiện tại: ${(
-          file.size / 1024
-        ).toFixed(1)} KB.`
-      );
+    const validationError = await validateWebpFile(file, HERO_MAX_SIZE);
+    if (validationError) {
+      setHeroError(validationError);
       return;
     }
 
@@ -608,6 +620,7 @@ export default function HinhAnhPage() {
       const objectUrl = URL.createObjectURL(file);
 
       image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
         resolve(true);
       };
 
@@ -851,46 +864,54 @@ export default function HinhAnhPage() {
     }
   }
 
-  function handleFileChange(
+  async function handleFileChange(
     event: ChangeEvent<HTMLInputElement>
   ) {
-    const files = Array.from(
-      event.target.files ?? []
-    );
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
 
     if (files.length === 0) return;
 
-    const newItems: UploadItem[] =
-      files.map((file) => ({
-        id: `${file.name}-${file.size}-${file.lastModified}-${Math.random()}`,
+    setError("");
+    setMessage("");
+
+    const checkedFiles = await Promise.all(
+      files.map(async (file) => ({
         file,
-        preview: URL.createObjectURL(file),
-        altVi: "",
-        altEn: "",
-        isCover: false,
-        progress: 0,
-        status: "waiting",
-      }));
+        error: await validateWebpFile(file, IMAGE_MAX_SIZE),
+      }))
+    );
+    const acceptedFiles = checkedFiles
+      .filter((item) => !item.error)
+      .map((item) => item.file);
+    const rejectedFiles = checkedFiles
+      .filter((item) => item.error)
+      .map((item) => `${item.file.name}: ${item.error}`);
+
+    if (rejectedFiles.length > 0) {
+      setError(rejectedFiles.join(" "));
+    }
+
+    if (acceptedFiles.length === 0) return;
+
+    const newItems: UploadItem[] = acceptedFiles.map((file) => ({
+      id: `${file.name}-${file.size}-${file.lastModified}-${Math.random()}`,
+      file,
+      preview: URL.createObjectURL(file),
+      altVi: "",
+      altEn: "",
+      isCover: false,
+      progress: 0,
+      status: "waiting",
+    }));
 
     setUploadItems((current) => {
-      const combined = [
-        ...current,
-        ...newItems,
-      ];
-
-      if (
-        combined.length > 0 &&
-        !combined.some(
-          (item) => item.isCover
-        )
-      ) {
+      const combined = [...current, ...newItems];
+      if (combined.length > 0 && !combined.some((item) => item.isCover)) {
         combined[0].isCover = true;
       }
-
       return combined;
     });
-
-    event.target.value = "";
   }
 
   function removeUploadItem(id: string) {
@@ -1016,6 +1037,8 @@ export default function HinhAnhPage() {
   ): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
+        const validationError = await validateWebpFile(file, IMAGE_MAX_SIZE);
+        if (validationError) throw new Error(validationError);
         const {
           data: { session },
           error: sessionError,
@@ -1100,8 +1123,7 @@ export default function HinhAnhPage() {
 
         xhr.setRequestHeader(
           "content-type",
-          file.type ||
-            "application/octet-stream"
+          "image/webp"
         );
 
         xhr.upload.onprogress = (
@@ -2439,7 +2461,7 @@ export default function HinhAnhPage() {
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Có thể chọn nhiều ảnh cùng lúc.
+              Chỉ nhận WebP, tối đa 2 MB mỗi ảnh. Có thể chọn nhiều ảnh cùng lúc.
             </p>
           </div>
 
@@ -2455,7 +2477,7 @@ export default function HinhAnhPage() {
 
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/avif"
+              accept="image/webp,.webp"
               multiple
               disabled={
                 !currentEntityId ||
