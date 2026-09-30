@@ -72,6 +72,7 @@ type HotelOTA = {
   website: string | null;
   listing_url: string | null;
   external_hotel_id: string | null;
+  sort_order: number;
 };
 type CustomerReview = {
   id: number;
