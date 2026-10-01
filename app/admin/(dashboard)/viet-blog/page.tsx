@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
 type BlogPost = {
@@ -143,7 +143,6 @@ function getStoragePathFromPublicUrl(url: string | null | undefined) {
   if (!url) return null;
 
   const marker = "/storage/v1/object/public/blog-images/";
-
   const index = url.indexOf(marker);
 
   if (index === -1) {
@@ -190,6 +189,8 @@ export default function VietBlogPage() {
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  const modalErrorRef = useRef<HTMLDivElement | null>(null);
+
   const editingPost = useMemo(() => {
     if (editingId === null) return null;
 
@@ -208,9 +209,19 @@ export default function VietBlogPage() {
     };
   }, [selectedFilePreview]);
 
+  useEffect(() => {
+    if (modalOpen && errorMessage && modalErrorRef.current) {
+      requestAnimationFrame(() => {
+        modalErrorRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
+    }
+  }, [modalOpen, errorMessage]);
+
   async function loadPosts() {
     setLoading(true);
-    setErrorMessage("");
 
     const { data, error } = await supabase
       .from("blog_posts")
@@ -301,12 +312,15 @@ export default function VietBlogPage() {
     setModalOpen(false);
     setEditingId(null);
     setForm(createEmptyForm());
+    setErrorMessage("");
   }
 
   function updateField<K extends keyof BlogForm>(
     field: K,
     value: BlogForm[K]
   ) {
+    setErrorMessage("");
+
     setForm((current) => ({
       ...current,
       [field]: value,
@@ -314,6 +328,8 @@ export default function VietBlogPage() {
   }
 
   function handleTitleViChange(value: string) {
+    setErrorMessage("");
+
     setForm((current) => ({
       ...current,
       title_vi: value,
@@ -325,6 +341,8 @@ export default function VietBlogPage() {
   }
 
   function handleCategoryChange(value: string) {
+    setErrorMessage("");
+
     const category = categories.find((item) => item.vi === value);
 
     setForm((current) => ({
@@ -417,30 +435,40 @@ export default function VietBlogPage() {
   }
 
   async function handleSave() {
+    if (saving || uploadingImage) {
+      return;
+    }
+
     setMessage("");
     setErrorMessage("");
 
-    if (!form.title_vi.trim()) {
+    const titleVi = form.title_vi.trim();
+    const titleEn = form.title_en.trim();
+    const slug = slugify(form.slug);
+    const contentVi = form.content_vi.trim();
+    const contentEn = form.content_en.trim();
+
+    if (!titleVi) {
       setErrorMessage("Vui lòng nhập tiêu đề tiếng Việt.");
       return;
     }
 
-    if (!form.title_en.trim()) {
+    if (!titleEn) {
       setErrorMessage("Vui lòng nhập tiêu đề tiếng Anh.");
       return;
     }
 
-    if (!form.slug.trim()) {
+    if (!slug) {
       setErrorMessage("Vui lòng nhập slug.");
       return;
     }
 
-    if (!form.content_vi.trim()) {
+    if (!contentVi) {
       setErrorMessage("Vui lòng nhập nội dung tiếng Việt.");
       return;
     }
 
-    if (!form.content_en.trim()) {
+    if (!contentEn) {
       setErrorMessage("Vui lòng nhập nội dung tiếng Anh.");
       return;
     }
@@ -450,7 +478,7 @@ export default function VietBlogPage() {
       return;
     }
 
-    if (form.read_time < 1) {
+    if (!Number.isFinite(Number(form.read_time)) || Number(form.read_time) < 1) {
       setErrorMessage("Thời gian đọc phải lớn hơn 0 phút.");
       return;
     }
@@ -460,19 +488,38 @@ export default function VietBlogPage() {
     let uploadedImageUrl: string | null = null;
 
     try {
+      /*
+       * Kiểm tra phiên đăng nhập Supabase.
+       * Nếu admin không có Supabase Auth session thì RLS
+       * sẽ không cho phép INSERT/UPDATE.
+       */
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError) {
+        throw new Error(
+          `Không kiểm tra được phiên đăng nhập Supabase: ${authError.message}`
+        );
+      }
+
+      if (!user) {
+        throw new Error(
+          "Phiên đăng nhập quản trị chưa được xác thực bằng Supabase Auth. Hãy đăng nhập lại trang quản trị rồi thử lại."
+        );
+      }
+
       let imageUrl = form.image.trim() || null;
 
       /*
-       * Nếu người dùng chọn ảnh mới:
-       * 1. Upload ảnh lên Supabase Storage.
+       * Nếu chọn ảnh mới:
+       * 1. Upload ảnh.
        * 2. Lấy public URL.
-       * 3. Lưu URL đó vào blog_posts.image.
+       * 3. Lưu URL vào blog_posts.
        */
       if (selectedFile) {
-        const uploaded = await uploadBlogImage(
-          selectedFile,
-          form.slug.trim()
-        );
+        const uploaded = await uploadBlogImage(selectedFile, slug);
 
         imageUrl = uploaded.publicUrl;
         uploadedImageUrl = uploaded.publicUrl;
@@ -493,13 +540,13 @@ export default function VietBlogPage() {
       }
 
       const payload = {
-        slug: slugify(form.slug),
-        title_vi: form.title_vi.trim(),
-        title_en: form.title_en.trim(),
+        slug,
+        title_vi: titleVi,
+        title_en: titleEn,
         excerpt_vi: form.excerpt_vi.trim() || null,
         excerpt_en: form.excerpt_en.trim() || null,
-        content_vi: form.content_vi.trim(),
-        content_en: form.content_en.trim(),
+        content_vi: contentVi,
+        content_en: contentEn,
         category_vi: form.category_vi,
         category_en: form.category_en,
         image: imageUrl,
@@ -518,7 +565,7 @@ export default function VietBlogPage() {
           throw error;
         }
 
-        setMessage("Đã tạo bài viết và lưu ảnh lên Supabase Storage.");
+        setMessage("Đã tạo bài viết.");
       } else {
         const oldImage = editingPost?.image ?? null;
 
@@ -532,8 +579,7 @@ export default function VietBlogPage() {
         }
 
         /*
-         * Xóa ảnh cũ khỏi Storage sau khi DB đã cập nhật thành công.
-         * Không đụng vào ảnh cũ dạng /images/blog/...
+         * Xóa ảnh cũ sau khi DB đã cập nhật thành công.
          */
         if (
           selectedFile &&
@@ -544,7 +590,7 @@ export default function VietBlogPage() {
           try {
             await deleteStorageImage(oldImage);
           } catch {
-            // Không làm thất bại việc lưu bài nếu xóa ảnh cũ không thành công.
+            // Không làm thất bại việc lưu bài nếu xóa ảnh cũ lỗi.
           }
         }
 
@@ -553,15 +599,49 @@ export default function VietBlogPage() {
 
       clearSelectedFile();
 
-      await loadPosts();
+      /*
+       * Tải lại danh sách sau khi DB đã lưu thành công.
+       */
+      const { data: refreshedPosts, error: refreshError } = await supabase
+        .from("blog_posts")
+        .select(
+          `
+          id,
+          slug,
+          title_vi,
+          title_en,
+          excerpt_vi,
+          excerpt_en,
+          content_vi,
+          content_en,
+          category_vi,
+          category_en,
+          image,
+          date,
+          read_time,
+          featured,
+          status,
+          created_at,
+          updated_at
+        `
+        )
+        .order("date", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (refreshError) {
+        throw refreshError;
+      }
+
+      setPosts((refreshedPosts ?? []) as BlogPost[]);
 
       setModalOpen(false);
       setEditingId(null);
       setForm(createEmptyForm());
+      setErrorMessage("");
     } catch (error) {
       /*
-       * Nếu upload ảnh mới thành công nhưng lưu DB thất bại,
-       * xóa ảnh mới để tránh file rác trong Storage.
+       * Nếu upload ảnh thành công nhưng DB lưu thất bại,
+       * xóa ảnh mới để tránh file rác.
        */
       if (uploadedImageUrl) {
         try {
@@ -571,7 +651,9 @@ export default function VietBlogPage() {
         }
       }
 
-      setErrorMessage(`Không thể lưu bài viết: ${getErrorMessage(error)}`);
+      const readableError = getErrorMessage(error);
+
+      setErrorMessage(`Không thể lưu bài viết: ${readableError}`);
     } finally {
       setSaving(false);
     }
@@ -582,7 +664,8 @@ export default function VietBlogPage() {
     setErrorMessage("");
     setTogglingId(post.id);
 
-    const nextStatus = post.status === "active" ? "inactive" : "active";
+    const nextStatus =
+      post.status === "active" ? "inactive" : "active";
 
     const { error } = await supabase
       .from("blog_posts")
@@ -636,15 +719,11 @@ export default function VietBlogPage() {
         throw error;
       }
 
-      /*
-       * Sau khi xóa DB, nếu ảnh nằm trong blog-images thì xóa luôn.
-       * Ảnh cũ /images/blog/... sẽ không bị đụng tới.
-       */
       if (post.image && isStorageBlogImage(post.image)) {
         try {
           await deleteStorageImage(post.image);
         } catch {
-          // DB đã xóa thành công; ảnh Storage lỗi xóa thì chỉ báo nhẹ.
+          // DB đã xóa thành công.
         }
       }
 
@@ -654,7 +733,9 @@ export default function VietBlogPage() {
 
       setMessage("Đã xóa bài viết.");
     } catch (error) {
-      setErrorMessage(`Không thể xóa bài viết: ${getErrorMessage(error)}`);
+      setErrorMessage(
+        `Không thể xóa bài viết: ${getErrorMessage(error)}`
+      );
     } finally {
       setDeletingId(null);
     }
@@ -689,7 +770,7 @@ export default function VietBlogPage() {
           </div>
         )}
 
-        {errorMessage && (
+        {errorMessage && !modalOpen && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {errorMessage}
           </div>
@@ -780,7 +861,9 @@ export default function VietBlogPage() {
                         <button
                           type="button"
                           disabled={togglingId === post.id}
-                          onClick={() => void handleToggleStatus(post)}
+                          onClick={() =>
+                            void handleToggleStatus(post)
+                          }
                           className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                             post.status === "active"
                               ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
@@ -861,6 +944,22 @@ export default function VietBlogPage() {
             </div>
 
             <div className="max-h-[calc(100vh-120px)] overflow-y-auto p-5">
+              {errorMessage && (
+                <div
+                  ref={modalErrorRef}
+                  role="alert"
+                  className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                >
+                  <div className="font-bold">
+                    Không thể lưu bài viết
+                  </div>
+
+                  <div className="mt-1 whitespace-pre-wrap break-words">
+                    {errorMessage}
+                  </div>
+                </div>
+              )}
+
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="space-y-5">
                   <div>
@@ -1027,8 +1126,8 @@ export default function VietBlogPage() {
                           />
 
                           <p className="mt-3 text-xs leading-5 text-slate-500">
-                            Chọn ảnh từ máy tính. Ảnh sẽ được upload vào
-                            Supabase Storage bucket{" "}
+                            Chọn ảnh từ máy tính. Ảnh sẽ được upload
+                            vào Supabase Storage bucket{" "}
                             <strong>blog-images</strong>.
                             <br />
                             Dung lượng tối đa: 10MB.
@@ -1040,7 +1139,7 @@ export default function VietBlogPage() {
                               <strong>{selectedFile.name}</strong>
                               <br />
                               Ảnh chỉ được lưu vào Storage khi bấm
-                              &quot;Lưu bài viết&quot;.
+                              &quot;Tạo bài viết&quot;.
                             </div>
                           )}
 
@@ -1175,8 +1274,8 @@ export default function VietBlogPage() {
 
                     {form.featured && (
                       <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                        Khi bài này được đặt nổi bật, các bài viết khác
-                        sẽ tự động bỏ trạng thái nổi bật.
+                        Khi bài này được đặt nổi bật, các bài viết
+                        khác sẽ tự động bỏ trạng thái nổi bật.
                       </p>
                     )}
                   </div>
