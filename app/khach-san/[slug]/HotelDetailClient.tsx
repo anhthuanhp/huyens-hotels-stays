@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -324,33 +325,6 @@ export default function HotelDetailClient({
     language
   );
 
-  const handleBooking = (room: Room) => {
-    const params = new URLSearchParams();
-
-    params.set(
-      "hotel",
-      initialHotel.slug
-    );
-
-    params.set("room", room.slug);
-
-    const stayType =
-      initialHotel.business_model?.trim().toLowerCase() ===
-      "monthly"
-        ? "month"
-        : "day";
-
-    params.set("stayType", stayType);
-
-    if (stayType === "month") {
-      params.set("months", "1");
-    }
-
-    router.push(
-      `/tim-phong?${params.toString()}`
-    );
-  };
-
   return (
     <main className="min-h-screen bg-white text-slate-900">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -364,10 +338,7 @@ export default function HotelDetailClient({
               {hotelAddress && (
                 <div className="mt-3 flex items-start gap-2 text-sm text-slate-600">
                   <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
-
-                  <span>
-                    {hotelAddress}
-                  </span>
+                  <span>{hotelAddress}</span>
                 </div>
               )}
 
@@ -451,6 +422,42 @@ export default function HotelDetailClient({
                     const roomImage =
                       roomCovers[room.id] || null;
 
+                    const stayType =
+                      initialHotel.business_model
+                        ?.trim()
+                        .toLowerCase() ===
+                      "monthly"
+                        ? "month"
+                        : "day";
+
+                    const bookingParams =
+                      new URLSearchParams();
+
+                    bookingParams.set(
+                      "hotel",
+                      initialHotel.slug
+                    );
+
+                    bookingParams.set(
+                      "room",
+                      room.slug
+                    );
+
+                    bookingParams.set(
+                      "stayType",
+                      stayType
+                    );
+
+                    if (stayType === "month") {
+                      bookingParams.set(
+                        "months",
+                        "1"
+                      );
+                    }
+
+                    const bookingUrl =
+                      `/tim-phong?${bookingParams.toString()}`;
+
                     return (
                       <article
                         key={room.id}
@@ -502,7 +509,6 @@ export default function HotelDetailClient({
                               room.size > 0 && (
                                 <div className="flex items-center gap-2">
                                   <Maximize2 className="h-4 w-4 shrink-0" />
-
                                   <span>
                                     {room.size} m²
                                   </span>
@@ -514,7 +520,6 @@ export default function HotelDetailClient({
                               room.max_guests > 0 && (
                                 <div className="flex items-center gap-2">
                                   <Users className="h-4 w-4 shrink-0" />
-
                                   <span>
                                     {room.max_guests}{" "}
                                     {language === "vi"
@@ -527,10 +532,7 @@ export default function HotelDetailClient({
                             {beds && (
                               <div className="flex items-center gap-2">
                                 <BedDouble className="h-4 w-4 shrink-0" />
-
-                                <span>
-                                  {beds}
-                                </span>
+                                <span>{beds}</span>
                               </div>
                             )}
 
@@ -539,7 +541,6 @@ export default function HotelDetailClient({
                               room.quantity > 0 && (
                                 <div className="flex items-center gap-2">
                                   <BedDouble className="h-4 w-4 shrink-0" />
-
                                   <span>
                                     {language === "vi"
                                       ? `${room.quantity} phòng`
@@ -568,7 +569,6 @@ export default function HotelDetailClient({
                                       className="flex items-start gap-2 text-sm text-slate-600"
                                     >
                                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-
                                       <span>
                                         {amenity}
                                       </span>
@@ -603,17 +603,15 @@ export default function HotelDetailClient({
                               </div>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleBooking(room)
-                              }
+                            <Link
+                              href={bookingUrl}
+                              prefetch={true}
                               className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
                             >
                               {language === "vi"
                                 ? "Đặt phòng"
                                 : "Book now"}
-                            </button>
+                            </Link>
                           </div>
                         </div>
                       </article>
@@ -635,10 +633,7 @@ export default function HotelDetailClient({
                   {hotelAddress && (
                     <div className="mt-2 flex items-start gap-2 text-sm text-slate-600">
                       <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-
-                      <span>
-                        {hotelAddress}
-                      </span>
+                      <span>{hotelAddress}</span>
                     </div>
                   )}
                 </div>

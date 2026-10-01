@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -72,6 +73,10 @@ export default function HotelBookingSidebar({
   useEffect(() => {
     setSelectedHotel(hotel.slug);
   }, [hotel.slug]);
+
+  useEffect(() => {
+    router.prefetch("/tim-phong");
+  }, [router]);
 
   const getHotelName = (item: Hotel) => {
     if (language === "vi") {
