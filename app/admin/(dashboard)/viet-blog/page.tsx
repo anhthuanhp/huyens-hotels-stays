@@ -167,6 +167,33 @@ function getFileExtension(file: File) {
   return "jpg";
 }
 
+function getCategoryByVi(categoryVi: string) {
+  return categories.find((category) => category.vi === categoryVi) ?? null;
+}
+
+function getCategoryByEn(categoryEn: string) {
+  return categories.find((category) => category.en === categoryEn) ?? null;
+}
+
+function normalizeCategory(
+  categoryVi: string | null | undefined,
+  categoryEn: string | null | undefined
+) {
+  const byVi = categoryVi ? getCategoryByVi(categoryVi) : null;
+
+  if (byVi) {
+    return byVi;
+  }
+
+  const byEn = categoryEn ? getCategoryByEn(categoryEn) : null;
+
+  if (byEn) {
+    return byEn;
+  }
+
+  return categories[0];
+}
+
 export default function VietBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -281,6 +308,11 @@ export default function VietBlogPage() {
   function openEditModal(post: BlogPost) {
     clearSelectedFile();
 
+    const category = normalizeCategory(
+      post.category_vi,
+      post.category_en
+    );
+
     setEditingId(post.id);
 
     setForm({
@@ -291,8 +323,8 @@ export default function VietBlogPage() {
       excerpt_en: post.excerpt_en ?? "",
       content_vi: post.content_vi ?? "",
       content_en: post.content_en ?? "",
-      category_vi: post.category_vi ?? categories[0].vi,
-      category_en: post.category_en ?? categories[0].en,
+      category_vi: category.vi,
+      category_en: category.en,
       image: post.image ?? "",
       date: post.date,
       read_time: post.read_time ?? 5,
@@ -343,12 +375,26 @@ export default function VietBlogPage() {
   function handleCategoryChange(value: string) {
     setErrorMessage("");
 
-    const category = categories.find((item) => item.vi === value);
+    const category = getCategoryByVi(value);
 
+    if (!category) {
+      setForm((current) => ({
+        ...current,
+        category_vi: value,
+        category_en: "",
+      }));
+
+      return;
+    }
+
+    /*
+     * Khi đổi danh mục:
+     * category_vi và category_en luôn được cập nhật cùng lúc.
+     */
     setForm((current) => ({
       ...current,
-      category_vi: value,
-      category_en: category?.en ?? "",
+      category_vi: category.vi,
+      category_en: category.en,
     }));
   }
 
@@ -448,6 +494,8 @@ export default function VietBlogPage() {
     const contentVi = form.content_vi.trim();
     const contentEn = form.content_en.trim();
 
+    const category = getCategoryByVi(form.category_vi);
+
     if (!titleVi) {
       setErrorMessage("Vui lòng nhập tiêu đề tiếng Việt.");
       return;
@@ -473,12 +521,22 @@ export default function VietBlogPage() {
       return;
     }
 
+    if (!category) {
+      setErrorMessage(
+        "Danh mục bài viết không hợp lệ. Vui lòng chọn lại danh mục."
+      );
+      return;
+    }
+
     if (!form.date) {
       setErrorMessage("Vui lòng chọn ngày.");
       return;
     }
 
-    if (!Number.isFinite(Number(form.read_time)) || Number(form.read_time) < 1) {
+    if (
+      !Number.isFinite(Number(form.read_time)) ||
+      Number(form.read_time) < 1
+    ) {
       setErrorMessage("Thời gian đọc phải lớn hơn 0 phút.");
       return;
     }
@@ -488,11 +546,6 @@ export default function VietBlogPage() {
     let uploadedImageUrl: string | null = null;
 
     try {
-      /*
-       * Kiểm tra phiên đăng nhập Supabase.
-       * Nếu admin không có Supabase Auth session thì RLS
-       * sẽ không cho phép INSERT/UPDATE.
-       */
       const {
         data: { user },
         error: authError,
@@ -512,12 +565,6 @@ export default function VietBlogPage() {
 
       let imageUrl = form.image.trim() || null;
 
-      /*
-       * Nếu chọn ảnh mới:
-       * 1. Upload ảnh.
-       * 2. Lấy public URL.
-       * 3. Lưu URL vào blog_posts.
-       */
       if (selectedFile) {
         const uploaded = await uploadBlogImage(selectedFile, slug);
 
@@ -539,6 +586,20 @@ export default function VietBlogPage() {
         }
       }
 
+      /*
+       * Quan trọng:
+       * category_vi và category_en lấy trực tiếp từ cùng một
+       * category được chọn trong danh sách categories.
+       *
+       * Vì vậy khi chuyển:
+       * Ẩm thực
+       * ->
+       * Kinh nghiệm lưu trú
+       *
+       * database sẽ nhận:
+       * category_vi = Kinh nghiệm lưu trú
+       * category_en = Stay Tips
+       */
       const payload = {
         slug,
         title_vi: titleVi,
@@ -547,8 +608,8 @@ export default function VietBlogPage() {
         excerpt_en: form.excerpt_en.trim() || null,
         content_vi: contentVi,
         content_en: contentEn,
-        category_vi: form.category_vi,
-        category_en: form.category_en,
+        category_vi: category.vi,
+        category_en: category.en,
         image: imageUrl,
         date: form.date,
         read_time: Number(form.read_time),
@@ -569,13 +630,41 @@ export default function VietBlogPage() {
       } else {
         const oldImage = editingPost?.image ?? null;
 
-        const { error } = await supabase
+        const { data: updatedPost, error } = await supabase
           .from("blog_posts")
           .update(payload)
-          .eq("id", editingId);
+          .eq("id", editingId)
+          .select(
+            `
+            id,
+            slug,
+            title_vi,
+            title_en,
+            excerpt_vi,
+            excerpt_en,
+            content_vi,
+            content_en,
+            category_vi,
+            category_en,
+            image,
+            date,
+            read_time,
+            featured,
+            status,
+            created_at,
+            updated_at
+          `
+          )
+          .single();
 
         if (error) {
           throw error;
+        }
+
+        if (!updatedPost) {
+          throw new Error(
+            "Không nhận được dữ liệu sau khi cập nhật bài viết."
+          );
         }
 
         /*
@@ -600,7 +689,8 @@ export default function VietBlogPage() {
       clearSelectedFile();
 
       /*
-       * Tải lại danh sách sau khi DB đã lưu thành công.
+       * Đọc lại danh sách từ Supabase để chắc chắn
+       * category mới đã được lưu vào database.
        */
       const { data: refreshedPosts, error: refreshError } = await supabase
         .from("blog_posts")
