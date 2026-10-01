@@ -1,7 +1,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
+
 import { GoogleGenAI } from "@google/genai";
+
 import { createClient } from "@supabase/supabase-js";
+
 import { HOME_FAQ_GROUPS } from "../../data/home-faq";
 
 type Language = "vi" | "en";
@@ -80,17 +83,22 @@ type HotelAmenity = {
   status: string | null;
 };
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 const supabaseKey =
   process.env.SUPABASE_SECRET_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const geminiApiKey = process.env.GEMINI_API_KEY;
+const geminiApiKey =
+  process.env.GEMINI_API_KEY;
 
 const supabase =
   supabaseUrl && supabaseKey
-    ? createClient(supabaseUrl, supabaseKey)
+    ? createClient(
+        supabaseUrl,
+        supabaseKey
+      )
     : null;
 
 const ai = geminiApiKey
@@ -99,7 +107,8 @@ const ai = geminiApiKey
     })
   : null;
 
-const GEMINI_MODEL = "gemini-3.8-flash";
+const GEMINI_MODEL =
+  "gemini-3.8-flash";
 
 type ChatTurn = {
   role: "user" | "assistant";
@@ -115,7 +124,9 @@ type AvailabilityDate = {
    TEXT
 ========================================================= */
 
-function normalizeText(value: string): string {
+function normalizeText(
+  value: string
+): string {
   return value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -127,12 +138,19 @@ function normalizeText(value: string): string {
     .trim();
 }
 
-function cleanText(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
+function cleanText(
+  value: unknown
+): string {
+  return typeof value === "string"
+    ? value.trim()
+    : "";
 }
 
-function detectLanguage(text: string): Language {
-  const normalized = normalizeText(text);
+function detectLanguage(
+  text: string
+): Language {
+  const normalized =
+    normalizeText(text);
 
   const vietnameseWords = [
     "toi",
@@ -162,8 +180,9 @@ function detectLanguage(text: string): Language {
     "le tan",
   ];
 
-  return vietnameseWords.some((word) =>
-    normalized.includes(word)
+  return vietnameseWords.some(
+    (word) =>
+      normalized.includes(word)
   )
     ? "vi"
     : "en";
@@ -220,19 +239,27 @@ const stopWords = new Set([
   "about",
 ]);
 
-function tokenize(value: string): string[] {
+function tokenize(
+  value: string
+): string[] {
   return normalizeText(value)
     .split(" ")
     .filter(Boolean)
-    .filter((token) => !stopWords.has(token));
+    .filter(
+      (token) =>
+        !stopWords.has(token)
+    );
 }
 
 /* =========================================================
    GREETING
 ========================================================= */
 
-function isGreeting(text: string): boolean {
-  const normalized = normalizeText(text);
+function isGreeting(
+  text: string
+): boolean {
+  const normalized =
+    normalizeText(text);
 
   const greetings = [
     "hello",
@@ -254,12 +281,18 @@ function isGreeting(text: string): boolean {
   return greetings.some(
     (item) =>
       normalized === item ||
-      normalized.startsWith(`${item} `) ||
-      normalized.endsWith(` ${item}`)
+      normalized.startsWith(
+        `${item} `
+      ) ||
+      normalized.endsWith(
+        ` ${item}`
+      )
   );
 }
 
-function greetingAnswer(language: Language): string {
+function greetingAnswer(
+  language: Language
+): string {
   return language === "vi"
     ? "Xin chào! Tôi là trợ lý của Huyen's. Tôi có thể giúp bạn tìm thông tin về khách sạn, phòng, giá phòng, tiện nghi và thông tin liên hệ."
     : "Hello! I’m Huyen's assistant. I can help you find information about our hotels, rooms, prices, amenities, and contact details.";
@@ -288,11 +321,17 @@ const abusiveWords = [
   "đụ",
 ];
 
-function containsAbuse(text: string): boolean {
-  const normalized = normalizeText(text);
+function containsAbuse(
+  text: string
+): boolean {
+  const normalized =
+    normalizeText(text);
 
-  return abusiveWords.some((word) =>
-    normalized.includes(normalizeText(word))
+  return abusiveWords.some(
+    (word) =>
+      normalized.includes(
+        normalizeText(word)
+      )
   );
 }
 
@@ -304,16 +343,25 @@ function scoreTextMatch(
   query: string,
   candidate: string
 ): number {
-  const q = normalizeText(query);
-  const c = normalizeText(candidate);
+  const q =
+    normalizeText(query);
+
+  const c =
+    normalizeText(candidate);
 
   if (!q || !c) return 0;
+
   if (q === c) return 100;
+
   if (c.includes(q)) return 90;
+
   if (q.includes(c)) return 85;
 
-  const queryTokens = tokenize(q);
-  const candidateTokens = tokenize(c);
+  const queryTokens =
+    tokenize(q);
+
+  const candidateTokens =
+    tokenize(c);
 
   if (
     !queryTokens.length ||
@@ -325,7 +373,11 @@ function scoreTextMatch(
   let score = 0;
 
   for (const token of queryTokens) {
-    if (candidateTokens.includes(token)) {
+    if (
+      candidateTokens.includes(
+        token
+      )
+    ) {
       score += 15;
     } else if (
       candidateTokens.some(
@@ -346,7 +398,8 @@ function findSiteFaqAnswer(
   language: Language
 ): string | null {
   let bestScore = 0;
-  let answer: string | null = null;
+  let answer: string | null =
+    null;
 
   for (const group of HOME_FAQ_GROUPS) {
     for (const item of group.items) {
@@ -363,6 +416,7 @@ function findSiteFaqAnswer(
 
       if (score > bestScore) {
         bestScore = score;
+
         answer =
           language === "vi"
             ? item.answerVi
@@ -371,7 +425,9 @@ function findSiteFaqAnswer(
     }
   }
 
-  return bestScore >= 45 ? answer : null;
+  return bestScore >= 45
+    ? answer
+    : null;
 }
 
 /* =========================================================
@@ -385,7 +441,10 @@ function findExplicitHotel(
   const normalizedQuestion =
     normalizeText(text);
 
-  let bestHotel: Hotel | null = null;
+  let bestHotel:
+    | Hotel
+    | null = null;
+
   let bestAliasLength = 0;
 
   for (const hotel of hotels) {
@@ -429,6 +488,7 @@ function findExplicitHotel(
         ) {
           bestAliasLength =
             normalizedAlias.length;
+
           bestHotel = hotel;
         }
       }
@@ -450,11 +510,15 @@ function findRoom(
   const availableRooms = hotel
     ? rooms.filter(
         (room) =>
-          room.hotel_id === hotel.id
+          room.hotel_id ===
+          hotel.id
       )
     : rooms;
 
-  let bestRoom: Room | null = null;
+  let bestRoom:
+    | Room
+    | null = null;
+
   let bestScore = 0;
 
   for (const room of availableRooms) {
@@ -492,7 +556,9 @@ function containsAny(
   words: string[]
 ): boolean {
   return words.some((word) =>
-    text.includes(normalizeText(word))
+    text.includes(
+      normalizeText(word)
+    )
   );
 }
 
@@ -503,7 +569,8 @@ function containsAny(
 function isGenericHotelAmenityQuestion(
   text: string
 ): boolean {
-  const normalized = normalizeText(text);
+  const normalized =
+    normalizeText(text);
 
   const genericPatterns = [
     "khach san nao",
@@ -554,9 +621,13 @@ function formatLocalDate(
     return null;
   }
 
-  return `${String(year).padStart(4, "0")}-${String(
-    month
-  ).padStart(2, "0")}-${String(day).padStart(
+  return `${String(year).padStart(
+    4,
+    "0"
+  )}-${String(month).padStart(
+    2,
+    "0"
+  )}-${String(day).padStart(
     2,
     "0"
   )}`;
@@ -594,30 +665,36 @@ function parseAvailabilityDates(
       month: Number(match[2]),
       year: match[3]
         ? Number(match[3]) < 100
-          ? 2000 + Number(match[3])
+          ? 2000 +
+            Number(match[3])
           : Number(match[3])
         : new Date().getFullYear(),
-      explicitYear: Boolean(match[3]),
+      explicitYear:
+        Boolean(match[3]),
     });
   }
 
   matches.sort(
-    (a, b) => a.index - b.index
+    (a, b) =>
+      a.index - b.index
   );
 
-  const dates: AvailabilityDate[] = [];
+  const dates: AvailabilityDate[] =
+    [];
 
   for (const item of matches) {
-    const value = formatLocalDate(
-      item.year,
-      item.month,
-      item.day
-    );
+    const value =
+      formatLocalDate(
+        item.year,
+        item.month,
+        item.day
+      );
 
     if (
       value &&
       !dates.some(
-        (date) => date.value === value
+        (date) =>
+          date.value === value
       )
     ) {
       dates.push({
@@ -630,7 +707,8 @@ function parseAvailabilityDates(
 
   if (
     dates.length >= 2 &&
-    dates[1].value < dates[0].value &&
+    dates[1].value <
+      dates[0].value &&
     !dates[1].explicitYear
   ) {
     const [
@@ -888,7 +966,9 @@ function detectIntent(
    SUPABASE
 ========================================================= */
 
-async function loadHotels(): Promise<Hotel[]> {
+async function loadHotels(): Promise<
+  Hotel[]
+> {
   if (!supabase) {
     return [];
   }
@@ -907,6 +987,7 @@ async function loadHotels(): Promise<Hotel[]> {
       "AI loadHotels error:",
       error
     );
+
     return [];
   }
 
@@ -963,6 +1044,7 @@ async function loadRooms(
       "AI loadRooms error:",
       error
     );
+
     return [];
   }
 
@@ -999,6 +1081,7 @@ async function loadLiveAvailability(
       "AI availability rooms error:",
       roomError
     );
+
     return null;
   }
 
@@ -1016,7 +1099,9 @@ async function loadLiveAvailability(
       status: string;
     }>;
 
-  if (!rooms.length) return [];
+  if (!rooms.length) {
+    return [];
+  }
 
   const {
     data: bookingRows,
@@ -1041,6 +1126,7 @@ async function loadLiveAvailability(
       "AI availability bookings error:",
       bookingError
     );
+
     return null;
   }
 
@@ -1069,6 +1155,7 @@ async function loadLiveAvailability(
       const roomId = Number(
         item.room_id
       );
+
       const quantity = Number(
         item.quantity
       );
@@ -1110,7 +1197,9 @@ async function loadLiveAvailability(
 
 async function loadHotelAmenities(
   hotelId?: number
-): Promise<HotelAmenity[]> {
+): Promise<
+  HotelAmenity[]
+> {
   if (!supabase) {
     return [];
   }
@@ -1153,6 +1242,7 @@ async function loadHotelAmenities(
       "AI loadHotelAmenities error:",
       error
     );
+
     return [];
   }
 
@@ -1415,8 +1505,12 @@ function hotelAmenitiesAnswer(
   }
 
   return language === "vi"
-    ? `${hotelName} có các tiện nghi:\n\n${list.join("\n")}`
-    : `${hotelName} has the following amenities:\n\n${list.join("\n")}`;
+    ? `${hotelName} có các tiện nghi:\n\n${list.join(
+        "\n"
+      )}`
+    : `${hotelName} has the following amenities:\n\n${list.join(
+        "\n"
+      )}`;
 }
 
 /* =========================================================
@@ -1450,18 +1544,16 @@ async function findHotelsByAmenity(
     return null;
   }
 
-  const hotelIds =
-    new Set(
-      matchingAmenities.map(
-        (amenity) =>
-          amenity.hotel_id
-      )
-    );
+  const hotelIds = new Set(
+    matchingAmenities.map(
+      (amenity) =>
+        amenity.hotel_id
+    )
+  );
 
   const matchedHotels =
-    hotels.filter(
-      (hotel) =>
-        hotelIds.has(hotel.id)
+    hotels.filter((hotel) =>
+      hotelIds.has(hotel.id)
     );
 
   if (!matchedHotels.length) {
@@ -1489,8 +1581,18 @@ async function findHotelsByAmenity(
     );
 
   return language === "vi"
-    ? `${amenityName || "Tiện nghi này"} hiện có tại:\n\n${names.join("\n")}`
-    : `${amenityName || "This amenity"} is currently available at:\n\n${names.join("\n")}`;
+    ? `${
+        amenityName ||
+        "Tiện nghi này"
+      } hiện có tại:\n\n${names.join(
+        "\n"
+      )}`
+    : `${
+        amenityName ||
+        "This amenity"
+      } is currently available at:\n\n${names.join(
+        "\n"
+      )}`;
 }
 
 /* =========================================================
@@ -1518,8 +1620,12 @@ function hotelListAnswer(
     );
 
   return language === "vi"
-    ? `Hiện Huyen's có các nơi lưu trú:\n\n${names.join("\n")}`
-    : `Huyen's currently has these places to stay:\n\n${names.join("\n")}`;
+    ? `Hiện Huyen's có các nơi lưu trú:\n\n${names.join(
+        "\n"
+      )}`
+    : `Huyen's currently has these places to stay:\n\n${names.join(
+        "\n"
+      )}`;
 }
 
 function hotelAddressAnswer(
@@ -1641,7 +1747,8 @@ function roomListAnswer(
   const hotelRooms =
     rooms.filter(
       (room) =>
-        room.hotel_id === hotel.id
+        room.hotel_id ===
+        hotel.id
     );
 
   const hotelName =
@@ -1666,8 +1773,12 @@ function roomListAnswer(
     );
 
   return language === "vi"
-    ? `${hotelName} hiện có các loại phòng:\n\n${list.join("\n")}`
-    : `${hotelName} currently has these room types:\n\n${list.join("\n")}`;
+    ? `${hotelName} hiện có các loại phòng:\n\n${list.join(
+        "\n"
+      )}`
+    : `${hotelName} currently has these room types:\n\n${list.join(
+        "\n"
+      )}`;
 }
 
 function formatMoney(
@@ -1804,14 +1915,18 @@ function buildGeminiContext(
           slug: hotel.slug,
           name_vi: hotel.name_vi,
           name_en: hotel.name_en,
-          address_vi: hotel.address_vi,
-          address_en: hotel.address_en,
+          address_vi:
+            hotel.address_vi,
+          address_en:
+            hotel.address_en,
           description_vi:
             hotel.description_vi,
           description_en:
             hotel.description_en,
-          nearby_vi: hotel.nearby_vi,
-          nearby_en: hotel.nearby_en,
+          nearby_vi:
+            hotel.nearby_vi,
+          nearby_en:
+            hotel.nearby_en,
           business_model:
             hotel.business_model,
         })
@@ -1943,27 +2058,27 @@ ${context}
   ) {
     try {
       const response =
-        await ai.models.generateContent({
-          model: GEMINI_MODEL,
+        await ai.models.generateContent(
+          {
+            model: GEMINI_MODEL,
 
-          contents: history.length
-            ? `Recent conversation (oldest to newest):\n${history
-                .map(
-                  (
-                    turn: ChatTurn
-                  ) =>
-                    `${turn.role}: ${turn.content}`
-                )
-                .join(
-                  "\n"
-                )}\n\nCurrent question: ${question}`
-            : question,
+            contents: history.length
+              ? `Recent conversation (oldest to newest):\n${history
+                  .map(
+                    (turn: ChatTurn) =>
+                      `${turn.role}: ${turn.content}`
+                  )
+                  .join(
+                    "\n"
+                  )}\n\nCurrent question: ${question}`
+              : question,
 
-          config: {
-            systemInstruction,
-            temperature: 0.2,
-          },
-        });
+            config: {
+              systemInstruction,
+              temperature: 0.2,
+            },
+          }
+        );
 
       const answer =
         response.text?.trim();
@@ -1982,7 +2097,9 @@ ${context}
           : String(error);
 
       console.error(
-        `Gemini attempt ${attempt + 1}/3:`,
+        `Gemini attempt ${
+          attempt + 1
+        }/3:`,
         message
       );
 
@@ -1991,10 +2108,14 @@ ${context}
         message.includes("429") ||
         message
           .toLowerCase()
-          .includes("unavailable") ||
+          .includes(
+            "unavailable"
+          ) ||
         message
           .toLowerCase()
-          .includes("overloaded");
+          .includes(
+            "overloaded"
+          );
 
       if (
         !retryable ||
@@ -2040,23 +2161,30 @@ function isRateLimited(
     "unknown";
 
   const now = Date.now();
-  const windowMs = 60_000;
+
+  const windowMs =
+    60_000;
+
   const maxRequests = 20;
 
   const recent = (
-    aiRequestWindows.get(ip) ?? []
+    aiRequestWindows.get(ip) ??
+    []
   ).filter(
     (time) =>
-      now - time < windowMs
+      now - time <
+      windowMs
   );
 
   if (
-    recent.length >= maxRequests
+    recent.length >=
+    maxRequests
   ) {
     aiRequestWindows.set(
       ip,
       recent
     );
+
     return true;
   }
 
@@ -2068,11 +2196,14 @@ function isRateLimited(
   );
 
   if (
-    aiRequestWindows.size > 2000
+    aiRequestWindows.size >
+    2000
   ) {
     for (
-      const [key, times] of
-        aiRequestWindows
+      const [
+        key,
+        times,
+      ] of aiRequestWindows
     ) {
       if (
         !times.some(
@@ -2103,7 +2234,8 @@ export async function POST(
       );
 
     if (
-      contentLength > 30_000
+      contentLength >
+      30_000
     ) {
       return NextResponse.json(
         {
@@ -2146,7 +2278,8 @@ export async function POST(
         : "";
 
     if (
-      question.length > 1000
+      question.length >
+      1000
     ) {
       return NextResponse.json(
         {
@@ -2159,72 +2292,78 @@ export async function POST(
       );
     }
 
-    /*
-     * HISTORY
-     *
-     * Parse dữ liệu history thành ChatTurn[]
-     * với kiểu dữ liệu rõ ràng để TypeScript
-     * không suy luận turn thành any hoặc null.
-     */
+    /* =====================================================
+       HISTORY
+
+       Parse history an toàn để TypeScript
+       không còn báo "'turn' is possibly 'null'".
+    ===================================================== */
 
     const rawHistory: unknown[] =
-      Array.isArray(body?.history)
+      Array.isArray(
+        body?.history
+      )
         ? body.history
         : [];
 
     const history: ChatTurn[] =
-      rawHistory
-        .filter(
-          (
-            turn: unknown
-          ): turn is {
-            role: unknown;
-            content: unknown;
-          } =>
-            Boolean(turn) &&
-            typeof turn ===
-              "object" &&
-            "role" in turn &&
-            "content" in turn
-        )
-        .filter(
-          (turn: {
-            role: unknown;
-            content: unknown;
-          }) =>
-            (
-              turn.role ===
-                "user" ||
-              turn.role ===
-                "assistant"
-            ) &&
-            typeof turn.content ===
-              "string"
-        )
-        .map(
-          (turn: {
-            role: unknown;
-            content: unknown;
-          }): ChatTurn => ({
-            role:
-              turn.role as
-                | "user"
-                | "assistant",
+      [];
 
-            content:
-              (
-                turn.content as string
-              )
-                .trim()
-                .slice(0, 600),
-          })
-        )
-        .filter(
-          (turn: ChatTurn) =>
-            turn.content.length >
-            0
-        )
-        .slice(-10);
+    for (
+      const rawTurn of rawHistory
+    ) {
+      if (
+        rawTurn === null ||
+        typeof rawTurn !==
+          "object"
+      ) {
+        continue;
+      }
+
+      const turn =
+        rawTurn as {
+          role?: unknown;
+          content?: unknown;
+        };
+
+      if (
+        turn.role !== "user" &&
+        turn.role !==
+          "assistant"
+      ) {
+        continue;
+      }
+
+      if (
+        typeof turn.content !==
+        "string"
+      ) {
+        continue;
+      }
+
+      const content =
+        turn.content
+          .trim()
+          .slice(0, 600);
+
+      if (!content) {
+        continue;
+      }
+
+      history.push({
+        role: turn.role,
+        content,
+      });
+    }
+
+    const limitedHistory =
+      history.slice(-10);
+
+    history.length = 0;
+
+    history.push(
+      ...limitedHistory
+    );
 
     const lastHistoryTurn =
       history[
@@ -2253,7 +2392,9 @@ export async function POST(
     }
 
     const language =
-      detectLanguage(question);
+      detectLanguage(
+        question
+      );
 
     if (
       containsAbuse(question)
@@ -2266,9 +2407,9 @@ export async function POST(
       });
     }
 
-    /*
-     * Greeting không cần database.
-     */
+    /* =====================================================
+       GREETING
+    ===================================================== */
 
     if (
       isGreeting(question)
@@ -2285,9 +2426,7 @@ export async function POST(
       [...history]
         .reverse()
         .find(
-          (
-            turn: ChatTurn
-          ) =>
+          (turn: ChatTurn) =>
             turn.role ===
             "assistant"
         );
@@ -2318,9 +2457,8 @@ export async function POST(
     const conversationText =
       [
         ...history.map(
-          (
-            turn: ChatTurn
-          ) => turn.content
+          (turn: ChatTurn) =>
+            turn.content
         ),
         question,
       ].join(" ");
@@ -2392,26 +2530,18 @@ export async function POST(
       });
     }
 
-    /*
-     * Load hotels.
-     */
+    /* =====================================================
+       LOAD HOTELS
+    ===================================================== */
 
     const hotels =
       await loadHotels();
 
-    /*
-     * =====================================================
-     * CỰC KỲ QUAN TRỌNG
-     *
-     * Nếu là câu hỏi tiện nghi chung:
-     *
-     * "khách sạn nào có thang máy"
-     * "khách sạn nào có wifi"
-     * "nơi nào có lễ tân"
-     *
-     * THÌ KHÔNG ĐƯỢC tìm selectedHotel trước.
-     * =====================================================
-     */
+    /* =====================================================
+       GENERIC HOTEL AMENITY
+
+       Không tìm selectedHotel trước.
+    ===================================================== */
 
     if (
       intent ===
@@ -2441,9 +2571,9 @@ export async function POST(
       });
     }
 
-    /*
-     * Chỉ từ đây trở xuống mới tìm khách sạn cụ thể.
-     */
+    /* =====================================================
+       FIND SPECIFIC HOTEL
+    ===================================================== */
 
     const historyText =
       conversationText;
@@ -2466,6 +2596,10 @@ export async function POST(
         historyText,
         hotels
       );
+
+    /* =====================================================
+       AVAILABILITY
+    ===================================================== */
 
     if (
       intent ===
@@ -2491,7 +2625,9 @@ export async function POST(
           availabilityText
         );
 
-      if (dates.length < 2) {
+      if (
+        dates.length < 2
+      ) {
         return NextResponse.json({
           answer:
             language === "vi"
@@ -2691,7 +2827,7 @@ export async function POST(
     }
 
     /* =====================================================
-       MỘT KHÁCH SẠN CỤ THỂ - TIỆN NGHI
+       SPECIFIC HOTEL - AMENITIES
     ===================================================== */
 
     if (
