@@ -187,25 +187,49 @@ function BookingPageContent() {
   const roomsParam = searchParams.get("rooms");
   const oldRoomParam = searchParams.get("room");
 
-  const [language, setLanguage] = useState<Language>("vi");
-  const [hotel, setHotel] = useState<Hotel | null>(null);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-  const [dataError, setDataError] = useState("");
+  const [language, setLanguage] =
+    useState<Language>("vi");
 
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [note, setNote] = useState("");
+  const [hotel, setHotel] =
+    useState<Hotel | null>(null);
 
-  const [phoneError, setPhoneError] = useState("");
-  const [emailError, setEmailError] = useState("");
+  const [rooms, setRooms] =
+    useState<Room[]>([]);
 
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [loadingData, setLoadingData] =
+    useState(true);
+
+  const [dataError, setDataError] =
+    useState("");
+
+  const [fullName, setFullName] =
+    useState("");
+
+  const [phone, setPhone] =
+    useState("");
+
+  const [email, setEmail] =
+    useState("");
+
+  const [note, setNote] =
+    useState("");
+
+  const [phoneError, setPhoneError] =
+    useState("");
+
+  const [emailError, setEmailError] =
+    useState("");
+
+  const [submitting, setSubmitting] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   const [confirmed, setConfirmed] =
-    useState<BookingApiResponse["booking"]>(undefined);
+    useState<BookingApiResponse["booking"]>(
+      undefined,
+    );
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -213,14 +237,22 @@ function BookingPageContent() {
     }
 
     const storedLanguage =
-      window.localStorage.getItem("huyen-language");
+      window.localStorage.getItem(
+        "huyen-language",
+      );
 
-    if (storedLanguage === "en" || storedLanguage === "vi") {
+    if (
+      storedLanguage === "en" ||
+      storedLanguage === "vi"
+    ) {
       setLanguage(storedLanguage);
     }
 
-    const handleLanguageChange = (event: Event) => {
-      const customEvent = event as CustomEvent<Language>;
+    const handleLanguageChange = (
+      event: Event,
+    ) => {
+      const customEvent =
+        event as CustomEvent<Language>;
 
       if (
         customEvent.detail === "vi" ||
@@ -231,9 +263,14 @@ function BookingPageContent() {
       }
 
       const nextLanguage =
-        window.localStorage.getItem("huyen-language");
+        window.localStorage.getItem(
+          "huyen-language",
+        );
 
-      if (nextLanguage === "en" || nextLanguage === "vi") {
+      if (
+        nextLanguage === "en" ||
+        nextLanguage === "vi"
+      ) {
         setLanguage(nextLanguage);
       }
     };
@@ -251,63 +288,75 @@ function BookingPageContent() {
     };
   }, []);
 
-  const selectedRooms = useMemo<BookingRoom[]>(() => {
-    if (roomsParam) {
-      try {
-        const parsed = JSON.parse(roomsParam);
+  const selectedRooms =
+    useMemo<BookingRoom[]>(() => {
+      if (roomsParam) {
+        try {
+          const parsed =
+            JSON.parse(roomsParam);
 
-        if (Array.isArray(parsed)) {
-          const result: BookingRoom[] = [];
+          if (Array.isArray(parsed)) {
+            const result: BookingRoom[] = [];
 
-          for (const item of parsed) {
-            if (!item || typeof item !== "object") {
-              continue;
+            for (const item of parsed) {
+              if (
+                !item ||
+                typeof item !== "object"
+              ) {
+                continue;
+              }
+
+              const raw =
+                item as Record<string, unknown>;
+
+              const roomSlug = String(
+                raw.roomSlug ??
+                  raw.slug ??
+                  "",
+              ).trim();
+
+              const rawQuantity = Number(
+                raw.quantity ?? 0,
+              );
+
+              const quantity =
+                Number.isFinite(
+                  rawQuantity,
+                ) && rawQuantity > 0
+                  ? Math.floor(rawQuantity)
+                  : 0;
+
+              if (
+                roomSlug &&
+                quantity > 0
+              ) {
+                result.push({
+                  roomSlug,
+                  quantity,
+                });
+              }
             }
 
-            const raw = item as Record<string, unknown>;
-
-            const roomSlug = String(
-              raw.roomSlug ?? raw.slug ?? "",
-            ).trim();
-
-            const rawQuantity = Number(
-              raw.quantity ?? 0,
-            );
-
-            const quantity =
-              Number.isFinite(rawQuantity) &&
-              rawQuantity > 0
-                ? Math.floor(rawQuantity)
-                : 0;
-
-            if (roomSlug && quantity > 0) {
-              result.push({
-                roomSlug,
-                quantity,
-              });
+            if (result.length > 0) {
+              return result;
             }
           }
-
-          if (result.length > 0) {
-            return result;
-          }
+        } catch {
+          // Ignore invalid JSON and try the old room parameter.
         }
-      } catch {
-        // Ignore invalid JSON and try the old room parameter.
       }
-    }
 
-    if (oldRoomParam) {
-      return [
-        {
-          roomSlug: oldRoomParam,
-          quantity: 1,
-        },
-      ];
-    }
+      if (oldRoomParam) {
+        return [
+          {
+            roomSlug: oldRoomParam,
+            quantity: 1,
+          },
+        ];
+      }
 
-    return [];
-  }, [roomsParam, oldRoomParam]);
+      return [];
+    }, [roomsParam, oldRoomParam]);
 
   useEffect(() => {
     let cancelled = false;
@@ -344,7 +393,9 @@ function BookingPageContent() {
           .maybeSingle();
 
         if (hotelError) {
-          throw new Error(hotelError.message);
+          throw new Error(
+            hotelError.message,
+          );
         }
 
         if (!hotelData) {
@@ -380,7 +431,9 @@ function BookingPageContent() {
           });
 
         if (roomError) {
-          throw new Error(roomError.message);
+          throw new Error(
+            roomError.message,
+          );
         }
 
         const activeRooms =
@@ -392,9 +445,15 @@ function BookingPageContent() {
 
         setHotel({
           id: Number(hotelData.id),
-          slug: String(hotelData.slug ?? ""),
-          name_vi: String(hotelData.name_vi ?? ""),
-          name_en: String(hotelData.name_en ?? ""),
+          slug: String(
+            hotelData.slug ?? "",
+          ),
+          name_vi: String(
+            hotelData.name_vi ?? "",
+          ),
+          name_en: String(
+            hotelData.name_en ?? "",
+          ),
           status:
             hotelData.status === "inactive"
               ? "inactive"
@@ -440,7 +499,8 @@ function BookingPageContent() {
         .map((selected) => {
           const room = rooms.find(
             (item) =>
-              item.slug === selected.roomSlug &&
+              item.slug ===
+                selected.roomSlug &&
               item.hotel_id === hotel?.id,
           );
 
@@ -450,25 +510,39 @@ function BookingPageContent() {
 
           return {
             ...room,
-            selectedQuantity: selected.quantity,
+            selectedQuantity:
+              selected.quantity,
           };
         })
         .filter(
-          (room): room is SelectedRoomDetail =>
+          (
+            room,
+          ): room is SelectedRoomDetail =>
             room !== null,
         );
-    }, [selectedRooms, rooms, hotel?.id]);
+    }, [
+      selectedRooms,
+      rooms,
+      hotel?.id,
+    ]);
 
-  const missingSelectedRooms = useMemo(() => {
-    return selectedRooms.filter(
-      (selected) =>
-        !rooms.some(
-          (room) =>
-            room.slug === selected.roomSlug &&
-            room.hotel_id === hotel?.id,
-        ),
-    );
-  }, [selectedRooms, rooms, hotel?.id]);
+  const missingSelectedRooms =
+    useMemo(() => {
+      return selectedRooms.filter(
+        (selected) =>
+          !rooms.some(
+            (room) =>
+              room.slug ===
+                selected.roomSlug &&
+              room.hotel_id ===
+                hotel?.id,
+          ),
+      );
+    }, [
+      selectedRooms,
+      rooms,
+      hotel?.id,
+    ]);
 
   const nights = useMemo(() => {
     if (
@@ -495,13 +569,23 @@ function BookingPageContent() {
     }
 
     const diff =
-      (end.getTime() - start.getTime()) /
+      (end.getTime() -
+        start.getTime()) /
       (1000 * 60 * 60 * 24);
 
-    return Math.max(0, Math.round(diff));
-  }, [stayType, checkIn, checkOut]);
+    return Math.max(
+      0,
+      Math.round(diff),
+    );
+  }, [
+    stayType,
+    checkIn,
+    checkOut,
+  ]);
 
-  const getRoomUnitPrice = (room: Room) => {
+  const getRoomUnitPrice = (
+    room: Room,
+  ) => {
     if (stayType === "month") {
       return Number(
         room.base_price_monthly || 0,
@@ -525,11 +609,11 @@ function BookingPageContent() {
   const stayTypeLabel =
     stayType === "month"
       ? language === "vi"
-        ? "Thuê theo tháng"
+        ? "Theo tháng"
         : "Monthly stay"
       : language === "vi"
-        ? "Đặt theo đêm"
-        : "Nightly stay";
+        ? "Theo ngày"
+        : "Daily stay";
 
   const stayDurationLabel =
     stayType === "month"
@@ -575,13 +659,15 @@ function BookingPageContent() {
     nights,
   ]);
 
-  const totalRoomCount = useMemo(() => {
-    return selectedRoomDetails.reduce(
-      (sum, room) =>
-        sum + room.selectedQuantity,
-      0,
-    );
-  }, [selectedRoomDetails]);
+  const totalRoomCount =
+    useMemo(() => {
+      return selectedRoomDetails.reduce(
+        (sum, room) =>
+          sum +
+          room.selectedQuantity,
+        0,
+      );
+    }, [selectedRoomDetails]);
 
   const invalidDayBooking =
     stayType === "day" &&
@@ -594,16 +680,18 @@ function BookingPageContent() {
     months < 1;
 
   const hasInvalidQuantity =
-    selectedRoomDetails.some((room) => {
-      if (room.quantity === null) {
-        return false;
-      }
+    selectedRoomDetails.some(
+      (room) => {
+        if (room.quantity === null) {
+          return false;
+        }
 
-      return (
-        room.selectedQuantity >
-        room.quantity
-      );
-    });
+        return (
+          room.selectedQuantity >
+          room.quantity
+        );
+      },
+    );
 
   const hasInvalidPrice =
     selectedRoomDetails.some(
@@ -611,7 +699,9 @@ function BookingPageContent() {
         getRoomUnitPrice(room) <= 0,
     );
 
-  const validatePhone = (value: string) => {
+  const validatePhone = (
+    value: string,
+  ) => {
     const normalized = value
       .replace(/\s+/g, "")
       .trim();
@@ -622,7 +712,11 @@ function BookingPageContent() {
         : "Please enter your phone number.";
     }
 
-    if (!/^[0-9+()-]{8,20}$/.test(normalized)) {
+    if (
+      !/^[0-9+()-]{8,20}$/.test(
+        normalized,
+      )
+    ) {
       return language === "vi"
         ? "Số điện thoại không hợp lệ."
         : "Invalid phone number.";
@@ -631,8 +725,11 @@ function BookingPageContent() {
     return "";
   };
 
-  const validateEmail = (value: string) => {
-    const normalized = value.trim();
+  const validateEmail = (
+    value: string,
+  ) => {
+    const normalized =
+      value.trim();
 
     if (!normalized) {
       return "";
@@ -716,7 +813,10 @@ function BookingPageContent() {
       return;
     }
 
-    if (missingSelectedRooms.length > 0) {
+    if (
+      missingSelectedRooms.length >
+      0
+    ) {
       setError(
         language === "vi"
           ? "Một hoặc nhiều loại phòng không còn tồn tại hoặc đã ngừng hoạt động."
@@ -759,7 +859,9 @@ function BookingPageContent() {
       validatePhone(phone);
 
     if (nextPhoneError) {
-      setPhoneError(nextPhoneError);
+      setPhoneError(
+        nextPhoneError,
+      );
       return;
     }
 
@@ -767,46 +869,49 @@ function BookingPageContent() {
       validateEmail(email);
 
     if (nextEmailError) {
-      setEmailError(nextEmailError);
+      setEmailError(
+        nextEmailError,
+      );
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const response = await fetch(
-        "/api/bookings",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
+      const response =
+        await fetch(
+          "/api/bookings",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              hotelSlug,
+              stayType,
+              checkIn:
+                stayType === "day"
+                  ? checkIn
+                  : "",
+              checkOut:
+                stayType === "day"
+                  ? checkOut
+                  : "",
+              months:
+                stayType === "month"
+                  ? months
+                  : 0,
+              adults,
+              children,
+              fullName: trimmedName,
+              phone: phone.trim(),
+              email: email.trim(),
+              note: note.trim(),
+              rooms: selectedRooms,
+            }),
           },
-          body: JSON.stringify({
-            hotelSlug,
-            stayType,
-            checkIn:
-              stayType === "day"
-                ? checkIn
-                : "",
-            checkOut:
-              stayType === "day"
-                ? checkOut
-                : "",
-            months:
-              stayType === "month"
-                ? months
-                : 0,
-            adults,
-            children,
-            fullName: trimmedName,
-            phone: phone.trim(),
-            email: email.trim(),
-            note: note.trim(),
-            rooms: selectedRooms,
-          }),
-        },
-      );
+        );
 
       const result =
         (await response.json()) as BookingApiResponse;
@@ -865,13 +970,6 @@ function BookingPageContent() {
         );
       }
 
-      /*
-       * Booking đã được tạo thành công.
-       *
-       * Gửi thông báo Telegram.
-       *
-       * Nếu Telegram lỗi thì KHÔNG làm hỏng booking.
-       */
       try {
         const telegramResponse =
           await fetch(
@@ -884,61 +982,51 @@ function BookingPageContent() {
               },
               body: JSON.stringify({
                 bookingCode:
-                  result.booking.bookingCode,
-
+                  result.booking
+                    .bookingCode,
                 hotelName:
                   language === "vi"
                     ? result.booking
                         .hotelNameVi
                     : result.booking
                         .hotelNameEn,
-
                 fullName:
-                  result.booking.fullName,
-
+                  result.booking
+                    .fullName,
                 phone:
                   result.booking.phone,
-
                 email:
                   result.booking.email,
-
                 stayType:
-                  result.booking.stayType,
-
+                  result.booking
+                    .stayType,
                 checkIn:
                   result.booking.checkIn,
-
                 checkOut:
                   result.booking.checkOut,
-
                 months:
                   result.booking.months,
-
                 nights:
                   result.booking.nights,
-
                 adults:
                   result.booking.adults,
-
                 children:
                   result.booking.children,
-
                 rooms:
                   selectedRoomDetails.map(
                     (room) => ({
                       name:
-                        language === "vi"
+                        language ===
+                        "vi"
                           ? room.name_vi
                           : room.name_en,
                       quantity:
                         room.selectedQuantity,
                     }),
                   ),
-
                 totalAmount:
                   result.booking
                     .totalAmount,
-
                 note:
                   result.booking.note,
               }),
@@ -963,7 +1051,9 @@ function BookingPageContent() {
         );
       }
 
-      setConfirmed(result.booking);
+      setConfirmed(
+        result.booking,
+      );
     } catch (submitError) {
       const message =
         submitError instanceof Error
@@ -985,23 +1075,26 @@ function BookingPageContent() {
     const confirmedStayType =
       confirmed.stayType === "month"
         ? language === "vi"
-          ? "Thuê theo tháng"
+          ? "Theo tháng"
           : "Monthly stay"
         : language === "vi"
-          ? "Đặt theo đêm"
-          : "Nightly stay";
+          ? "Theo ngày"
+          : "Daily stay";
 
     const confirmedRooms =
       confirmed.rooms?.reduce(
         (sum, room) =>
-          sum + Number(room.quantity || 0),
+          sum +
+          Number(
+            room.quantity || 0,
+          ),
         0,
       ) || 0;
 
     return (
       <main className="min-h-screen bg-slate-50 text-slate-900">
-        <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-10">
+        <section className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-10">
             <div className="mb-8 text-center">
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">
                 ✓
@@ -1038,7 +1131,7 @@ function BookingPageContent() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 p-4">
                 <div className="text-xs uppercase tracking-wide text-slate-400">
                   {language === "vi"
@@ -1046,7 +1139,7 @@ function BookingPageContent() {
                     : "Hotel"}
                 </div>
 
-                <div className="mt-1 font-semibold">
+                <div className="mt-1 break-words font-semibold">
                   {confirmedHotelName}
                 </div>
               </div>
@@ -1070,7 +1163,7 @@ function BookingPageContent() {
                     : "Guest"}
                 </div>
 
-                <div className="mt-1 font-semibold">
+                <div className="mt-1 break-words font-semibold">
                   {confirmed.fullName}
                 </div>
               </div>
@@ -1097,7 +1190,8 @@ function BookingPageContent() {
                   </div>
 
                   <div className="mt-1 font-semibold">
-                    {confirmed.months || 1}{" "}
+                    {confirmed.months ||
+                      1}{" "}
                     {language === "vi"
                       ? "tháng"
                       : (confirmed.months ||
@@ -1166,7 +1260,8 @@ function BookingPageContent() {
                   </div>
 
                   <div className="mt-1 font-semibold">
-                    {confirmed.nights || 0}
+                    {confirmed.nights ||
+                      0}
                   </div>
                 </div>
               )}
@@ -1180,7 +1275,7 @@ function BookingPageContent() {
                     : "Total amount"}
                 </span>
 
-                <span className="text-xl font-bold">
+                <span className="text-right text-xl font-bold">
                   {formatMoney(
                     Number(
                       confirmed.totalAmount ||
@@ -1275,8 +1370,8 @@ function BookingPageContent() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-7">
+      <section className="mx-auto max-w-6xl px-4 py-7 sm:px-6 lg:px-8 lg:py-8">
+        <div className="mb-6">
           <div className="text-sm font-medium text-sky-600">
             {stayTypeLabel}
           </div>
@@ -1287,216 +1382,252 @@ function BookingPageContent() {
               : "Confirm your booking"}
           </h1>
 
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 break-words text-slate-500">
             {hotelName}
           </p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="grid gap-6 lg:grid-cols-[1fr_380px]"
+          className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]"
         >
-          <div className="space-y-6">
-            <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-7">
+          <div className="space-y-5">
+            {/* THÔNG TIN LƯU TRÚ + PHÒNG ĐÃ CHỌN */}
+            <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
               <h2 className="text-lg font-bold">
                 {language === "vi"
-                  ? "Thông tin lưu trú"
-                  : "Stay details"}
+                  ? "Thông tin lưu trú & phòng đã chọn"
+                  : "Stay details & selected rooms"}
               </h2>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-400">
-                    {language === "vi"
-                      ? "Hình thức"
-                      : "Stay type"}
-                  </div>
-
-                  <div className="mt-1 font-semibold">
-                    {stayTypeLabel}
-                  </div>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-400">
-                    {language === "vi"
-                      ? "Thời gian"
-                      : "Duration"}
-                  </div>
-
-                  <div className="mt-1 font-semibold">
-                    {stayDurationLabel}
-                  </div>
-                </div>
-
+              <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
                 {stayType === "day" ? (
                   <>
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <div className="text-xs uppercase tracking-wide text-slate-400">
+                    <div className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                         {language === "vi"
                           ? "Nhận phòng"
                           : "Check-in"}
                       </div>
 
-                      <div className="mt-1 font-semibold">
+                      <div className="mt-1 break-words text-sm font-semibold sm:text-base">
                         {formatDate(
                           checkIn,
                           language,
-                        )}
+                        ) || "-"}
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <div className="text-xs uppercase tracking-wide text-slate-400">
+                    <div className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                         {language === "vi"
                           ? "Trả phòng"
                           : "Check-out"}
                       </div>
 
-                      <div className="mt-1 font-semibold">
+                      <div className="mt-1 break-words text-sm font-semibold sm:text-base">
                         {formatDate(
                           checkOut,
                           language,
-                        )}
+                        ) || "-"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                        {language === "vi"
+                          ? "Hình thức"
+                          : "Stay type"}
+                      </div>
+
+                      <div className="mt-1 break-words text-sm font-semibold sm:text-base">
+                        {stayTypeLabel}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                        {language === "vi"
+                          ? "Thời gian"
+                          : "Duration"}
+                      </div>
+
+                      <div className="mt-1 break-words text-sm font-semibold sm:text-base">
+                        {stayDurationLabel}
                       </div>
                     </div>
                   </>
-                ) : null}
+                ) : (
+                  <>
+                    <div className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                        {language === "vi"
+                          ? "Hình thức"
+                          : "Stay type"}
+                      </div>
 
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-400">
+                      <div className="mt-1 break-words text-sm font-semibold sm:text-base">
+                        {stayTypeLabel}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                        {language === "vi"
+                          ? "Thời gian"
+                          : "Duration"}
+                      </div>
+
+                      <div className="mt-1 break-words text-sm font-semibold sm:text-base">
+                        {stayDurationLabel}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                     {language === "vi"
                       ? "Người lớn"
                       : "Adults"}
                   </div>
 
-                  <div className="mt-1 font-semibold">
+                  <div className="mt-1 text-sm font-semibold sm:text-base">
                     {adults}
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-400">
+                <div className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                     {language === "vi"
                       ? "Trẻ em"
                       : "Children"}
                   </div>
 
-                  <div className="mt-1 font-semibold">
+                  <div className="mt-1 text-sm font-semibold sm:text-base">
                     {children}
                   </div>
                 </div>
               </div>
-            </section>
 
-            <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-7">
-              <h2 className="text-lg font-bold">
-                {language === "vi"
-                  ? "Phòng đã chọn"
-                  : "Selected rooms"}
-              </h2>
+              {/* PHÒNG ĐÃ CHỌN */}
+              <div className="mt-6 border-t border-slate-200 pt-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-base font-bold">
+                    {language === "vi"
+                      ? "Phòng đã chọn"
+                      : "Selected rooms"}
+                  </h3>
 
-              {selectedRoomDetails.length ===
-              0 ? (
-                <div className="mt-5 rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
-                  {language === "vi"
-                    ? "Chưa có phòng được chọn."
-                    : "No rooms selected."}
+                  {totalRoomCount > 0 ? (
+                    <span className="text-xs font-medium text-slate-400">
+                      {totalRoomCount}{" "}
+                      {language === "vi"
+                        ? "phòng"
+                        : totalRoomCount === 1
+                          ? "room"
+                          : "rooms"}
+                    </span>
+                  ) : null}
                 </div>
-              ) : (
-                <div className="mt-5 space-y-4">
-                  {selectedRoomDetails.map(
-                    (room) => {
-                      const unitPrice =
-                        getRoomUnitPrice(
-                          room,
-                        );
 
-                      const multiplier =
-                        stayType === "month"
-                          ? months
-                          : nights;
+                {selectedRoomDetails.length ===
+                0 ? (
+                  <div className="mt-4 rounded-2xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">
+                    {language === "vi"
+                      ? "Chưa có phòng được chọn."
+                      : "No rooms selected."}
+                  </div>
+                ) : (
+                  <div className="mt-4 divide-y divide-slate-200 rounded-2xl border border-slate-200">
+                    {selectedRoomDetails.map(
+                      (room) => {
+                        const unitPrice =
+                          getRoomUnitPrice(
+                            room,
+                          );
 
-                      const lineTotal =
-                        unitPrice *
-                        room.selectedQuantity *
-                        multiplier;
+                        const multiplier =
+                          stayType ===
+                          "month"
+                            ? months
+                            : nights;
 
-                      const quantityValid =
-                        room.quantity ===
-                          null ||
-                        room.selectedQuantity <=
-                          room.quantity;
+                        const lineTotal =
+                          unitPrice *
+                          room.selectedQuantity *
+                          multiplier;
 
-                      return (
-                        <div
-                          key={room.id}
-                          className="rounded-2xl border border-slate-200 p-4"
-                        >
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                              <h3 className="font-semibold">
-                                {language ===
-                                "vi"
-                                  ? room.name_vi
-                                  : room.name_en}
-                              </h3>
+                        const quantityValid =
+                          room.quantity ===
+                            null ||
+                          room.selectedQuantity <=
+                            room.quantity;
 
-                              <div className="mt-1 text-sm text-slate-500">
-                                {language ===
-                                "vi"
-                                  ? `Số lượng: ${room.selectedQuantity} phòng`
-                                  : `Quantity: ${room.selectedQuantity} room(s)`}
-                              </div>
+                        const roomName =
+                          language === "vi"
+                            ? room.name_vi
+                            : room.name_en;
 
-                              {room.quantity !==
-                              null ? (
-                                <div
-                                  className={`mt-1 text-xs ${
-                                    quantityValid
-                                      ? "text-slate-400"
-                                      : "font-semibold text-red-600"
-                                  }`}
-                                >
-                                  {language ===
-                                  "vi"
-                                    ? `Có sẵn: ${room.quantity} phòng`
-                                    : `Available: ${room.quantity} room(s)`}
+                        return (
+                          <div
+                            key={room.id}
+                            className="p-4"
+                          >
+                            <div className="flex min-w-0 items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="break-words text-sm font-semibold sm:text-base">
+                                  {roomName}
+                                </h4>
+
+                                <div className="mt-1 text-xs text-slate-500 sm:text-sm">
+                                  {language === "vi"
+                                    ? `${room.selectedQuantity} phòng`
+                                    : `${room.selectedQuantity} room(s)`}
                                 </div>
-                              ) : null}
-                            </div>
 
-                            <div className="text-left sm:text-right">
-                              <div className="font-semibold">
-                                {formatMoney(
-                                  unitPrice,
-                                  language,
-                                )}{" "}
-                                VND
+                                {room.quantity !==
+                                null ? (
+                                  <div
+                                    className={`mt-1 text-[11px] ${
+                                      quantityValid
+                                        ? "text-slate-400"
+                                        : "font-semibold text-red-600"
+                                    }`}
+                                  >
+                                    {language ===
+                                    "vi"
+                                      ? `Có sẵn: ${room.quantity} phòng`
+                                      : `Available: ${room.quantity} room(s)`}
+                                  </div>
+                                ) : null}
                               </div>
 
-                              <div className="text-xs text-slate-400">
-                                {priceUnitLabel}
-                              </div>
+                              <div className="shrink-0 text-right">
+                                <div className="text-sm font-semibold sm:text-base">
+                                  {formatMoney(
+                                    lineTotal,
+                                    language,
+                                  )}{" "}
+                                  VND
+                                </div>
 
-                              <div className="mt-1 text-sm font-bold text-sky-700">
-                                {formatMoney(
-                                  lineTotal,
-                                  language,
-                                )}{" "}
-                                VND
+                                <div className="mt-0.5 text-[10px] text-slate-400 sm:text-xs">
+                                  {priceUnitLabel}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    },
-                  )}
-                </div>
-              )}
+                        );
+                      },
+                    )}
+                  </div>
+                )}
+              </div>
             </section>
 
-            <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-7">
+            {/* THÔNG TIN KHÁCH HÀNG */}
+            <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
               <h2 className="text-lg font-bold">
                 {language === "vi"
                   ? "Thông tin khách hàng"
@@ -1652,8 +1783,9 @@ function BookingPageContent() {
             </section>
           </div>
 
+          {/* TÓM TẮT ĐẶT PHÒNG */}
           <aside className="lg:sticky lg:top-6 lg:self-start">
-            <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-7">
+            <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
               <h2 className="text-lg font-bold">
                 {language === "vi"
                   ? "Tóm tắt đặt phòng"
@@ -1668,7 +1800,7 @@ function BookingPageContent() {
                       : "Hotel"}
                   </span>
 
-                  <span className="text-right text-sm font-semibold">
+                  <span className="max-w-[60%] break-words text-right text-sm font-semibold">
                     {hotelName}
                   </span>
                 </div>
@@ -1717,7 +1849,7 @@ function BookingPageContent() {
                         : "Estimated total"}
                     </span>
 
-                    <span className="text-right text-2xl font-bold text-sky-700">
+                    <span className="text-right text-xl font-bold text-sky-700 sm:text-2xl">
                       {formatMoney(
                         totalPrice,
                         language,

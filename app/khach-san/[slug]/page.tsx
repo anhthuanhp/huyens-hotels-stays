@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+
 import HotelDetailClient from "./HotelDetailClient";
+
 import {
   getCachedHotel,
   getCachedHotelList,
@@ -41,15 +43,39 @@ type ClientRoomMedia = {
 };
 
 type StructuredRoom = {
-  "@type": "Product";
+  "@type": ["HotelRoom", "Product"];
+  "@id": string;
   name: string;
   description?: string;
+  url: string;
+  image?: string;
+  occupancy?: {
+    "@type": "QuantitativeValue";
+    maxValue: number;
+  };
+  bed?: {
+    "@type": "BedDetails";
+    typeOfBed: string;
+  };
+  floorSize?: {
+    "@type": "QuantitativeValue";
+    value: number;
+    unitCode: "MTK";
+  };
+  amenityFeature?: {
+    "@type": "LocationFeatureSpecification";
+    name: string;
+    value: boolean;
+  }[];
   offers?: {
     "@type": "Offer";
     priceCurrency: "VND";
     price: number;
     availability: string;
     url: string;
+    itemOffered: {
+      "@id": string;
+    };
   };
 };
 
@@ -66,6 +92,34 @@ function isActiveStatus(
     typeof status === "string" &&
     status.trim().toLowerCase() === "active"
   );
+}
+
+function getRoomAmenities(
+  room: ClientRoom
+): string[] {
+  const source =
+    room.amenities_vi ??
+    room.amenities ??
+    [];
+
+  if (Array.isArray(source)) {
+    return source
+      .filter(
+        (item): item is string =>
+          typeof item === "string" &&
+          item.trim().length > 0
+      )
+      .map((item) => item.trim());
+  }
+
+  if (typeof source === "string") {
+    return source
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
 }
 
 function createHotelStructuredData(
@@ -88,7 +142,10 @@ function createHotelStructuredData(
     hotel.description_en ||
     `Thông tin lưu trú tại ${hotelName}.`;
 
-  const roomOffers: StructuredRoom[] =
+  const hotelUrl =
+    `${baseUrl}/khach-san/${hotel.slug}`;
+
+  const roomStructuredData: StructuredRoom[] =
     rooms
       .filter((room) =>
         isActiveStatus(room.status)
@@ -104,14 +161,73 @@ function createHotelStructuredData(
           room.description_en ||
           undefined;
 
+        const roomUrl =
+          `${baseUrl}/khach-san/${hotel.slug}/phong/${room.slug}`;
+
+        const roomId =
+          `${roomUrl}#room`;
+
         const roomData: StructuredRoom = {
-          "@type": "Product",
+          "@type": ["HotelRoom", "Product"],
+          "@id": roomId,
           name: roomName,
+          url: roomUrl,
         };
 
         if (roomDescription) {
           roomData.description =
             roomDescription;
+        }
+
+        if (room.image) {
+          roomData.image =
+            room.image;
+        }
+
+        if (
+          typeof room.max_guests === "number" &&
+          Number.isFinite(room.max_guests) &&
+          room.max_guests > 0
+        ) {
+          roomData.occupancy = {
+            "@type": "QuantitativeValue",
+            maxValue: room.max_guests,
+          };
+        }
+
+        if (room.beds_vi || room.beds_en) {
+          roomData.bed = {
+            "@type": "BedDetails",
+            typeOfBed:
+              room.beds_vi ||
+              room.beds_en ||
+              "Bed",
+          };
+        }
+
+        if (
+          typeof room.size === "number" &&
+          Number.isFinite(room.size) &&
+          room.size > 0
+        ) {
+          roomData.floorSize = {
+            "@type": "QuantitativeValue",
+            value: room.size,
+            unitCode: "MTK",
+          };
+        }
+
+        const amenities =
+          getRoomAmenities(room);
+
+        if (amenities.length > 0) {
+          roomData.amenityFeature =
+            amenities.map((amenity) => ({
+              "@type":
+                "LocationFeatureSpecification",
+              name: amenity,
+              value: true,
+            }));
         }
 
         if (
@@ -125,26 +241,26 @@ function createHotelStructuredData(
             price: room.base_price,
             availability:
               "https://schema.org/InStock",
-            url:
-              `${baseUrl}/khach-san/` +
-              `${hotel.slug}/phong/` +
-              `${room.slug}`,
+            url: roomUrl,
+            itemOffered: {
+              "@id": roomId,
+            },
           };
         }
 
         return roomData;
       });
 
-  const hotelStructuredData = {
+  const hotelStructuredData: Record<
+    string,
+    unknown
+  > = {
     "@type": "Hotel",
+    "@id": `${hotelUrl}#hotel`,
     name: hotelName,
     description: hotelDescription,
-    url:
-      `${baseUrl}/khach-san/` +
-      hotel.slug,
-    image:
-      hotel.image || undefined,
-
+    url: hotelUrl,
+    image: hotel.image || undefined,
     address: {
       "@type": "PostalAddress",
       streetAddress:
@@ -155,28 +271,25 @@ function createHotelStructuredData(
         "Ho Chi Minh City",
       addressCountry: "VN",
     },
-
-    ...(typeof hotel.latitude === "number" &&
-    typeof hotel.longitude === "number"
-      ? {
-          geo: {
-            "@type":
-              "GeoCoordinates",
-            latitude:
-              hotel.latitude,
-            longitude:
-              hotel.longitude,
-          },
-        }
-      : {}),
-
-    ...(roomOffers.length > 0
-      ? {
-          makesOffer:
-            roomOffers,
-        }
-      : {}),
   };
+
+  if (
+    typeof hotel.latitude === "number" &&
+    Number.isFinite(hotel.latitude) &&
+    typeof hotel.longitude === "number" &&
+    Number.isFinite(hotel.longitude)
+  ) {
+    hotelStructuredData.geo = {
+      "@type": "GeoCoordinates",
+      latitude: hotel.latitude,
+      longitude: hotel.longitude,
+    };
+  }
+
+  if (roomStructuredData.length > 0) {
+    hotelStructuredData.containsPlace =
+      roomStructuredData;
+  }
 
   const graph: Record<
     string,
@@ -185,27 +298,54 @@ function createHotelStructuredData(
     hotelStructuredData,
   ];
 
+  graph.push({
+    "@type": "BreadcrumbList",
+    "@id": `${hotelUrl}#breadcrumb`,
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Trang chủ",
+        item: baseUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Khách sạn",
+        item: `${baseUrl}/phong`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: hotelName,
+        item: hotelUrl,
+      },
+    ],
+  });
+
   if (faqs.length > 0) {
     graph.push({
       "@type": "FAQPage",
-      mainEntity: faqs.map(
-        (faq) => ({
+      "@id": `${hotelUrl}#faq`,
+      mainEntity: faqs
+        .filter(
+          (faq) =>
+            faq.question_vi?.trim() &&
+            faq.answer_vi?.trim()
+        )
+        .map((faq) => ({
           "@type": "Question",
-          name:
-            faq.question_vi,
+          name: faq.question_vi.trim(),
           acceptedAnswer: {
             "@type": "Answer",
-            text:
-              faq.answer_vi,
+            text: faq.answer_vi.trim(),
           },
-        })
-      ),
+        })),
     });
   }
 
   return {
-    "@context":
-      "https://schema.org",
+    "@context": "https://schema.org",
     "@graph": graph,
   };
 }
