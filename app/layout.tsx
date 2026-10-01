@@ -5,6 +5,8 @@ import "./globals.css";
 import VisitorTracker from "./components/VisitorTracker";
 import BackToTopButton from "./components/BackToTopButton";
 import LazyWidgets from "./components/LazyWidgets";
+import { Suspense } from "react";
+import SiteHeader from "./components/SiteHeader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -113,6 +115,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-white text-neutral-900 font-sans">
         <VisitorTracker />
         <BackToTopButton />
+
+        <Suspense fallback={null}>
+          <SiteHeader />
+        </Suspense>
 
         <main className="flex-1">
           {children}

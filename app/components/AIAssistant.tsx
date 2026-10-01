@@ -47,15 +47,29 @@ const INITIAL_MESSAGE_EN =
 const QUICK_QUESTIONS_VI = [
   "Có những khách sạn nào?",
   "Khách sạn nào có thang máy?",
-  "Giá phòng hiện tại là bao nhiêu?",
-  "Các khách sạn ở đâu?",
+  "Khách sạn nào có Wi-Fi miễn phí?",
+  "Khách sạn nào có máy lạnh?",
 ];
 
 const QUICK_QUESTIONS_EN = [
   "Which hotels are available?",
   "Which hotels have an elevator?",
-  "What are the current room prices?",
-  "Where are the hotels located?",
+  "Which hotels offer free Wi-Fi?",
+  "Which hotels have air conditioning?",
+];
+
+const HOTEL_QUESTIONS_VI = [
+  "Khách sạn này có những loại phòng nào?",
+  "Khách sạn này có những tiện nghi gì?",
+  "Địa chỉ khách sạn này ở đâu?",
+  "Tôi muốn liên hệ khách sạn này.",
+];
+
+const HOTEL_QUESTIONS_EN = [
+  "What room types does this hotel have?",
+  "What amenities does this hotel offer?",
+  "Where is this hotel located?",
+  "I want to contact this hotel.",
 ];
 
 export default function AIAssistant({
@@ -78,6 +92,8 @@ export default function AIAssistant({
   const [mounted, setMounted] =
     useState(false);
 
+  const [pagePath, setPagePath] = useState("");
+
   const [messages, setMessages] =
     useState<ChatMessage[]>([
       {
@@ -94,6 +110,7 @@ export default function AIAssistant({
 
   useEffect(() => {
     setMounted(true);
+    setPagePath(window.location.pathname);
 
     const saved =
       localStorage.getItem("huyen-language");
@@ -109,6 +126,7 @@ export default function AIAssistant({
     };
 
     const handleOpenAI = () => {
+      setPagePath(window.location.pathname);
       setIsOpen(true);
     };
 
@@ -218,7 +236,11 @@ export default function AIAssistant({
         body: JSON.stringify({
           message: text,
           language,
-          history: newHistory,
+          hotelSlug: pagePath.match(/^\/khach-san\/([^/]+)/)?.[1] ?? null,
+          history: newHistory.slice(-10).map((turn) => ({
+            role: turn.role,
+            content: turn.content.slice(0, 600),
+          })),
         }),
       });
 
@@ -237,7 +259,9 @@ export default function AIAssistant({
         });
 
         throw new Error(
-          typeof data?.error === "string"
+          typeof data?.answer === "string"
+            ? data.answer
+            : typeof data?.error === "string"
             ? data.error
             : isVi
             ? `Trợ lý AI gặp lỗi (${response.status}). Vui lòng thử lại.`
@@ -310,9 +334,14 @@ export default function AIAssistant({
     return null;
   }
 
-  const quickQuestions = isVi
-    ? QUICK_QUESTIONS_VI
-    : QUICK_QUESTIONS_EN;
+  const isHotelPage = /^\/khach-san\/[^/]+/.test(pagePath);
+  const quickQuestions = isHotelPage
+    ? isVi
+      ? HOTEL_QUESTIONS_VI
+      : HOTEL_QUESTIONS_EN
+    : isVi
+      ? QUICK_QUESTIONS_VI
+      : QUICK_QUESTIONS_EN;
 
   const assistantUI = (
     <>
@@ -453,6 +482,7 @@ export default function AIAssistant({
             <input
               ref={inputRef}
               type="text"
+              maxLength={1000}
               value={input}
               onChange={(e) =>
                 setInput(e.target.value)

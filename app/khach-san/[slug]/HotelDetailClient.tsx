@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from "next/image";
@@ -62,11 +61,21 @@ type HotelListItem = {
   name_en: string | null;
 };
 
+type HotelFaq = {
+  id: string;
+  question_vi: string;
+  answer_vi: string;
+  question_en: string | null;
+  answer_en: string | null;
+  sort_order: number;
+};
+
 type Props = {
   initialHotel: Hotel;
   initialRooms: Room[];
   initialRoomCovers: RoomMedia[];
   initialHotels: HotelListItem[];
+  initialFaqs: HotelFaq[];
 };
 
 function extractMapUrl(value: string | null): string | null {
@@ -209,6 +218,7 @@ export default function HotelDetailClient({
   initialRooms,
   initialRoomCovers,
   initialHotels,
+  initialFaqs,
 }: Props) {
   const router = useRouter();
 
@@ -325,7 +335,8 @@ export default function HotelDetailClient({
     params.set("room", room.slug);
 
     const stayType =
-      initialHotel.business_model?.trim().toLowerCase() === "monthly"
+      initialHotel.business_model?.trim().toLowerCase() ===
+      "monthly"
         ? "month"
         : "day";
 
@@ -342,35 +353,9 @@ export default function HotelDetailClient({
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
-      {/* HEADER */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="flex items-center gap-2"
-          >
-            <span className="text-lg font-bold tracking-wide text-slate-900">
-              HUYEN&apos;S
-            </span>
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-          >
-            <span aria-hidden="true">←</span>
-            {language === "vi" ? "Quay về trang chủ" : "Back to home"}
-          </Link>
-        </div>
-      </header>
-
-      {/* PAGE */}
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-
-        {/* HOTEL + SIDEBAR */}
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-          {/* MAIN CONTENT */}
           <div className="min-w-0">
-            {/* HOTEL INFO */}
             <section>
               <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
                 {hotelName}
@@ -393,7 +378,6 @@ export default function HotelDetailClient({
               )}
             </section>
 
-            {/* ROOM TYPES */}
             <section
               id="rooms"
               className="mt-10 scroll-mt-24"
@@ -459,17 +443,19 @@ export default function HotelDetailClient({
                               room.amenities
                           );
 
+                    /*
+                     * Ảnh đại diện phòng:
+                     * Chỉ lấy Cover từ /admin/hinh-anh.
+                     * Không sử dụng rooms.image.
+                     */
                     const roomImage =
-                      roomCovers[room.id] ||
-                      room.image ||
-                      null;
+                      roomCovers[room.id] || null;
 
                     return (
                       <article
                         key={room.id}
                         className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
                       >
-                        {/* ROOM COVER */}
                         <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
                           {roomImage ? (
                             <Image
@@ -488,7 +474,6 @@ export default function HotelDetailClient({
                           )}
                         </div>
 
-                        {/* ROOM CONTENT */}
                         <div className="p-5">
                           <div className="flex items-start justify-between gap-4">
                             <h3 className="text-xl font-bold text-slate-950">
@@ -511,7 +496,6 @@ export default function HotelDetailClient({
                             </p>
                           )}
 
-                          {/* ROOM SPECS */}
                           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm text-slate-600">
                             {typeof room.size ===
                               "number" &&
@@ -565,7 +549,6 @@ export default function HotelDetailClient({
                               )}
                           </div>
 
-                          {/* AMENITIES */}
                           {amenities.length > 0 && (
                             <div className="mt-4 border-t border-slate-100 pt-4">
                               <div className="mb-2 text-sm font-semibold text-slate-800">
@@ -596,7 +579,6 @@ export default function HotelDetailClient({
                             </div>
                           )}
 
-                          {/* PRICE + BOOKING */}
                           <div className="mt-5 flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-end sm:justify-between">
                             <div>
                               <div className="text-xs text-slate-500">
@@ -621,13 +603,10 @@ export default function HotelDetailClient({
                               </div>
                             </div>
 
-                            {/* ĐẶT PHÒNG */}
                             <button
                               type="button"
                               onClick={() =>
-                                handleBooking(
-                                  room
-                                )
+                                handleBooking(room)
                               }
                               className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
                             >
@@ -644,7 +623,6 @@ export default function HotelDetailClient({
               )}
             </section>
 
-            {/* MAP */}
             {mapUrl && (
               <section className="mt-12 border-t border-slate-200 pt-10">
                 <div className="mb-5">
@@ -676,9 +654,56 @@ export default function HotelDetailClient({
                 </div>
               </section>
             )}
+
+            {initialFaqs.length > 0 && (
+              <section
+                className="mt-12 border-t border-slate-200 pt-10"
+                aria-labelledby="hotel-faq-heading"
+              >
+                <h2
+                  id="hotel-faq-heading"
+                  className="mb-5 text-2xl font-bold tracking-tight text-slate-950"
+                >
+                  {language === "vi"
+                    ? `Hỏi đáp về ${hotelName}`
+                    : `FAQs about ${hotelName}`}
+                </h2>
+
+                <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white px-5">
+                  {initialFaqs.map((faq) => (
+                    <details
+                      key={faq.id}
+                      className="group py-4"
+                    >
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-800">
+                        <span>
+                          {language === "vi"
+                            ? faq.question_vi
+                            : faq.question_en ||
+                              faq.question_vi}
+                        </span>
+
+                        <span
+                          aria-hidden="true"
+                          className="text-lg text-slate-400 transition group-open:rotate-45"
+                        >
+                          +
+                        </span>
+                      </summary>
+
+                      <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">
+                        {language === "vi"
+                          ? faq.answer_vi
+                          : faq.answer_en ||
+                            faq.answer_vi}
+                      </p>
+                    </details>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
 
-          {/* SIDEBAR TÌM PHÒNG */}
           <div className="order-last h-fit self-start lg:order-none lg:sticky lg:top-24 lg:h-fit lg:self-start">
             <HotelBookingSidebar
               hotel={{
@@ -693,7 +718,6 @@ export default function HotelDetailClient({
         </div>
       </div>
 
-      {/* FOOTER */}
       <footer className="mt-16 border-t border-slate-200 bg-slate-50">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">

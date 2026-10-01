@@ -93,30 +93,7 @@ export default function ExploreClient({ hotels, heroSlides }: ExploreClientProps
     <main className="min-h-screen bg-white text-neutral-900">
       {/* HEADER */}
       <header className="border-b border-neutral-100 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <Link href="/" className="block">
-            <div
-              className="text-xl font-semibold tracking-tight text-blue-900"
-              style={{
-                fontFamily:
-                  'Arial, "Helvetica Neue", "Segoe UI", sans-serif',
-              }}
-            >
-              Huyen&apos;s
-            </div>
-
-            <div className="mt-0.5 text-[10px] tracking-[0.25em] text-neutral-400">
-              HOTELS &amp; STAYS
-            </div>
-          </Link>
-
-          <div className="flex items-center gap-5">
-            <Link
-              href="/"
-              className="text-sm font-medium text-neutral-600 transition hover:text-blue-900"
-            >
-              {isVi ? "Trang chủ" : "Home"}
-            </Link>
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5"><div className="flex items-center gap-5">
 
             <div className="flex items-center text-sm">
               <button

@@ -150,25 +150,6 @@ export default function RoomsClient({ rooms, roomCovers }: RoomsClientProps) {
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
-      {/* BACK TO MAIN */}
-      <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-[1200px] items-center px-6 lg:px-10">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 transition hover:text-sky-600"
-          >
-            <span aria-hidden="true">
-              ←
-            </span>
-
-            <span>
-              {language === "vi"
-                ? "Quay về trang chính"
-                : "Back to Main"}
-            </span>
-          </Link>
-        </div>
-      </div>
 
       {/* PAGE BANNER */}
       <section className="relative mx-auto h-[220px] max-w-[1200px] overflow-hidden bg-[#eaf3f6]">

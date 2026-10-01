@@ -388,16 +388,6 @@ return (
 <section className="border-b border-slate-200 bg-slate-50">
 <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
 
-      {/* BACK TO HOME - ĐẶT ĐẦU TIÊN */}
-      <Link
-        href="/"
-        className="mb-8 inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
-      >
-        {language === "vi"
-          ? "← Quay về trang chủ"
-          : "← Back to Home"}
-      </Link>
-
       <div className="max-w-3xl">
         <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">
           Huyen's Hotels & Stays

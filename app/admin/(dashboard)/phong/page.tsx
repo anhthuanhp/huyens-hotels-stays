@@ -18,7 +18,6 @@ type Room = {
   name_en: string;
   description_vi: string | null;
   description_en: string | null;
-  image: string | null;
   size: number | null;
   max_guests: number;
   beds_vi: string | null;
@@ -38,7 +37,6 @@ type RoomForm = {
   name_en: string;
   description_vi: string;
   description_en: string;
-  image: string;
   size: string;
   max_guests: string;
   beds_vi: string;
@@ -58,7 +56,6 @@ const emptyForm: RoomForm = {
   name_en: "",
   description_vi: "",
   description_en: "",
-  image: "",
   size: "",
   max_guests: "2",
   beds_vi: "",
@@ -110,19 +107,13 @@ export default function AdminRoomsPage() {
     ]);
 
     if (hotelsResult.error) {
-      console.error(
-        "Lỗi tải khách sạn:",
-        hotelsResult.error
-      );
+      console.error("Lỗi tải khách sạn:", hotelsResult.error);
     } else {
       setHotels((hotelsResult.data ?? []) as Hotel[]);
     }
 
     if (roomsResult.error) {
-      console.error(
-        "Lỗi tải phòng:",
-        roomsResult.error
-      );
+      console.error("Lỗi tải phòng:", roomsResult.error);
     } else {
       setRooms((roomsResult.data ?? []) as Room[]);
     }
@@ -158,9 +149,7 @@ export default function AdminRoomsPage() {
   }, [rooms, selectedHotel, search]);
 
   const getHotel = (hotelId: number) => {
-    return hotels.find(
-      (hotel) => hotel.id === hotelId
-    );
+    return hotels.find((hotel) => hotel.id === hotelId);
   };
 
   const openCreate = () => {
@@ -189,7 +178,6 @@ export default function AdminRoomsPage() {
       name_en: room.name_en,
       description_vi: room.description_vi ?? "",
       description_en: room.description_en ?? "",
-      image: room.image ?? "",
       size:
         room.size !== null
           ? String(room.size)
@@ -247,30 +235,22 @@ export default function AdminRoomsPage() {
 
   const saveRoom = async () => {
     if (!form.hotel_id) {
-      window.alert(
-        "Vui lòng chọn khách sạn."
-      );
+      window.alert("Vui lòng chọn khách sạn.");
       return;
     }
 
     if (!form.slug.trim()) {
-      window.alert(
-        "Vui lòng nhập slug phòng."
-      );
+      window.alert("Vui lòng nhập slug phòng.");
       return;
     }
 
     if (!form.name_vi.trim()) {
-      window.alert(
-        "Vui lòng nhập tên phòng tiếng Việt."
-      );
+      window.alert("Vui lòng nhập tên phòng tiếng Việt.");
       return;
     }
 
     if (!form.name_en.trim()) {
-      window.alert(
-        "Vui lòng nhập tên phòng tiếng Anh."
-      );
+      window.alert("Vui lòng nhập tên phòng tiếng Anh.");
       return;
     }
 
@@ -314,9 +294,7 @@ export default function AdminRoomsPage() {
       !Number.isFinite(basePriceDaily) ||
       basePriceDaily < 0
     ) {
-      window.alert(
-        "Giá ngày không hợp lệ."
-      );
+      window.alert("Giá ngày không hợp lệ.");
       return;
     }
 
@@ -324,9 +302,7 @@ export default function AdminRoomsPage() {
       !Number.isFinite(basePriceMonthly) ||
       basePriceMonthly < 0
     ) {
-      window.alert(
-        "Giá tháng không hợp lệ."
-      );
+      window.alert("Giá tháng không hợp lệ.");
       return;
     }
 
@@ -334,9 +310,7 @@ export default function AdminRoomsPage() {
       size !== null &&
       (!Number.isFinite(size) || size <= 0)
     ) {
-      window.alert(
-        "Diện tích phòng không hợp lệ."
-      );
+      window.alert("Diện tích phòng không hợp lệ.");
       return;
     }
 
@@ -351,22 +325,17 @@ export default function AdminRoomsPage() {
         form.description_vi.trim() || null,
       description_en:
         form.description_en.trim() || null,
-      image: form.image.trim() || null,
       size,
       max_guests: maxGuests,
       beds_vi: form.beds_vi.trim() || null,
       beds_en: form.beds_en.trim() || null,
-
       base_price_daily: basePriceDaily,
       base_price_monthly: basePriceMonthly,
-
       quantity,
-
       amenities_vi:
         parseAmenities(form.amenities_vi),
       amenities_en:
         parseAmenities(form.amenities_en),
-
       status: form.status,
     };
 
@@ -388,10 +357,7 @@ export default function AdminRoomsPage() {
     }
 
     if (error) {
-      console.error(
-        "Lỗi lưu phòng:",
-        error
-      );
+      console.error("Lỗi lưu phòng:", error);
 
       window.alert(
         `Không thể lưu phòng.\n\n${error.message}`
@@ -426,10 +392,7 @@ export default function AdminRoomsPage() {
       .eq("id", room.id);
 
     if (error) {
-      console.error(
-        "Lỗi xóa phòng:",
-        error
-      );
+      console.error("Lỗi xóa phòng:", error);
 
       window.alert(
         `Không thể xóa phòng.\n\n${error.message}\n\nNếu phòng đã có booking, nên chuyển trạng thái sang "Ngừng bán" thay vì xóa.`
@@ -590,7 +553,7 @@ export default function AdminRoomsPage() {
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1450px] text-left text-sm">
+          <table className="w-full min-w-[1250px] text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
                 <th className="px-5 py-4">
@@ -657,33 +620,17 @@ export default function AdminRoomsPage() {
                     className="hover:bg-slate-50"
                   >
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                          {room.image ? (
-                            <img
-                              src={room.image}
-                              alt={room.name_vi}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-xs text-slate-400">
-                              No image
-                            </div>
-                          )}
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          {room.name_vi}
                         </div>
 
-                        <div>
-                          <div className="font-semibold text-slate-900">
-                            {room.name_vi}
-                          </div>
+                        <div className="mt-1 text-xs text-slate-400">
+                          {room.name_en}
+                        </div>
 
-                          <div className="mt-1 text-xs text-slate-400">
-                            {room.name_en}
-                          </div>
-
-                          <div className="mt-1 text-[11px] text-slate-400">
-                            {room.slug}
-                          </div>
+                        <div className="mt-1 text-[11px] text-slate-400">
+                          {room.slug}
                         </div>
                       </div>
                     </td>
@@ -1154,51 +1101,31 @@ export default function AdminRoomsPage() {
 
               <section>
                 <h3 className="mb-4 font-semibold text-slate-900">
-                  Hình ảnh & trạng thái
+                  Trạng thái
                 </h3>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="Ảnh đại diện">
-                    <input
-                      value={form.image}
-                      onChange={(event) =>
-                        updateForm(
-                          "image",
-                          event.target.value
-                        )
-                      }
-                      placeholder="/images/rooms/deluxe.jpg"
-                      className={inputClass}
-                    />
+                <Field label="Trạng thái">
+                  <select
+                    value={form.status}
+                    onChange={(event) =>
+                      updateForm(
+                        "status",
+                        event.target.value as
+                          | "active"
+                          | "inactive"
+                      )
+                    }
+                    className={inputClass}
+                  >
+                    <option value="active">
+                      Đang bán
+                    </option>
 
-                    <p className="mt-1 text-xs text-slate-400">
-                      Hiện tại nhập đường dẫn ảnh. Phần quản lý upload sẽ làm riêng ở Hình ảnh.
-                    </p>
-                  </Field>
-
-                  <Field label="Trạng thái">
-                    <select
-                      value={form.status}
-                      onChange={(event) =>
-                        updateForm(
-                          "status",
-                          event.target.value as
-                            | "active"
-                            | "inactive"
-                        )
-                      }
-                      className={inputClass}
-                    >
-                      <option value="active">
-                        Đang bán
-                      </option>
-
-                      <option value="inactive">
-                        Ngừng bán
-                      </option>
-                    </select>
-                  </Field>
-                </div>
+                    <option value="inactive">
+                      Ngừng bán
+                    </option>
+                  </select>
+                </Field>
               </section>
             </div>
 

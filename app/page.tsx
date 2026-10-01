@@ -6,6 +6,7 @@ import {
 } from "@supabase/supabase-js";
 
 import HomeClient from "./HomeClient";
+import { HOME_FAQ_GROUPS } from "./data/home-faq";
 
 export const revalidate = 60;
 
@@ -677,6 +678,26 @@ function buildStructuredData(
               },
             })
           ),
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${SITE_URL}/#faq`,
+        "mainEntity": HOME_FAQ_GROUPS.flatMap((group) =>
+          group.items.map((item) => ({
+            "@type": "Question",
+            name: item.questionVi,
+            acceptedAnswer: {
+              "@type": "Answer",
+              text:
+                item.questionEn === "Where are Huyen’s hotels located?"
+                  ? `${item.answerVi} ${hotels
+                      .filter((hotel) => hotel.address_vi)
+                      .map((hotel) => `${hotel.name_vi}: ${hotel.address_vi}`)
+                      .join("; ")}`
+                  : item.answerVi,
+            },
+          }))
+        ),
       },
     ],
   };

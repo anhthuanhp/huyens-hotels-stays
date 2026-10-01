@@ -16,6 +16,7 @@ import {
 import BookingSearch from "./components/BookingSearch";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import { HOME_FAQ_GROUPS } from "./data/home-faq";
 
 type Language = "vi" | "en";
 
@@ -1125,6 +1126,118 @@ export default function HomeClient({
                 )}
               </div>
             )}
+          </div>
+        </section>
+        {/* HỎI ĐÁP TRƯỚC KHI ĐẶT PHÒNG */}
+        <section
+          id="cau-hoi-thuong-gap"
+          className="bg-white px-4 py-16 sm:px-6"
+          aria-labelledby="home-faq-heading"
+        >
+          <div className="mx-auto max-w-5xl">
+            <div className="mb-10 text-center">
+              <p className="text-sm font-semibold uppercase tracking-widest text-sky-600">
+                {isVi ? "Thông tin dành cho khách lưu trú" : "Guest information"}
+              </p>
+              <h2
+                id="home-faq-heading"
+                className="mt-2 text-2xl font-bold text-neutral-900 md:text-3xl"
+              >
+                {isVi
+                  ? "Câu hỏi thường gặp trước khi đặt phòng"
+                  : "Frequently asked questions before booking"}
+              </h2>
+              <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-neutral-600">
+                {isVi
+                  ? "Thông tin về đặt phòng, giờ lưu trú, loại phòng, thanh toán, vị trí, tiện nghi và lưu trú dài ngày tại Huyen’s Hotels & Stays."
+                  : "Information about booking, stay times, room types, payment, location, amenities, and long stays at Huyen’s Hotels & Stays."}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {HOME_FAQ_GROUPS.map((group, groupIndex) => (
+                <details
+                  key={group.titleEn}
+                  className="group overflow-hidden rounded-xl border border-neutral-200 bg-white"
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold text-neutral-900 marker:hidden hover:bg-sky-50">
+                    <span className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-bold text-sky-800">
+                        {groupIndex + 1}
+                      </span>
+                      <span>{isVi ? group.titleVi : group.titleEn}</span>
+                      <span className="text-xs font-normal text-neutral-500">
+                        ({group.items.length})
+                      </span>
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="shrink-0 text-xl text-sky-700 transition-transform group-open:rotate-45"
+                    >
+                      +
+                    </span>
+                  </summary>
+                  <div className="border-t border-neutral-200 px-2 sm:px-4">
+                    {group.items.map((item) => (
+                      <details key={item.questionEn} className="group/item border-b border-neutral-100 px-3 py-4 last:border-b-0">
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium leading-6 text-neutral-900 marker:hidden">
+                          <span>{isVi ? item.questionVi : item.questionEn}</span>
+                          <span
+                            aria-hidden="true"
+                            className="shrink-0 text-lg text-sky-700 transition-transform group-open/item:rotate-45"
+                          >
+                            +
+                          </span>
+                        </summary>
+                        <p className="mt-3 pr-7 text-sm leading-6 text-neutral-600">
+                          {isVi ? item.answerVi : item.answerEn}
+                        </p>
+                        {group.titleEn === "Location & transport" &&
+                          item.questionEn === "Where are Huyen’s hotels located?" && (
+                            <ul className="mt-3 space-y-2 pr-7 text-sm leading-6 text-neutral-600">
+                              {hotels.map((hotel) => {
+                                const address = isVi ? hotel.address_vi : hotel.address_en;
+                                if (!address) return null;
+                                return (
+                                  <li key={hotel.id}>
+                                    <Link
+                                      href={`/khach-san/${hotel.slug}`}
+                                      className="font-medium text-sky-800 hover:underline"
+                                    >
+                                      {t(hotel.name_vi, hotel.name_en) as string}
+                                    </Link>
+                                    {`: ${address}`}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                      </details>
+                    ))}
+                  </div>
+                </details>
+              ))}
+            </div>
+
+            <div className="mt-8 rounded-xl bg-sky-50 p-5 text-sm leading-6 text-neutral-700">
+              <p>
+                {isVi
+                  ? "Cần xác nhận thông tin theo khách sạn hoặc kênh đặt phòng? Gọi "
+                  : "Need to confirm details for a hotel or booking channel? Call "}
+                <a className="font-semibold text-sky-800 hover:underline" href="tel:+84902095669">
+                  +84 902 095 669
+                </a>
+                {isVi ? " hoặc " : " or "}
+                <a className="font-semibold text-sky-800 hover:underline" href="mailto:buihongnhung83@gmail.com">
+                  buihongnhung83@gmail.com
+                </a>.
+              </p>
+              <p className="mt-2">
+                <Link href="#hotels" className="font-semibold text-sky-800 hover:underline">
+                  {isVi ? "Xem các khách sạn và địa chỉ →" : "View hotels and addresses →"}
+                </Link>
+              </p>
+            </div>
           </div>
         </section>
       </div>

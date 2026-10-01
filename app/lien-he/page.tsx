@@ -105,12 +105,7 @@ return (
 <main className="min-h-screen bg-neutral-50">
 <section className="border-b border-neutral-200 bg-white">
 <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-<div className="mb-8">
-<Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-600 transition hover:text-sky-600" >
-<span aria-hidden="true">←</span>
-{isVi ? "Trở về trang chủ" : "Back to home"}
-</Link>
-</div>
+
 
       <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>

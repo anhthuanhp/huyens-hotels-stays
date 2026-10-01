@@ -112,16 +112,6 @@ export default function BlogDetailClient({
       {/* ARTICLE HEADER */}
       <section className="bg-white px-6 pb-10 pt-10">
         <div className="mx-auto max-w-[1000px]">
-          <Link
-            href="/blog"
-            className="mb-8 inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
-          >
-            ←{" "}
-            {isVi
-              ? "Quay lại Blog"
-              : "Back to Blog"}
-          </Link>
-
           <div className="mb-5 flex items-center gap-3 text-sm font-semibold uppercase tracking-wider text-sky-600">
             <span>{category}</span>
 
@@ -280,3 +270,4 @@ export default function BlogDetailClient({
     </main>
   );
 }
+

@@ -123,21 +123,6 @@ export default function ExperienceClient({ activities, hotels, media, hasError }
 
   return (
     <main className="min-h-screen bg-white text-neutral-900">
-      {/* BACK LINK */}
-      <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-[1200px] items-center px-6 lg:px-10">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 transition hover:text-sky-600"
-          >
-            <span aria-hidden="true">←</span>
-
-            <span>
-              {isVi ? "Quay về trang chính" : "Back to Main"}
-            </span>
-          </Link>
-        </div>
-      </div>
 
       {/* INTRO */}
       <section className="px-6 py-16 sm:py-20">

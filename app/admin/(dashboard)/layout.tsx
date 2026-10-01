@@ -18,6 +18,7 @@ const menuItems = [
   { href: "/admin/phong", label: "Quản lý phòng" },
   { href: "/admin/hinh-anh", label: "Hình ảnh" },
   { href: "/admin/khach-san", label: "Quản lý khách sạn" },
+  { href: "/admin/faq-khach-san", label: "FAQ khách sạn" },
   { href: "/admin/tien-nghi", label: "Quản lý tiện nghi" },
   { href: "/admin/chinh-sach", label: "Quản lý chính sách" },
   { href: "/admin/trai-nghiem", label: "Hình ảnh hoạt động" },
@@ -194,3 +195,4 @@ export default function AdminDashboardLayout({
     </div>
   );
 }
+

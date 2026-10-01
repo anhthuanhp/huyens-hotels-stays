@@ -77,9 +77,9 @@ type BookingApiResponse = {
 };
 
 function formatMoney(value: number, language: Language) {
-  return new Intl.NumberFormat(language === "vi" ? "vi-VN" : "en-US").format(
-    Math.max(0, Number(value) || 0),
-  );
+  return new Intl.NumberFormat(
+    language === "vi" ? "vi-VN" : "en-US",
+  ).format(Math.max(0, Number(value) || 0));
 }
 
 function formatDate(value: string, language: Language) {
@@ -134,7 +134,8 @@ function normalizeRoomData(roomData: unknown): Room[] {
             ? null
             : Number(item.base_price_monthly),
         quantity:
-          item.quantity === null || item.quantity === undefined
+          item.quantity === null ||
+          item.quantity === undefined
             ? null
             : Number(item.quantity),
         status,
@@ -156,21 +157,27 @@ function BookingPageContent() {
   const checkIn = searchParams.get("checkIn") || "";
   const checkOut = searchParams.get("checkOut") || "";
 
-  const parsedMonths = Number(searchParams.get("months") || 1);
+  const parsedMonths = Number(
+    searchParams.get("months") || 1,
+  );
 
   const months =
     Number.isFinite(parsedMonths) && parsedMonths > 0
       ? Math.floor(parsedMonths)
       : 1;
 
-  const parsedAdults = Number(searchParams.get("adults") || 1);
+  const parsedAdults = Number(
+    searchParams.get("adults") || 1,
+  );
 
   const adults =
     Number.isFinite(parsedAdults) && parsedAdults > 0
       ? Math.floor(parsedAdults)
       : 1;
 
-  const parsedChildren = Number(searchParams.get("children") || 0);
+  const parsedChildren = Number(
+    searchParams.get("children") || 0,
+  );
 
   const children =
     Number.isFinite(parsedChildren) && parsedChildren >= 0
@@ -181,10 +188,8 @@ function BookingPageContent() {
   const oldRoomParam = searchParams.get("room");
 
   const [language, setLanguage] = useState<Language>("vi");
-
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
-
   const [loadingData, setLoadingData] = useState(true);
   const [dataError, setDataError] = useState("");
 
@@ -315,24 +320,28 @@ function BookingPageContent() {
         setHotel(null);
         setRooms([]);
         setLoadingData(false);
+
         setDataError(
           language === "vi"
             ? "Không tìm thấy thông tin khách sạn."
             : "Hotel information was not found.",
         );
+
         return;
       }
 
       try {
-        const { data: hotelData, error: hotelError } =
-          await supabase
-            .from("hotels")
-            .select(
-              "id, slug, name_vi, name_en, status",
-            )
-            .eq("slug", hotelSlug)
-            .eq("status", "active")
-            .maybeSingle();
+        const {
+          data: hotelData,
+          error: hotelError,
+        } = await supabase
+          .from("hotels")
+          .select(
+            "id, slug, name_vi, name_en, status",
+          )
+          .eq("slug", hotelSlug)
+          .eq("status", "active")
+          .maybeSingle();
 
         if (hotelError) {
           throw new Error(hotelError.message);
@@ -346,33 +355,36 @@ function BookingPageContent() {
           );
         }
 
-        const { data: roomData, error: roomError } =
-          await supabase
-            .from("rooms")
-            .select(
-              `
-                id,
-                hotel_id,
-                slug,
-                name_vi,
-                name_en,
-                base_price_daily,
-                base_price_monthly,
-                quantity,
-                status
-              `,
-            )
-            .eq("hotel_id", hotelData.id)
-            .eq("status", "active")
-            .order("id", {
-              ascending: true,
-            });
+        const {
+          data: roomData,
+          error: roomError,
+        } = await supabase
+          .from("rooms")
+          .select(
+            `
+              id,
+              hotel_id,
+              slug,
+              name_vi,
+              name_en,
+              base_price_daily,
+              base_price_monthly,
+              quantity,
+              status
+            `,
+          )
+          .eq("hotel_id", hotelData.id)
+          .eq("status", "active")
+          .order("id", {
+            ascending: true,
+          });
 
         if (roomError) {
           throw new Error(roomError.message);
         }
 
-        const activeRooms = normalizeRoomData(roomData);
+        const activeRooms =
+          normalizeRoomData(roomData);
 
         if (cancelled) {
           return;
@@ -467,8 +479,13 @@ function BookingPageContent() {
       return 0;
     }
 
-    const start = new Date(`${checkIn}T00:00:00`);
-    const end = new Date(`${checkOut}T00:00:00`);
+    const start = new Date(
+      `${checkIn}T00:00:00`,
+    );
+
+    const end = new Date(
+      `${checkOut}T00:00:00`,
+    );
 
     if (
       Number.isNaN(start.getTime()) ||
@@ -486,10 +503,14 @@ function BookingPageContent() {
 
   const getRoomUnitPrice = (room: Room) => {
     if (stayType === "month") {
-      return Number(room.base_price_monthly || 0);
+      return Number(
+        room.base_price_monthly || 0,
+      );
     }
 
-    return Number(room.base_price_daily || 0);
+    return Number(
+      room.base_price_daily || 0,
+    );
   };
 
   const priceUnitLabel =
@@ -514,18 +535,14 @@ function BookingPageContent() {
     stayType === "month"
       ? `${months} ${
           language === "vi"
-            ? months === 1
-              ? "tháng"
-              : "tháng"
+            ? "tháng"
             : months === 1
               ? "month"
               : "months"
         }`
       : `${nights} ${
           language === "vi"
-            ? nights === 1
-              ? "đêm"
-              : "đêm"
+            ? "đêm"
             : nights === 1
               ? "night"
               : "nights"
@@ -534,7 +551,8 @@ function BookingPageContent() {
   const totalPrice = useMemo(() => {
     return selectedRoomDetails.reduce(
       (sum, room) => {
-        const unitPrice = getRoomUnitPrice(room);
+        const unitPrice =
+          getRoomUnitPrice(room);
 
         const multiplier =
           stayType === "month"
@@ -725,7 +743,8 @@ function BookingPageContent() {
       return;
     }
 
-    const trimmedName = fullName.trim();
+    const trimmedName =
+      fullName.trim();
 
     if (!trimmedName) {
       setError(
@@ -766,30 +785,24 @@ function BookingPageContent() {
           body: JSON.stringify({
             hotelSlug,
             stayType,
-
             checkIn:
               stayType === "day"
                 ? checkIn
                 : "",
-
             checkOut:
               stayType === "day"
                 ? checkOut
                 : "",
-
             months:
               stayType === "month"
                 ? months
                 : 0,
-
             adults,
             children,
-
             fullName: trimmedName,
             phone: phone.trim(),
             email: email.trim(),
             note: note.trim(),
-
             rooms: selectedRooms,
           }),
         },
@@ -852,6 +865,104 @@ function BookingPageContent() {
         );
       }
 
+      /*
+       * Booking đã được tạo thành công.
+       *
+       * Gửi thông báo Telegram.
+       *
+       * Nếu Telegram lỗi thì KHÔNG làm hỏng booking.
+       */
+      try {
+        const telegramResponse =
+          await fetch(
+            "/api/telegram-booking",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify({
+                bookingCode:
+                  result.booking.bookingCode,
+
+                hotelName:
+                  language === "vi"
+                    ? result.booking
+                        .hotelNameVi
+                    : result.booking
+                        .hotelNameEn,
+
+                fullName:
+                  result.booking.fullName,
+
+                phone:
+                  result.booking.phone,
+
+                email:
+                  result.booking.email,
+
+                stayType:
+                  result.booking.stayType,
+
+                checkIn:
+                  result.booking.checkIn,
+
+                checkOut:
+                  result.booking.checkOut,
+
+                months:
+                  result.booking.months,
+
+                nights:
+                  result.booking.nights,
+
+                adults:
+                  result.booking.adults,
+
+                children:
+                  result.booking.children,
+
+                rooms:
+                  selectedRoomDetails.map(
+                    (room) => ({
+                      name:
+                        language === "vi"
+                          ? room.name_vi
+                          : room.name_en,
+                      quantity:
+                        room.selectedQuantity,
+                    }),
+                  ),
+
+                totalAmount:
+                  result.booking
+                    .totalAmount,
+
+                note:
+                  result.booking.note,
+              }),
+            },
+          );
+
+        if (!telegramResponse.ok) {
+          const telegramResult =
+            await telegramResponse
+              .json()
+              .catch(() => null);
+
+          console.error(
+            "Telegram notification failed:",
+            telegramResult,
+          );
+        }
+      } catch (telegramError) {
+        console.error(
+          "Telegram notification error:",
+          telegramError,
+        );
+      }
+
       setConfirmed(result.booking);
     } catch (submitError) {
       const message =
@@ -889,29 +1000,6 @@ function BookingPageContent() {
 
     return (
       <main className="min-h-screen bg-slate-50 text-slate-900">
-        <header className="border-b bg-white">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
-            <Link
-              href="/"
-              className="text-xl font-bold tracking-wide"
-            >
-              HUYEN’S
-              <span className="ml-2 text-sm font-normal text-slate-500">
-                Hotels & Stays
-              </span>
-            </Link>
-
-            <Link
-              href="/"
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50"
-            >
-              {language === "vi"
-                ? "Về trang chủ"
-                : "Back to home"}
-            </Link>
-          </div>
-        </header>
-
         <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-10">
             <div className="mb-8 text-center">
@@ -930,6 +1018,7 @@ function BookingPageContent() {
                   ? "Thông tin đặt phòng của bạn đã được ghi nhận."
                   : "Your booking request has been successfully received."}
               </p>
+
               <p className="mt-2 text-slate-500">
                 {language === "vi"
                   ? "Chúng tôi sẽ liên hệ với bạn sớm nhất."
@@ -1186,33 +1275,6 @@ function BookingPageContent() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="shrink-0 text-xl font-bold tracking-wide"
-          >
-            HUYEN’S
-            <span className="ml-2 hidden text-sm font-normal text-slate-500 sm:inline">
-              Hotels & Stays
-            </span>
-          </Link>
-
-          <Link
-            href={
-              stayType === "month"
-                ? "/"
-                : "/#booking-search"
-            }
-            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50"
-          >
-            {language === "vi"
-              ? "Quay lại"
-              : "Back"}
-          </Link>
-        </div>
-      </header>
-
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-7">
           <div className="text-sm font-medium text-sky-600">
@@ -1267,8 +1329,7 @@ function BookingPageContent() {
                   </div>
                 </div>
 
-                {stayType ===
-                "day" ? (
+                {stayType === "day" ? (
                   <>
                     <div className="rounded-2xl bg-slate-50 p-4">
                       <div className="text-xs uppercase tracking-wide text-slate-400">
@@ -1352,8 +1413,7 @@ function BookingPageContent() {
                         );
 
                       const multiplier =
-                        stayType ===
-                        "month"
+                        stayType === "month"
                           ? months
                           : nights;
 
@@ -1520,13 +1580,13 @@ function BookingPageContent() {
                     htmlFor="email"
                     className="mb-2 block text-sm font-medium"
                   >
-                    {language === "vi"
-                      ? "Email"
-                      : "Email"}{" "}
+                    Email{" "}
                     <span className="text-xs font-normal text-slate-400">
-                      ({language === "vi"
+                      (
+                      {language === "vi"
                         ? "không bắt buộc"
-                        : "optional"})
+                        : "optional"}
+                      )
                     </span>
                   </label>
 
@@ -1539,11 +1599,7 @@ function BookingPageContent() {
                         event.target.value,
                       )
                     }
-                    placeholder={
-                      language === "vi"
-                        ? "you@example.com"
-                        : "you@example.com"
-                    }
+                    placeholder="you@example.com"
                     className={`w-full rounded-xl border px-4 py-3 outline-none transition focus:ring-2 ${
                       emailError
                         ? "border-red-500 focus:ring-red-100"
@@ -1567,9 +1623,11 @@ function BookingPageContent() {
                       ? "Ghi chú"
                       : "Note"}{" "}
                     <span className="text-xs font-normal text-slate-400">
-                      ({language === "vi"
+                      (
+                      {language === "vi"
                         ? "không bắt buộc"
-                        : "optional"})
+                        : "optional"}
+                      )
                     </span>
                   </label>
 
