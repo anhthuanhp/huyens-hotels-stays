@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
-
 import {
   createClient,
   type SupabaseClient,
 } from "@supabase/supabase-js";
-
 import HotelDetailClient from "./HotelDetailClient";
 
 type Hotel = {
@@ -81,7 +79,7 @@ type ClientRoomMedia = {
 };
 
 type HotelFaq = {
-  id: number;
+  id: string;
   hotel_id: number;
   question_vi: string;
   answer_vi: string;
@@ -111,9 +109,7 @@ type StructuredRoom = {
 };
 
 function getSupabaseServerClient(): SupabaseClient {
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL;
-
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -123,15 +119,10 @@ function getSupabaseServerClient(): SupabaseClient {
     );
   }
 
-  return createClient(
-    supabaseUrl,
-    supabaseKey
-  );
+  return createClient(supabaseUrl, supabaseKey);
 }
 
-function isActiveStatus(
-  status: string | null
-): boolean {
+function isActiveStatus(status: string | null): boolean {
   return (
     typeof status === "string" &&
     status.trim().toLowerCase() === "active"
@@ -159,9 +150,7 @@ function createHotelStructuredData(
     `Thông tin lưu trú tại ${hotelName}.`;
 
   const roomOffers: StructuredRoom[] = rooms
-    .filter((room) =>
-      isActiveStatus(room.status)
-    )
+    .filter((room) => isActiveStatus(room.status))
     .map((room) => {
       const roomName =
         room.name_vi ||
@@ -179,8 +168,7 @@ function createHotelStructuredData(
       };
 
       if (roomDescription) {
-        roomData.description =
-          roomDescription;
+        roomData.description = roomDescription;
       }
 
       if (
@@ -207,6 +195,7 @@ function createHotelStructuredData(
     description: hotelDescription,
     url: `${baseUrl}/khach-san/${hotel.slug}`,
     image: hotel.image || undefined,
+
     address: {
       "@type": "PostalAddress",
       streetAddress:
@@ -216,6 +205,7 @@ function createHotelStructuredData(
       addressLocality: "Ho Chi Minh City",
       addressCountry: "VN",
     },
+
     ...(typeof hotel.latitude === "number" &&
     typeof hotel.longitude === "number"
       ? {
@@ -226,6 +216,7 @@ function createHotelStructuredData(
           },
         }
       : {}),
+
     ...(roomOffers.length > 0
       ? {
           makesOffer: roomOffers,
@@ -268,8 +259,7 @@ export default async function HotelDetailPage({
 }: PageProps) {
   const { slug } = await params;
 
-  const supabase =
-    getSupabaseServerClient();
+  const supabase = getSupabaseServerClient();
 
   /*
    * ============================================================
@@ -311,7 +301,6 @@ export default async function HotelDetailPage({
       "Lỗi lấy thông tin khách sạn:",
       hotelError
     );
-
     notFound();
   }
 
@@ -319,8 +308,7 @@ export default async function HotelDetailPage({
     notFound();
   }
 
-  const hotel =
-    hotelData as Hotel;
+  const hotel = hotelData as Hotel;
 
   /*
    * ============================================================
@@ -408,14 +396,12 @@ export default async function HotelDetailPage({
   }
 
   const initialHotels: HotelListItem[] =
-    (hotelListData || []).map(
-      (item) => ({
-        id: item.id,
-        slug: item.slug,
-        name_vi: item.name_vi,
-        name_en: item.name_en,
-      })
-    );
+    (hotelListData || []).map((item) => ({
+      id: item.id,
+      slug: item.slug,
+      name_vi: item.name_vi,
+      name_en: item.name_en,
+    }));
 
   /*
    * ============================================================
@@ -435,13 +421,11 @@ export default async function HotelDetailPage({
     );
   }
 
-  const rooms =
-    (roomsData || []) as Room[];
+  const rooms = (roomsData || []) as Room[];
 
-  const activeRooms =
-    rooms.filter((room) =>
-      isActiveStatus(room.status)
-    );
+  const activeRooms = rooms.filter((room) =>
+    isActiveStatus(room.status)
+  );
 
   /*
    * ============================================================
@@ -456,28 +440,19 @@ export default async function HotelDetailPage({
       slug: room.slug,
       name_vi: room.name_vi,
       name_en: room.name_en,
-      description_vi:
-        room.description_vi,
-      description_en:
-        room.description_en,
+      description_vi: room.description_vi,
+      description_en: room.description_en,
       image: room.image,
       size: room.size,
-      max_guests:
-        room.max_guests,
+      max_guests: room.max_guests,
       beds_vi: room.beds_vi,
       beds_en: room.beds_en,
-      base_price:
-        room.base_price,
-      quantity:
-        room.quantity,
-      amenities_vi:
-        room.amenities_vi,
-      amenities_en:
-        room.amenities_en,
-      amenities:
-        room.amenities,
-      status:
-        room.status,
+      base_price: room.base_price,
+      quantity: room.quantity,
+      amenities_vi: room.amenities_vi,
+      amenities_en: room.amenities_en,
+      amenities: room.amenities,
+      status: room.status,
     }));
 
   /*
@@ -492,13 +467,11 @@ export default async function HotelDetailPage({
    * ============================================================
    */
 
-  const roomIds =
-    activeRooms.map(
-      (room) => room.id
-    );
+  const roomIds = activeRooms.map(
+    (room) => room.id
+  );
 
-  let roomCovers: ClientRoomMedia[] =
-    [];
+  let roomCovers: ClientRoomMedia[] = [];
 
   if (roomIds.length > 0) {
     const {
@@ -517,10 +490,7 @@ export default async function HotelDetailPage({
       .eq("entity_type", "room")
       .eq("is_cover", true)
       .eq("status", "active")
-      .in(
-        "entity_id",
-        roomIds
-      )
+      .in("entity_id", roomIds)
       .order("sort_order", {
         ascending: true,
       })
@@ -538,17 +508,13 @@ export default async function HotelDetailPage({
     const mediaRows =
       (mediaData || []) as RoomMedia[];
 
-    const coverMap =
-      new Map<number, string>();
+    const coverMap = new Map<number, string>();
 
     for (const media of mediaRows) {
       if (
-        typeof media.entity_id !==
-          "number" ||
+        typeof media.entity_id !== "number" ||
         !media.public_url ||
-        coverMap.has(
-          media.entity_id
-        )
+        coverMap.has(media.entity_id)
       ) {
         continue;
       }
@@ -559,15 +525,14 @@ export default async function HotelDetailPage({
       );
     }
 
-    roomCovers =
-      Array.from(
-        coverMap.entries()
-      ).map(
-        ([entity_id, public_url]) => ({
-          entity_id,
-          public_url,
-        })
-      );
+    roomCovers = Array.from(
+      coverMap.entries()
+    ).map(
+      ([entity_id, public_url]) => ({
+        entity_id,
+        public_url,
+      })
+    );
   }
 
   /*
@@ -588,8 +553,24 @@ export default async function HotelDetailPage({
     );
   }
 
-  const hotelFaqs =
-    (faqData || []) as HotelFaq[];
+  /*
+   * hotel_faqs.id có thể là number từ Supabase,
+   * trong khi HotelDetailClient sử dụng string.
+   *
+   * Chuyển id sang string ngay tại server để hai bên
+   * dùng cùng một kiểu dữ liệu.
+   */
+
+  const hotelFaqs: HotelFaq[] =
+    (faqData || []).map((faq) => ({
+      id: String(faq.id),
+      hotel_id: faq.hotel_id,
+      question_vi: faq.question_vi,
+      answer_vi: faq.answer_vi,
+      question_en: faq.question_en,
+      answer_en: faq.answer_en,
+      sort_order: faq.sort_order,
+    }));
 
   const structuredData =
     createHotelStructuredData(
@@ -609,28 +590,18 @@ export default async function HotelDetailPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html:
-            JSON.stringify(
-              structuredData
-            ).replace(
-              /</g,
-              "\\u003c"
-            ),
+          __html: JSON.stringify(
+            structuredData
+          ).replace(/</g, "\\u003c"),
         }}
       />
 
       <HotelDetailClient
         initialHotel={hotel}
         initialRooms={clientRooms}
-        initialRoomCovers={
-          roomCovers
-        }
-        initialHotels={
-          initialHotels
-        }
-        initialFaqs={
-          hotelFaqs
-        }
+        initialRoomCovers={roomCovers}
+        initialHotels={initialHotels}
+        initialFaqs={hotelFaqs}
       />
     </>
   );

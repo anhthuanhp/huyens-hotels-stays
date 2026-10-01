@@ -101,8 +101,15 @@ const ai = geminiApiKey
 
 const GEMINI_MODEL = "gemini-3.8-flash";
 
-type ChatTurn = { role: "user" | "assistant"; content: string };
-type AvailabilityDate = { value: string; explicitYear: boolean };
+type ChatTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+type AvailabilityDate = {
+  value: string;
+  explicitYear: boolean;
+};
 
 /* =========================================================
    TEXT
@@ -301,11 +308,8 @@ function scoreTextMatch(
   const c = normalizeText(candidate);
 
   if (!q || !c) return 0;
-
   if (q === c) return 100;
-
   if (c.includes(q)) return 90;
-
   if (q.includes(c)) return 85;
 
   const queryTokens = tokenize(q);
@@ -337,36 +341,49 @@ function scoreTextMatch(
   return score;
 }
 
-function findSiteFaqAnswer(question: string, language: Language): string | null {
+function findSiteFaqAnswer(
+  question: string,
+  language: Language
+): string | null {
   let bestScore = 0;
   let answer: string | null = null;
+
   for (const group of HOME_FAQ_GROUPS) {
     for (const item of group.items) {
-      const score = Math.max(scoreTextMatch(question, item.questionVi), scoreTextMatch(question, item.questionEn));
-      if (score > bestScore) { bestScore = score; answer = language === "vi" ? item.answerVi : item.answerEn; }
+      const score = Math.max(
+        scoreTextMatch(
+          question,
+          item.questionVi
+        ),
+        scoreTextMatch(
+          question,
+          item.questionEn
+        )
+      );
+
+      if (score > bestScore) {
+        bestScore = score;
+        answer =
+          language === "vi"
+            ? item.answerVi
+            : item.answerEn;
+      }
     }
   }
+
   return bestScore >= 45 ? answer : null;
 }
 
 /* =========================================================
    STRICT HOTEL DETECTION
-   =========================================================
-   Quan trọng:
-   Không dùng fuzzy match để tự chọn khách sạn cho những
-   câu hỏi chung như:
-   "khách sạn nào có thang máy"
-   "khách sạn nào có wifi"
-
-   Chỉ nhận khách sạn khi tên/slug thực sự xuất hiện
-   trong câu hỏi.
 ========================================================= */
 
 function findExplicitHotel(
   text: string,
   hotels: Hotel[]
 ): Hotel | null {
-  const normalizedQuestion = normalizeText(text);
+  const normalizedQuestion =
+    normalizeText(text);
 
   let bestHotel: Hotel | null = null;
   let bestAliasLength = 0;
@@ -376,12 +393,10 @@ function findExplicitHotel(
       hotel.name_vi,
       hotel.name_en,
       hotel.slug,
-
       hotel.name_vi?.replace(
         /^Khách sạn\s+/i,
         ""
       ),
-
       hotel.name_en?.replace(
         /^Hotel\s+/i,
         ""
@@ -414,7 +429,6 @@ function findExplicitHotel(
         ) {
           bestAliasLength =
             normalizedAlias.length;
-
           bestHotel = hotel;
         }
       }
@@ -424,10 +438,10 @@ function findExplicitHotel(
   return bestHotel;
 }
 
-/*
- * Giữ fuzzy matcher cho phòng.
- * Không dùng nó để chọn khách sạn.
- */
+/* =========================================================
+   ROOM MATCHING
+========================================================= */
+
 function findRoom(
   text: string,
   rooms: Room[],
@@ -499,7 +513,6 @@ function isGenericHotelAmenityQuestion(
     "cac khach san nao",
     "noi luu tru nao",
     "noi nao co",
-    "khach san nao co",
     "which hotel",
     "which hotels",
     "what hotel",
@@ -522,20 +535,127 @@ function isGenericHotelAmenityQuestion(
    INTENT
 ========================================================= */
 
-function formatLocalDate(year: number, month: number, day: number): string | null {
-  const date = new Date(year, month - 1, day);
-  if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) return null;
-  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+function formatLocalDate(
+  year: number,
+  month: number,
+  day: number
+): string | null {
+  const date = new Date(
+    year,
+    month - 1,
+    day
+  );
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() + 1 !== month ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return `${String(year).padStart(4, "0")}-${String(
+    month
+  ).padStart(2, "0")}-${String(day).padStart(
+    2,
+    "0"
+  )}`;
 }
 
-function parseAvailabilityDates(text: string): AvailabilityDate[] {
-  const matches: Array<{ index: number; year: number; month: number; day: number; explicitYear: boolean }> = [];
-  for (const match of text.matchAll(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/g)) matches.push({ index: match.index ?? 0, year: Number(match[1]), month: Number(match[2]), day: Number(match[3]), explicitYear: true });
-  for (const match of text.matchAll(/(?<![\d-])(?:ngày\s*)?(\d{1,2})\s*(?:\/|-|tháng|thang)\s*(\d{1,2})(?:\s*(?:\/|-|năm|nam)\s*(\d{2,4}))?/gi)) matches.push({ index: match.index ?? 0, day: Number(match[1]), month: Number(match[2]), year: match[3] ? (Number(match[3]) < 100 ? 2000 + Number(match[3]) : Number(match[3])) : new Date().getFullYear(), explicitYear: Boolean(match[3]) });
-  matches.sort((a, b) => a.index - b.index);
+function parseAvailabilityDates(
+  text: string
+): AvailabilityDate[] {
+  const matches: Array<{
+    index: number;
+    year: number;
+    month: number;
+    day: number;
+    explicitYear: boolean;
+  }> = [];
+
+  for (const match of text.matchAll(
+    /\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/g
+  )) {
+    matches.push({
+      index: match.index ?? 0,
+      year: Number(match[1]),
+      month: Number(match[2]),
+      day: Number(match[3]),
+      explicitYear: true,
+    });
+  }
+
+  for (const match of text.matchAll(
+    /(?<![\d-])(?:ngày\s*)?(\d{1,2})\s*(?:\/|-|tháng|thang)\s*(\d{1,2})(?:\s*(?:\/|-|năm|nam)\s*(\d{2,4}))?/gi
+  )) {
+    matches.push({
+      index: match.index ?? 0,
+      day: Number(match[1]),
+      month: Number(match[2]),
+      year: match[3]
+        ? Number(match[3]) < 100
+          ? 2000 + Number(match[3])
+          : Number(match[3])
+        : new Date().getFullYear(),
+      explicitYear: Boolean(match[3]),
+    });
+  }
+
+  matches.sort(
+    (a, b) => a.index - b.index
+  );
+
   const dates: AvailabilityDate[] = [];
-  for (const item of matches) { const value = formatLocalDate(item.year, item.month, item.day); if (value && !dates.some((date) => date.value === value)) dates.push({ value, explicitYear: item.explicitYear }); }
-  if (dates.length >= 2 && dates[1].value < dates[0].value && !dates[1].explicitYear) { const [year, month, day] = dates[1].value.split("-").map(Number); const nextYear = formatLocalDate(year + 1, month, day); if (nextYear) dates[1] = { value: nextYear, explicitYear: false }; }
+
+  for (const item of matches) {
+    const value = formatLocalDate(
+      item.year,
+      item.month,
+      item.day
+    );
+
+    if (
+      value &&
+      !dates.some(
+        (date) => date.value === value
+      )
+    ) {
+      dates.push({
+        value,
+        explicitYear:
+          item.explicitYear,
+      });
+    }
+  }
+
+  if (
+    dates.length >= 2 &&
+    dates[1].value < dates[0].value &&
+    !dates[1].explicitYear
+  ) {
+    const [
+      year,
+      month,
+      day,
+    ] = dates[1].value
+      .split("-")
+      .map(Number);
+
+    const nextYear =
+      formatLocalDate(
+        year + 1,
+        month,
+        day
+      );
+
+    if (nextYear) {
+      dates[1] = {
+        value: nextYear,
+        explicitYear: false,
+      };
+    }
+  }
+
   return dates.slice(0, 2);
 }
 
@@ -549,13 +669,19 @@ function detectIntent(
     return "greeting";
   }
 
-  if (containsAny(normalized, ["con phong", "phong con trong", "phong trong", "available room", "room availability", "availability", "rooms available"])) {
+  if (
+    containsAny(normalized, [
+      "con phong",
+      "phong con trong",
+      "phong trong",
+      "available room",
+      "room availability",
+      "availability",
+      "rooms available",
+    ])
+  ) {
     return "availability";
   }
-
-  /* =====================================================
-     PHÒNG
-  ===================================================== */
 
   const roomContextWords = [
     "phong",
@@ -640,10 +766,6 @@ function detectIntent(
     return "room_size";
   }
 
-  /* =====================================================
-     CONTACT
-  ===================================================== */
-
   if (
     containsAny(normalized, [
       "lien lac",
@@ -666,10 +788,6 @@ function detectIntent(
   ) {
     return "hotel_contact";
   }
-
-  /* =====================================================
-     TIỆN NGHI
-  ===================================================== */
 
   if (
     containsAny(normalized, [
@@ -703,10 +821,6 @@ function detectIntent(
     return "hotel_amenities";
   }
 
-  /* =====================================================
-     ROOMS
-  ===================================================== */
-
   if (
     containsAny(normalized, [
       "phong",
@@ -720,10 +834,6 @@ function detectIntent(
   ) {
     return "hotel_rooms";
   }
-
-  /* =====================================================
-     ADDRESS
-  ===================================================== */
 
   if (
     containsAny(normalized, [
@@ -740,10 +850,6 @@ function detectIntent(
     return "hotel_address";
   }
 
-  /* =====================================================
-     DESCRIPTION
-  ===================================================== */
-
   if (
     containsAny(normalized, [
       "gioi thieu",
@@ -757,10 +863,6 @@ function detectIntent(
   ) {
     return "hotel_description";
   }
-
-  /* =====================================================
-     HOTEL LIST
-  ===================================================== */
 
   if (
     containsAny(normalized, [
@@ -805,7 +907,6 @@ async function loadHotels(): Promise<Hotel[]> {
       "AI loadHotels error:",
       error
     );
-
     return [];
   }
 
@@ -862,7 +963,6 @@ async function loadRooms(
       "AI loadRooms error:",
       error
     );
-
     return [];
   }
 
@@ -873,31 +973,139 @@ async function loadLiveAvailability(
   hotel: Hotel,
   checkIn: string,
   checkOut: string
-): Promise<Array<{ roomId: number; nameVi: string; nameEn: string; available: number }> | null> {
+): Promise<
+  Array<{
+    roomId: number;
+    nameVi: string;
+    nameEn: string;
+    available: number;
+  }> | null
+> {
   if (!supabase) return null;
-  const { data: roomRows, error: roomError } = await supabase
+
+  const {
+    data: roomRows,
+    error: roomError,
+  } = await supabase
     .from("rooms")
-    .select("id, hotel_id, slug, name_vi, name_en, quantity, status")
+    .select(
+      "id, hotel_id, slug, name_vi, name_en, quantity, status"
+    )
     .eq("hotel_id", hotel.id)
     .eq("status", "active");
-  if (roomError) { console.error("AI availability rooms error:", roomError); return null; }
-  const rooms = (roomRows ?? []) as Array<{ id: number; hotel_id: number; slug: string; name_vi: string | null; name_en: string | null; quantity: number | string | null; status: string }>;
+
+  if (roomError) {
+    console.error(
+      "AI availability rooms error:",
+      roomError
+    );
+    return null;
+  }
+
+  const rooms =
+    (roomRows ?? []) as Array<{
+      id: number;
+      hotel_id: number;
+      slug: string;
+      name_vi: string | null;
+      name_en: string | null;
+      quantity:
+        | number
+        | string
+        | null;
+      status: string;
+    }>;
+
   if (!rooms.length) return [];
-  const { data: bookingRows, error: bookingError } = await supabase
+
+  const {
+    data: bookingRows,
+    error: bookingError,
+  } = await supabase
     .from("bookings")
-    .select("id, stay_type, check_in, check_out, status, booking_rooms ( room_id, quantity )")
+    .select(
+      "id, stay_type, check_in, check_out, status, booking_rooms ( room_id, quantity )"
+    )
     .eq("hotel_id", hotel.id)
     .eq("status", "confirmed")
-    .or("stay_type.eq.month,and(stay_type.eq.day,check_in.lt." + checkOut + ",check_out.gt." + checkIn + ")");
-  if (bookingError) { console.error("AI availability bookings error:", bookingError); return null; }
-  const booked = new Map<number, number>();
-  for (const booking of (bookingRows ?? []) as Array<{ booking_rooms: Array<{ room_id: number | string | null; quantity: number | string | null }> | null }>) {
-    for (const item of booking.booking_rooms ?? []) {
-      const roomId = Number(item.room_id); const quantity = Number(item.quantity);
-      if (Number.isInteger(roomId) && roomId > 0 && Number.isFinite(quantity) && quantity > 0) booked.set(roomId, (booked.get(roomId) ?? 0) + Math.floor(quantity));
+    .or(
+      "stay_type.eq.month,and(stay_type.eq.day,check_in.lt." +
+        checkOut +
+        ",check_out.gt." +
+        checkIn +
+        ")"
+    );
+
+  if (bookingError) {
+    console.error(
+      "AI availability bookings error:",
+      bookingError
+    );
+    return null;
+  }
+
+  const booked = new Map<
+    number,
+    number
+  >();
+
+  for (const booking of (bookingRows ??
+    []) as Array<{
+    booking_rooms:
+      | Array<{
+          room_id:
+            | number
+            | string
+            | null;
+          quantity:
+            | number
+            | string
+            | null;
+        }>
+      | null;
+  }>) {
+    for (const item of
+      booking.booking_rooms ?? []) {
+      const roomId = Number(
+        item.room_id
+      );
+      const quantity = Number(
+        item.quantity
+      );
+
+      if (
+        Number.isInteger(roomId) &&
+        roomId > 0 &&
+        Number.isFinite(quantity) &&
+        quantity > 0
+      ) {
+        booked.set(
+          roomId,
+          (booked.get(roomId) ?? 0) +
+            Math.floor(quantity)
+        );
+      }
     }
   }
-  return rooms.map((room) => ({ roomId: Number(room.id), nameVi: cleanText(room.name_vi), nameEn: cleanText(room.name_en), available: Math.max(0, Math.floor(Number(room.quantity) || 0) - (booked.get(Number(room.id)) ?? 0)) }));
+
+  return rooms.map((room) => ({
+    roomId: Number(room.id),
+    nameVi: cleanText(
+      room.name_vi
+    ),
+    nameEn: cleanText(
+      room.name_en
+    ),
+    available: Math.max(
+      0,
+      Math.floor(
+        Number(room.quantity) || 0
+      ) -
+        (booked.get(
+          Number(room.id)
+        ) ?? 0)
+    ),
+  }));
 }
 
 async function loadHotelAmenities(
@@ -945,7 +1153,6 @@ async function loadHotelAmenities(
       "AI loadHotelAmenities error:",
       error
     );
-
     return [];
   }
 
@@ -1100,10 +1307,6 @@ function amenityMatchesSearch(
       text
     );
 
-  /*
-   * Nếu câu hỏi chứa một tiện nghi cụ thể,
-   * chỉ match theo nhóm tiện nghi đó.
-   */
   if (searchTerms.length) {
     return searchTerms.some(
       (term) =>
@@ -1115,9 +1318,6 @@ function amenityMatchesSearch(
     );
   }
 
-  /*
-   * Fallback cho tiện nghi khác.
-   */
   const tokens =
     tokenize(text);
 
@@ -1161,9 +1361,6 @@ function hotelAmenitiesAnswer(
         )
     );
 
-  /*
-   * Hỏi một tiện nghi cụ thể.
-   */
   if (matched.length > 0) {
     const amenity =
       matched[0];
@@ -1189,9 +1386,6 @@ function hotelAmenitiesAnswer(
       : `Yes. ${hotelName} has ${name || "this amenity"}.`;
   }
 
-  /*
-   * Hỏi toàn bộ tiện nghi.
-   */
   const list = amenities
     .map((amenity) => {
       const name =
@@ -1276,9 +1470,6 @@ async function findHotelsByAmenity(
       : "No hotel in the system is currently recorded as having this amenity.";
   }
 
-  /*
-   * Dùng tiện nghi thực tế từ database.
-   */
   const amenity =
     matchingAmenities[0];
 
@@ -1659,8 +1850,25 @@ function buildGeminiContext(
       selected_room:
         selectedRoom,
 
-      site_knowledge_base: HOME_FAQ_GROUPS.flatMap((group) => group.items.map((item) => ({ question_vi: item.questionVi, answer_vi: item.answerVi, question_en: item.questionEn, answer_en: item.answerEn }))),
-      recent_conversation: history,
+      site_knowledge_base:
+        HOME_FAQ_GROUPS.flatMap(
+          (group) =>
+            group.items.map(
+              (item) => ({
+                question_vi:
+                  item.questionVi,
+                answer_vi:
+                  item.answerVi,
+                question_en:
+                  item.questionEn,
+                answer_en:
+                  item.answerEn,
+              })
+            )
+        ),
+
+      recent_conversation:
+        history,
 
       selected_hotel_amenities:
         amenities.map(
@@ -1737,7 +1945,20 @@ ${context}
       const response =
         await ai.models.generateContent({
           model: GEMINI_MODEL,
-          contents: history.length ? `Recent conversation (oldest to newest):\n${history.map((turn) => `${turn.role}: ${turn.content}`).join("\n")}\n\nCurrent question: ${question}` : question,
+
+          contents: history.length
+            ? `Recent conversation (oldest to newest):\n${history
+                .map(
+                  (
+                    turn: ChatTurn
+                  ) =>
+                    `${turn.role}: ${turn.content}`
+                )
+                .join(
+                  "\n"
+                )}\n\nCurrent question: ${question}`
+            : question,
+
           config: {
             systemInstruction,
             temperature: 0.2,
@@ -1802,15 +2023,71 @@ ${context}
    API
 ========================================================= */
 
-const aiRequestWindows = new Map<string, number[]>();
+const aiRequestWindows =
+  new Map<string, number[]>();
 
-function isRateLimited(request: NextRequest): boolean {
-  const ip = request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const now = Date.now(); const windowMs = 60_000; const maxRequests = 20;
-  const recent = (aiRequestWindows.get(ip) ?? []).filter((time) => now - time < windowMs);
-  if (recent.length >= maxRequests) { aiRequestWindows.set(ip, recent); return true; }
-  recent.push(now); aiRequestWindows.set(ip, recent);
-  if (aiRequestWindows.size > 2000) for (const [key, times] of aiRequestWindows) if (!times.some((time) => now - time < windowMs)) aiRequestWindows.delete(key);
+function isRateLimited(
+  request: NextRequest
+): boolean {
+  const ip =
+    request.headers.get(
+      "x-real-ip"
+    ) ||
+    request.headers
+      .get("x-forwarded-for")
+      ?.split(",")[0]
+      ?.trim() ||
+    "unknown";
+
+  const now = Date.now();
+  const windowMs = 60_000;
+  const maxRequests = 20;
+
+  const recent = (
+    aiRequestWindows.get(ip) ?? []
+  ).filter(
+    (time) =>
+      now - time < windowMs
+  );
+
+  if (
+    recent.length >= maxRequests
+  ) {
+    aiRequestWindows.set(
+      ip,
+      recent
+    );
+    return true;
+  }
+
+  recent.push(now);
+
+  aiRequestWindows.set(
+    ip,
+    recent
+  );
+
+  if (
+    aiRequestWindows.size > 2000
+  ) {
+    for (
+      const [key, times] of
+        aiRequestWindows
+    ) {
+      if (
+        !times.some(
+          (time) =>
+            now - time <
+            windowMs
+        )
+      ) {
+        aiRequestWindows.delete(
+          key
+        );
+      }
+    }
+  }
+
   return false;
 }
 
@@ -1818,25 +2095,150 @@ export async function POST(
   request: NextRequest
 ) {
   try {
-    const contentLength = Number(request.headers.get("content-length") || 0);
-    if (contentLength > 30_000) return NextResponse.json({ answer: "Nội dung gửi lên quá dài." }, { status: 413 });
-    if (isRateLimited(request)) return NextResponse.json({ answer: "Bạn gửi câu hỏi hơi nhanh. Vui lòng thử lại sau một phút." }, { status: 429 });
+    const contentLength =
+      Number(
+        request.headers.get(
+          "content-length"
+        ) || 0
+      );
+
+    if (
+      contentLength > 30_000
+    ) {
+      return NextResponse.json(
+        {
+          answer:
+            "Nội dung gửi lên quá dài.",
+        },
+        {
+          status: 413,
+        }
+      );
+    }
+
+    if (
+      isRateLimited(request)
+    ) {
+      return NextResponse.json(
+        {
+          answer:
+            "Bạn gửi câu hỏi hơi nhanh. Vui lòng thử lại sau một phút.",
+        },
+        {
+          status: 429,
+        }
+      );
+    }
+
     const body =
       await request.json();
 
     const question =
-      typeof body?.message === "string"
+      typeof body?.message ===
+      "string"
         ? body.message.trim()
         : "";
+
     const hotelSlug =
-      typeof body?.hotelSlug === "string"
+      typeof body?.hotelSlug ===
+      "string"
         ? body.hotelSlug.trim()
         : "";
 
-    if (question.length > 1000) return NextResponse.json({ answer: "Câu hỏi tối đa 1.000 ký tự." }, { status: 413 });
-    const history: ChatTurn[] = Array.isArray(body?.history) ? body.history.filter((turn: unknown): turn is { role: unknown; content: unknown } => Boolean(turn) && typeof turn === "object" && "role" in turn && "content" in turn).filter((turn) => (turn.role === "user" || turn.role === "assistant") && typeof turn.content === "string").map((turn) => ({ role: turn.role as "user" | "assistant", content: (turn.content as string).trim().slice(0, 600) })).filter((turn) => turn.content).slice(-10) : [];
-    const lastHistoryTurn = history[history.length - 1];
-    if (lastHistoryTurn?.role === "user" && lastHistoryTurn.content === question) history.pop();
+    if (
+      question.length > 1000
+    ) {
+      return NextResponse.json(
+        {
+          answer:
+            "Câu hỏi tối đa 1.000 ký tự.",
+        },
+        {
+          status: 413,
+        }
+      );
+    }
+
+    /*
+     * HISTORY
+     *
+     * Parse dữ liệu history thành ChatTurn[]
+     * với kiểu dữ liệu rõ ràng để TypeScript
+     * không suy luận turn thành any hoặc null.
+     */
+
+    const rawHistory: unknown[] =
+      Array.isArray(body?.history)
+        ? body.history
+        : [];
+
+    const history: ChatTurn[] =
+      rawHistory
+        .filter(
+          (
+            turn: unknown
+          ): turn is {
+            role: unknown;
+            content: unknown;
+          } =>
+            Boolean(turn) &&
+            typeof turn ===
+              "object" &&
+            "role" in turn &&
+            "content" in turn
+        )
+        .filter(
+          (turn: {
+            role: unknown;
+            content: unknown;
+          }) =>
+            (
+              turn.role ===
+                "user" ||
+              turn.role ===
+                "assistant"
+            ) &&
+            typeof turn.content ===
+              "string"
+        )
+        .map(
+          (turn: {
+            role: unknown;
+            content: unknown;
+          }): ChatTurn => ({
+            role:
+              turn.role as
+                | "user"
+                | "assistant",
+
+            content:
+              (
+                turn.content as string
+              )
+                .trim()
+                .slice(0, 600),
+          })
+        )
+        .filter(
+          (turn: ChatTurn) =>
+            turn.content.length >
+            0
+        )
+        .slice(-10);
+
+    const lastHistoryTurn =
+      history[
+        history.length - 1
+      ];
+
+    if (
+      lastHistoryTurn?.role ===
+        "user" &&
+      lastHistoryTurn.content ===
+        question
+    ) {
+      history.pop();
+    }
 
     if (!question) {
       return NextResponse.json(
@@ -1853,7 +2255,9 @@ export async function POST(
     const language =
       detectLanguage(question);
 
-    if (containsAbuse(question)) {
+    if (
+      containsAbuse(question)
+    ) {
       return NextResponse.json({
         answer:
           language === "vi"
@@ -1865,24 +2269,89 @@ export async function POST(
     /*
      * Greeting không cần database.
      */
-    if (isGreeting(question)) {
+
+    if (
+      isGreeting(question)
+    ) {
       return NextResponse.json({
         answer:
-          greetingAnswer(language),
+          greetingAnswer(
+            language
+          ),
       });
     }
 
-    const lastAssistantTurn = [...history].reverse().find((turn) => turn.role === "assistant");
-    const assistantAskedAvailabilityDetails = Boolean(lastAssistantTurn && (/which hotel would you like me to check|bạn muốn kiểm tra phòng trống/i.test(lastAssistantTurn.content) || /provide both check-in and check-out|cho tôi ngày nhận phòng và ngày trả phòng/i.test(lastAssistantTurn.content)));
-    const currentIntent = detectIntent(question);
-    const intent = currentIntent === "unknown" && assistantAskedAvailabilityDetails
-      ? "availability"
-      : currentIntent;
-    const conversationText = [...history.map((turn) => turn.content), question].join(" ");
+    const lastAssistantTurn =
+      [...history]
+        .reverse()
+        .find(
+          (
+            turn: ChatTurn
+          ) =>
+            turn.role ===
+            "assistant"
+        );
 
-    if (intent === "unknown" || (intent === "room_price" && containsAny(question, ["thue", "gtgt", "vat", "tax"]))) {
-      const faqAnswer = findSiteFaqAnswer(question, language);
-      if (faqAnswer) return NextResponse.json({ answer: faqAnswer });
+    const assistantAskedAvailabilityDetails =
+      Boolean(
+        lastAssistantTurn &&
+          (
+            /which hotel would you like me to check|bạn muốn kiểm tra phòng trống/i.test(
+              lastAssistantTurn.content
+            ) ||
+            /provide both check-in and check-out|cho tôi ngày nhận phòng và ngày trả phòng/i.test(
+              lastAssistantTurn.content
+            )
+          )
+      );
+
+    const currentIntent =
+      detectIntent(question);
+
+    const intent =
+      currentIntent ===
+        "unknown" &&
+      assistantAskedAvailabilityDetails
+        ? "availability"
+        : currentIntent;
+
+    const conversationText =
+      [
+        ...history.map(
+          (
+            turn: ChatTurn
+          ) => turn.content
+        ),
+        question,
+      ].join(" ");
+
+    if (
+      intent === "unknown" ||
+      (
+        intent ===
+          "room_price" &&
+        containsAny(
+          question,
+          [
+            "thue",
+            "gtgt",
+            "vat",
+            "tax",
+          ]
+        )
+      )
+    ) {
+      const faqAnswer =
+        findSiteFaqAnswer(
+          question,
+          language
+        );
+
+      if (faqAnswer) {
+        return NextResponse.json({
+          answer: faqAnswer,
+        });
+      }
     }
 
     if (!supabase) {
@@ -1908,7 +2377,8 @@ export async function POST(
     ===================================================== */
 
     if (
-      intent === "hotel_list"
+      intent ===
+      "hotel_list"
     ) {
       const hotels =
         await loadHotels();
@@ -1925,6 +2395,7 @@ export async function POST(
     /*
      * Load hotels.
      */
+
     const hotels =
       await loadHotels();
 
@@ -1939,13 +2410,12 @@ export async function POST(
      * "nơi nào có lễ tân"
      *
      * THÌ KHÔNG ĐƯỢC tìm selectedHotel trước.
-     *
-     * Tìm trực tiếp trong toàn bộ hotel_amenities.
      * =====================================================
      */
 
     if (
-      intent === "hotel_amenities" &&
+      intent ===
+        "hotel_amenities" &&
       isGenericHotelAmenityQuestion(
         question
       )
@@ -1973,43 +2443,251 @@ export async function POST(
 
     /*
      * Chỉ từ đây trở xuống mới tìm khách sạn cụ thể.
-     *
-     * Dùng STRICT MATCHING, không fuzzy.
      */
-    const historyText = conversationText;
-    const selectedHotel =
-      findExplicitHotel(question, hotels) ||
-      (hotelSlug
-        ? hotels.find((hotel) => hotel.slug === hotelSlug) || null
-        : null) ||
-      findExplicitHotel(historyText, hotels);
 
-    if (intent === "availability") {
-      if (!selectedHotel) return NextResponse.json({ answer: language === "vi" ? "Bạn muốn kiểm tra phòng trống ở khách sạn nào?" : "Which hotel would you like me to check?" });
-      const availabilityText = currentIntent === "availability" ? question : conversationText;
-      const dates = parseAvailabilityDates(availabilityText);
-      if (dates.length < 2) return NextResponse.json({ answer: language === "vi" ? "Để kiểm tra chính xác, bạn cho tôi ngày nhận phòng và ngày trả phòng (ví dụ: 05/10/2026 đến 07/10/2026) nhé." : "Please provide both check-in and check-out dates (for example, 05/10/2026 to 07/10/2026) so I can check accurately." });
-      const checkIn = dates[0].value;
-      const checkOut = dates[1].value;
-      if (checkOut <= checkIn) return NextResponse.json({ answer: language === "vi" ? "Ngày trả phòng cần sau ngày nhận phòng. Bạn kiểm tra lại giúp tôi nhé." : "Check-out must be after check-in. Please check the dates." });
-      const todayParts = new Intl.DateTimeFormat("en", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
-      const todayValues = Object.fromEntries(todayParts.map((part) => [part.type, part.value]));
-      const todayInVietnam = `${todayValues.year}-${todayValues.month}-${todayValues.day}`;
-      if (checkIn < todayInVietnam) return NextResponse.json({ answer: language === "vi" ? "Ngày nhận phòng đã qua. Bạn gửi lại ngày lưu trú sắp tới giúp tôi nhé." : "That check-in date has already passed. Please provide upcoming stay dates." });
-      const rooms = await loadRooms(selectedHotel.id);
-      const selectedRoom = findRoom(availabilityText, rooms, selectedHotel);
-      const live = await loadLiveAvailability(selectedHotel, checkIn, checkOut);
-      if (!live) return NextResponse.json({ answer: language === "vi" ? "Hiện tôi chưa kết nối được dữ liệu phòng trống trực tiếp. Vui lòng thử lại sau hoặc liên hệ khách sạn." : "I can’t reach live availability right now. Please try again later or contact the hotel." }, { status: 503 });
-      const targets = selectedRoom ? live.filter((room) => room.roomId === selectedRoom.id) : live;
-      if (!targets.length) return NextResponse.json({ answer: language === "vi" ? "Không tìm thấy loại phòng phù hợp tại " + selectedHotel.name_vi + "." : "No matching room types were found at " + selectedHotel.name_en + "." });
-      const dateFormatter = new Intl.DateTimeFormat(language === "vi" ? "vi-VN" : "en-GB", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric" });
-      const humanCheckIn = dateFormatter.format(new Date(checkIn + "T00:00:00+07:00"));
-      const humanCheckOut = dateFormatter.format(new Date(checkOut + "T00:00:00+07:00"));
-      const details = targets.map((room) => (language === "vi" ? (room.nameVi || room.nameEn) + ": " + (room.available > 0 ? "còn " + room.available + " phòng" : "đã hết phòng") : (room.nameEn || room.nameVi) + ": " + (room.available > 0 ? room.available + " room(s) available" : "sold out"))).join("; ");
-      const answer = language === "vi"
-        ? selectedHotel.name_vi + " từ " + humanCheckIn + " đến " + humanCheckOut + ": " + details + ". Tình trạng có thể thay đổi trước khi hoàn tất đặt phòng."
-        : selectedHotel.name_en + " from " + humanCheckIn + " to " + humanCheckOut + ": " + details + ". Availability may change before booking is completed.";
-      return NextResponse.json({ answer });
+    const historyText =
+      conversationText;
+
+    const selectedHotel =
+      findExplicitHotel(
+        question,
+        hotels
+      ) ||
+      (
+        hotelSlug
+          ? hotels.find(
+              (hotel) =>
+                hotel.slug ===
+                hotelSlug
+            ) || null
+          : null
+      ) ||
+      findExplicitHotel(
+        historyText,
+        hotels
+      );
+
+    if (
+      intent ===
+      "availability"
+    ) {
+      if (!selectedHotel) {
+        return NextResponse.json({
+          answer:
+            language === "vi"
+              ? "Bạn muốn kiểm tra phòng trống ở khách sạn nào?"
+              : "Which hotel would you like me to check?",
+        });
+      }
+
+      const availabilityText =
+        currentIntent ===
+        "availability"
+          ? question
+          : conversationText;
+
+      const dates =
+        parseAvailabilityDates(
+          availabilityText
+        );
+
+      if (dates.length < 2) {
+        return NextResponse.json({
+          answer:
+            language === "vi"
+              ? "Để kiểm tra chính xác, bạn cho tôi ngày nhận phòng và ngày trả phòng (ví dụ: 05/10/2026 đến 07/10/2026) nhé."
+              : "Please provide both check-in and check-out dates (for example, 05/10/2026 to 07/10/2026) so I can check accurately.",
+        });
+      }
+
+      const checkIn =
+        dates[0].value;
+
+      const checkOut =
+        dates[1].value;
+
+      if (
+        checkOut <= checkIn
+      ) {
+        return NextResponse.json({
+          answer:
+            language === "vi"
+              ? "Ngày trả phòng cần sau ngày nhận phòng. Bạn kiểm tra lại giúp tôi nhé."
+              : "Check-out must be after check-in. Please check the dates.",
+        });
+      }
+
+      const todayParts =
+        new Intl.DateTimeFormat(
+          "en",
+          {
+            timeZone:
+              "Asia/Ho_Chi_Minh",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }
+        ).formatToParts(
+          new Date()
+        );
+
+      const todayValues =
+        Object.fromEntries(
+          todayParts.map(
+            (part) => [
+              part.type,
+              part.value,
+            ]
+          )
+        );
+
+      const todayInVietnam =
+        `${todayValues.year}-${todayValues.month}-${todayValues.day}`;
+
+      if (
+        checkIn <
+        todayInVietnam
+      ) {
+        return NextResponse.json({
+          answer:
+            language === "vi"
+              ? "Ngày nhận phòng đã qua. Bạn gửi lại ngày lưu trú sắp tới giúp tôi nhé."
+              : "That check-in date has already passed. Please provide upcoming stay dates.",
+        });
+      }
+
+      const rooms =
+        await loadRooms(
+          selectedHotel.id
+        );
+
+      const selectedRoom =
+        findRoom(
+          availabilityText,
+          rooms,
+          selectedHotel
+        );
+
+      const live =
+        await loadLiveAvailability(
+          selectedHotel,
+          checkIn,
+          checkOut
+        );
+
+      if (!live) {
+        return NextResponse.json(
+          {
+            answer:
+              language === "vi"
+                ? "Hiện tôi chưa kết nối được dữ liệu phòng trống trực tiếp. Vui lòng thử lại sau hoặc liên hệ khách sạn."
+                : "I can’t reach live availability right now. Please try again later or contact the hotel.",
+          },
+          {
+            status: 503,
+          }
+        );
+      }
+
+      const targets =
+        selectedRoom
+          ? live.filter(
+              (room) =>
+                room.roomId ===
+                selectedRoom.id
+            )
+          : live;
+
+      if (!targets.length) {
+        return NextResponse.json({
+          answer:
+            language === "vi"
+              ? "Không tìm thấy loại phòng phù hợp tại " +
+                selectedHotel.name_vi +
+                "."
+              : "No matching room types were found at " +
+                selectedHotel.name_en +
+                ".",
+        });
+      }
+
+      const dateFormatter =
+        new Intl.DateTimeFormat(
+          language === "vi"
+            ? "vi-VN"
+            : "en-GB",
+          {
+            timeZone:
+              "Asia/Ho_Chi_Minh",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          }
+        );
+
+      const humanCheckIn =
+        dateFormatter.format(
+          new Date(
+            checkIn +
+              "T00:00:00+07:00"
+          )
+        );
+
+      const humanCheckOut =
+        dateFormatter.format(
+          new Date(
+            checkOut +
+              "T00:00:00+07:00"
+          )
+        );
+
+      const details =
+        targets
+          .map(
+            (room) =>
+              language === "vi"
+                ? (room.nameVi ||
+                    room.nameEn) +
+                  ": " +
+                  (room.available >
+                  0
+                    ? "còn " +
+                      room.available +
+                      " phòng"
+                    : "đã hết phòng")
+                : (room.nameEn ||
+                    room.nameVi) +
+                  ": " +
+                  (room.available >
+                  0
+                    ? room.available +
+                      " room(s) available"
+                    : "sold out")
+          )
+          .join("; ");
+
+      const answer =
+        language === "vi"
+          ? selectedHotel.name_vi +
+            " từ " +
+            humanCheckIn +
+            " đến " +
+            humanCheckOut +
+            ": " +
+            details +
+            ". Tình trạng có thể thay đổi trước khi hoàn tất đặt phòng."
+          : selectedHotel.name_en +
+            " from " +
+            humanCheckIn +
+            " to " +
+            humanCheckOut +
+            ": " +
+            details +
+            ". Availability may change before booking is completed.";
+
+      return NextResponse.json({
+        answer,
+      });
     }
 
     /* =====================================================
@@ -2017,7 +2695,8 @@ export async function POST(
     ===================================================== */
 
     if (
-      intent === "hotel_amenities"
+      intent ===
+      "hotel_amenities"
     ) {
       if (!selectedHotel) {
         return NextResponse.json({
@@ -2049,7 +2728,8 @@ export async function POST(
     ===================================================== */
 
     if (
-      intent === "hotel_address"
+      intent ===
+      "hotel_address"
     ) {
       if (!selectedHotel) {
         return NextResponse.json({
@@ -2074,7 +2754,8 @@ export async function POST(
     ===================================================== */
 
     if (
-      intent === "hotel_description"
+      intent ===
+      "hotel_description"
     ) {
       if (!selectedHotel) {
         return NextResponse.json({
@@ -2099,7 +2780,8 @@ export async function POST(
     ===================================================== */
 
     if (
-      intent === "hotel_contact"
+      intent ===
+      "hotel_contact"
     ) {
       if (!selectedHotel) {
         return NextResponse.json({
@@ -2124,7 +2806,8 @@ export async function POST(
     ===================================================== */
 
     if (
-      intent === "hotel_rooms"
+      intent ===
+      "hotel_rooms"
     ) {
       if (!selectedHotel) {
         return NextResponse.json({
@@ -2156,7 +2839,8 @@ export async function POST(
 
     if (
       intent === "room_price" ||
-      intent === "room_capacity" ||
+      intent ===
+        "room_capacity" ||
       intent === "room_size" ||
       intent === "room_beds"
     ) {
@@ -2184,7 +2868,8 @@ export async function POST(
       let answer = "";
 
       if (
-        intent === "room_price"
+        intent ===
+        "room_price"
       ) {
         answer =
           roomPriceAnswer(
@@ -2194,7 +2879,8 @@ export async function POST(
       }
 
       if (
-        intent === "room_capacity"
+        intent ===
+        "room_capacity"
       ) {
         answer =
           roomCapacityAnswer(
@@ -2204,7 +2890,8 @@ export async function POST(
       }
 
       if (
-        intent === "room_size"
+        intent ===
+        "room_size"
       ) {
         answer =
           roomSizeAnswer(
@@ -2214,7 +2901,8 @@ export async function POST(
       }
 
       if (
-        intent === "room_beds"
+        intent ===
+        "room_beds"
       ) {
         answer =
           roomBedsAnswer(
