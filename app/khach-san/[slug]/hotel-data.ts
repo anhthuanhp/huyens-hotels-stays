@@ -66,6 +66,39 @@ export type ClientRoomMedia = {
   public_url: string;
 };
 
+export type NearbyCategory = {
+  id: number;
+  slug: string;
+  name_vi: string;
+  name_en: string;
+  icon: string | null;
+  sort_order: number;
+  status: boolean;
+};
+
+export type HotelNearbyPlace = {
+  id: number;
+  hotel_id: number;
+  category_id: number;
+  name_vi: string;
+  name_en: string | null;
+  description_vi: string | null;
+  description_en: string | null;
+  distance_m: number | null;
+  walking_minutes: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  google_maps_url: string | null;
+  image: string | null;
+  sort_order: number;
+  status: boolean;
+};
+
+export type HotelNearbyData = {
+  categories: NearbyCategory[];
+  places: HotelNearbyPlace[];
+};
+
 function getSupabaseServerClient(): SupabaseClient {
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -85,10 +118,12 @@ function getSupabaseServerClient(): SupabaseClient {
   );
 }
 
-export const getCachedHotel =
-  unstable_cache(
+export async function getCachedHotel(
+  slug: string
+): Promise<Hotel | null> {
+  const getHotel = unstable_cache(
     async (
-      slug: string
+      currentSlug: string
     ): Promise<Hotel | null> => {
       const supabase =
         getSupabaseServerClient();
@@ -118,7 +153,7 @@ export const getCachedHotel =
             nearby_en
           `
         )
-        .eq("slug", slug)
+        .eq("slug", currentSlug)
         .eq("status", "active")
         .maybeSingle();
 
@@ -134,11 +169,17 @@ export const getCachedHotel =
         ? (data as Hotel)
         : null;
     },
-    ["hotel-detail"],
+    [
+      "hotel-detail",
+      slug,
+    ],
     {
       revalidate: 60,
     }
   );
+
+  return getHotel(slug);
+}
 
 export const getCachedHotelSlugs =
   unstable_cache(
@@ -217,200 +258,353 @@ export const getCachedHotelList =
     }
   );
 
-export const getCachedRoomsAndFaqs =
-  unstable_cache(
-    async (
-      hotelId: number
-    ): Promise<{
-      rooms: Room[];
-      faqs: HotelFaq[];
-    }> => {
-      const supabase =
-        getSupabaseServerClient();
+export async function getCachedRoomsAndFaqs(
+  hotelId: number
+): Promise<{
+  rooms: Room[];
+  faqs: HotelFaq[];
+}> {
+  const getRoomsAndFaqs =
+    unstable_cache(
+      async (
+        currentHotelId: number
+      ): Promise<{
+        rooms: Room[];
+        faqs: HotelFaq[];
+      }> => {
+        const supabase =
+          getSupabaseServerClient();
 
-      const [
-        roomsResult,
-        faqsResult,
-      ] = await Promise.all([
-        supabase
-          .from("rooms")
-          .select(
-            `
-              id,
-              hotel_id,
-              slug,
-              name_vi,
-              name_en,
-              description_vi,
-              description_en,
-              image,
-              size,
-              max_guests,
-              beds_vi,
-              beds_en,
-              base_price,
-              quantity,
-              amenities_vi,
-              amenities_en,
-              amenities,
-              status
-            `
-          )
-          .eq("hotel_id", hotelId)
-          .eq("status", "active")
-          .order("id", {
-            ascending: true,
-          }),
+        const [
+          roomsResult,
+          faqsResult,
+        ] = await Promise.all([
+          supabase
+            .from("rooms")
+            .select(
+              `
+                id,
+                hotel_id,
+                slug,
+                name_vi,
+                name_en,
+                description_vi,
+                description_en,
+                image,
+                size,
+                max_guests,
+                beds_vi,
+                beds_en,
+                base_price,
+                quantity,
+                amenities_vi,
+                amenities_en,
+                amenities,
+                status
+              `
+            )
+            .eq(
+              "hotel_id",
+              currentHotelId
+            )
+            .eq("status", "active")
+            .order("id", {
+              ascending: true,
+            }),
 
-        supabase
-          .from("hotel_faqs")
-          .select(
-            `
-              id,
-              hotel_id,
-              question_vi,
-              answer_vi,
-              question_en,
-              answer_en,
-              sort_order
-            `
-          )
-          .eq("hotel_id", hotelId)
-          .eq("is_active", true)
-          .order("sort_order", {
-            ascending: true,
-          })
-          .order("id", {
-            ascending: true,
-          }),
-      ]);
-
-      if (roomsResult.error) {
-        console.error(
-          "getCachedRoomsAndFaqs rooms error:",
-          roomsResult.error
-        );
-      }
-
-      if (faqsResult.error) {
-        console.error(
-          "getCachedRoomsAndFaqs FAQ error:",
-          faqsResult.error
-        );
-      }
-
-      return {
-        rooms:
-          (roomsResult.data || []) as Room[],
-        faqs:
-          (faqsResult.data || []).map(
-            (faq) => ({
-              id: String(faq.id),
-              hotel_id: faq.hotel_id,
-              question_vi:
-                faq.question_vi,
-              answer_vi:
-                faq.answer_vi,
-              question_en:
-                faq.question_en,
-              answer_en:
-                faq.answer_en,
-              sort_order:
-                faq.sort_order,
+          supabase
+            .from("hotel_faqs")
+            .select(
+              `
+                id,
+                hotel_id,
+                question_vi,
+                answer_vi,
+                question_en,
+                answer_en,
+                sort_order
+              `
+            )
+            .eq(
+              "hotel_id",
+              currentHotelId
+            )
+            .eq("is_active", true)
+            .order("sort_order", {
+              ascending: true,
             })
-          ),
-      };
-    },
-    ["hotel-rooms-faqs"],
-    {
-      revalidate: 60,
-    }
-  );
+            .order("id", {
+              ascending: true,
+            }),
+        ]);
 
-export const getCachedRoomCovers =
-  unstable_cache(
-    async (
-      roomIdsKey: string
-    ): Promise<ClientRoomMedia[]> => {
-      if (!roomIdsKey) {
-        return [];
-      }
-
-      const roomIds =
-        roomIdsKey
-          .split(",")
-          .map(Number)
-          .filter(Number.isFinite);
-
-      if (roomIds.length === 0) {
-        return [];
-      }
-
-      const supabase =
-        getSupabaseServerClient();
-
-      const {
-        data,
-        error,
-      } = await supabase
-        .from("media")
-        .select(
-          "id, entity_id, public_url, sort_order"
-        )
-        .eq("entity_type", "room")
-        .eq("is_cover", true)
-        .eq("status", "active")
-        .in(
-          "entity_id",
-          roomIds
-        )
-        .order("sort_order", {
-          ascending: true,
-        })
-        .order("id", {
-          ascending: true,
-        });
-
-      if (error) {
-        console.error(
-          "getCachedRoomCovers error:",
-          error
-        );
-        return [];
-      }
-
-      const coverMap =
-        new Map<number, string>();
-
-      for (const media of data || []) {
-        if (
-          typeof media.entity_id !==
-            "number" ||
-          !media.public_url ||
-          coverMap.has(
-            media.entity_id
-          )
-        ) {
-          continue;
+        if (roomsResult.error) {
+          console.error(
+            "getCachedRoomsAndFaqs rooms error:",
+            roomsResult.error
+          );
         }
 
-        coverMap.set(
-          media.entity_id,
-          media.public_url
-        );
-      }
+        if (faqsResult.error) {
+          console.error(
+            "getCachedRoomsAndFaqs FAQ error:",
+            faqsResult.error
+          );
+        }
 
-      return Array.from(
-        coverMap.entries()
-      ).map(
-        ([entity_id, public_url]) => ({
-          entity_id,
-          public_url,
-        })
-      );
-    },
-    ["room-covers"],
-    {
-      revalidate: 60,
-    }
+        return {
+          rooms:
+            (roomsResult.data || []) as Room[],
+
+          faqs:
+            (faqsResult.data || []).map(
+              (faq) => ({
+                id: String(faq.id),
+                hotel_id:
+                  faq.hotel_id,
+                question_vi:
+                  faq.question_vi,
+                answer_vi:
+                  faq.answer_vi,
+                question_en:
+                  faq.question_en,
+                answer_en:
+                  faq.answer_en,
+                sort_order:
+                  faq.sort_order,
+              })
+            ),
+        };
+      },
+      [
+        "hotel-rooms-faqs",
+        String(hotelId),
+      ],
+      {
+        revalidate: 60,
+      }
+    );
+
+  return getRoomsAndFaqs(hotelId);
+}
+
+/**
+ * Nearby được đọc trực tiếp từ Supabase.
+ *
+ * Không dùng unstable_cache ở đây trong giai đoạn này
+ * để tránh dữ liệu Nearby mới thêm vào bị giữ cache.
+ */
+export async function getCachedHotelNearby(
+  hotelId: number
+): Promise<HotelNearbyData> {
+  const supabase =
+    getSupabaseServerClient();
+
+  const [
+    categoriesResult,
+    placesResult,
+  ] = await Promise.all([
+    supabase
+      .from("nearby_categories")
+      .select(
+        `
+          id,
+          slug,
+          name_vi,
+          name_en,
+          icon,
+          sort_order,
+          status
+        `
+      )
+      .eq("status", true)
+      .order("sort_order", {
+        ascending: true,
+      })
+      .order("id", {
+        ascending: true,
+      }),
+
+    supabase
+      .from("hotel_nearby_places")
+      .select(
+        `
+          id,
+          hotel_id,
+          category_id,
+          name_vi,
+          name_en,
+          description_vi,
+          description_en,
+          distance_m,
+          walking_minutes,
+          latitude,
+          longitude,
+          google_maps_url,
+          image,
+          sort_order,
+          status
+        `
+      )
+      .eq(
+        "hotel_id",
+        hotelId
+      )
+      .eq("status", true)
+      .order("sort_order", {
+        ascending: true,
+      })
+      .order("id", {
+        ascending: true,
+      }),
+  ]);
+
+  if (categoriesResult.error) {
+    console.error(
+      "getCachedHotelNearby categories error:",
+      categoriesResult.error
+    );
+  }
+
+  if (placesResult.error) {
+    console.error(
+      "getCachedHotelNearby places error:",
+      placesResult.error
+    );
+  }
+
+  const categories =
+    (categoriesResult.data || []) as NearbyCategory[];
+
+  const places =
+    (placesResult.data || []) as HotelNearbyPlace[];
+
+  console.log(
+    `[Nearby] hotel=${hotelId} categories=${categories.length} places=${places.length}`
   );
+
+  return {
+    categories,
+    places,
+  };
+}
+
+export async function getCachedRoomCovers(
+  roomIdsKey: string
+): Promise<ClientRoomMedia[]> {
+  if (!roomIdsKey) {
+    return [];
+  }
+
+  const getRoomCovers =
+    unstable_cache(
+      async (
+        currentRoomIdsKey: string
+      ): Promise<ClientRoomMedia[]> => {
+        if (!currentRoomIdsKey) {
+          return [];
+        }
+
+        const roomIds =
+          currentRoomIdsKey
+            .split(",")
+            .map(Number)
+            .filter(Number.isFinite);
+
+        if (roomIds.length === 0) {
+          return [];
+        }
+
+        const supabase =
+          getSupabaseServerClient();
+
+        const {
+          data,
+          error,
+        } = await supabase
+          .from("media")
+          .select(
+            "id, entity_id, public_url, sort_order"
+          )
+          .eq(
+            "entity_type",
+            "room"
+          )
+          .eq(
+            "is_cover",
+            true
+          )
+          .eq(
+            "status",
+            "active"
+          )
+          .in(
+            "entity_id",
+            roomIds
+          )
+          .order(
+            "sort_order",
+            {
+              ascending: true,
+            }
+          )
+          .order("id", {
+            ascending: true,
+          });
+
+        if (error) {
+          console.error(
+            "getCachedRoomCovers error:",
+            error
+          );
+          return [];
+        }
+
+        const coverMap =
+          new Map<number, string>();
+
+        for (
+          const media of data || []
+        ) {
+          if (
+            typeof media.entity_id !==
+              "number" ||
+            !media.public_url ||
+            coverMap.has(
+              media.entity_id
+            )
+          ) {
+            continue;
+          }
+
+          coverMap.set(
+            media.entity_id,
+            media.public_url
+          );
+        }
+
+        return Array.from(
+          coverMap.entries()
+        ).map(
+          ([
+            entity_id,
+            public_url,
+          ]) => ({
+            entity_id,
+            public_url,
+          })
+        );
+      },
+      [
+        "room-covers",
+        roomIdsKey,
+      ],
+      {
+        revalidate: 60,
+      }
+    );
+
+  return getRoomCovers(
+    roomIdsKey
+  );
+}

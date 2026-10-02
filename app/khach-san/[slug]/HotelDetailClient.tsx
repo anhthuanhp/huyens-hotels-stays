@@ -4,12 +4,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   BedDouble,
   Check,
+  Clock3,
   MapPin,
   Maximize2,
+  Navigation,
   Users,
 } from "lucide-react";
 import HotelBookingSidebar from "./HotelBookingSidebar";
@@ -71,12 +72,46 @@ type HotelFaq = {
   sort_order: number;
 };
 
+type NearbyCategory = {
+  id: number;
+  slug: string;
+  name_vi: string;
+  name_en: string;
+  icon: string | null;
+  sort_order: number;
+  status: boolean;
+};
+
+type HotelNearbyPlace = {
+  id: number;
+  hotel_id: number;
+  category_id: number;
+  name_vi: string;
+  name_en: string | null;
+  description_vi: string | null;
+  description_en: string | null;
+  distance_m: number | null;
+  walking_minutes: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  google_maps_url: string | null;
+  image: string | null;
+  sort_order: number;
+  status: boolean;
+};
+
+type HotelNearbyData = {
+  categories: NearbyCategory[];
+  places: HotelNearbyPlace[];
+};
+
 type Props = {
   initialHotel: Hotel;
   initialRooms: Room[];
   initialRoomCovers: RoomMedia[];
   initialHotels: HotelListItem[];
   initialFaqs: HotelFaq[];
+  initialNearby: HotelNearbyData;
 };
 
 function extractMapUrl(value: string | null): string | null {
@@ -158,9 +193,7 @@ function parseAmenities(value: unknown): string[] {
       }
 
       if (typeof parsed === "string") {
-        return parsed.trim()
-          ? [parsed.trim()]
-          : [];
+        return parsed.trim() ? [parsed.trim()] : [];
       }
     } catch {
       // Xử lý như chuỗi thông thường.
@@ -184,9 +217,7 @@ function formatPrice(
     !Number.isFinite(price) ||
     price <= 0
   ) {
-    return language === "vi"
-      ? "Liên hệ"
-      : "Contact";
+    return language === "vi" ? "Liên hệ" : "Contact";
   }
 
   return new Intl.NumberFormat(
@@ -204,14 +235,39 @@ function getPriceUnit(
       : "";
 
   if (model === "monthly") {
+    return language === "vi" ? "/tháng" : "/month";
+  }
+
+  return language === "vi" ? "/ngày" : "/day";
+}
+
+function formatDistance(
+  distanceM: number | null,
+  language: Language
+): string | null {
+  if (
+    typeof distanceM !== "number" ||
+    !Number.isFinite(distanceM) ||
+    distanceM < 0
+  ) {
+    return null;
+  }
+
+  if (distanceM >= 1000) {
+    const km = distanceM / 1000;
+
+    const formatted = Number.isInteger(km)
+      ? String(km)
+      : km.toFixed(1);
+
     return language === "vi"
-      ? "/tháng"
-      : "/month";
+      ? `${formatted} km`
+      : `${formatted} km`;
   }
 
   return language === "vi"
-    ? "/ngày"
-    : "/day";
+    ? `${Math.round(distanceM)} m`
+    : `${Math.round(distanceM)} m`;
 }
 
 export default function HotelDetailClient({
@@ -220,11 +276,16 @@ export default function HotelDetailClient({
   initialRoomCovers,
   initialHotels,
   initialFaqs,
+  initialNearby,
 }: Props) {
-  const router = useRouter();
-
   const [language, setLanguage] =
     useState<Language>("vi");
+
+  const [activeNearbyCategory, setActiveNearbyCategory] =
+    useState<number | null>(null);
+
+  const [showAllNearby, setShowAllNearby] =
+    useState(false);
 
   useEffect(() => {
     const savedLanguage =
@@ -288,6 +349,78 @@ export default function HotelDetailClient({
       return status === "active";
     });
   }, [initialRooms]);
+
+  const nearbyGroups = useMemo(() => {
+    const categories = Array.isArray(
+      initialNearby?.categories
+    )
+      ? initialNearby.categories
+      : [];
+
+    const places = Array.isArray(
+      initialNearby?.places
+    )
+      ? initialNearby.places
+      : [];
+
+    return categories
+      .filter((category) => category.status === true)
+      .map((category) => ({
+        category,
+        places: places
+          .filter(
+            (place) =>
+              place.category_id === category.id &&
+              place.status === true
+          )
+          .sort(
+            (a, b) => a.sort_order - b.sort_order
+          ),
+      }))
+      .filter((group) => group.places.length > 0);
+  }, [initialNearby]);
+
+  const hasNearby = nearbyGroups.length > 0;
+
+  useEffect(() => {
+    if (
+      activeNearbyCategory === null &&
+      nearbyGroups.length > 0
+    ) {
+      setActiveNearbyCategory(
+        nearbyGroups[0].category.id
+      );
+    }
+  }, [activeNearbyCategory, nearbyGroups]);
+
+  useEffect(() => {
+    setShowAllNearby(false);
+  }, [activeNearbyCategory]);
+
+  const activeNearbyGroup = useMemo(() => {
+    if (!nearbyGroups.length) {
+      return null;
+    }
+
+    const selected = nearbyGroups.find(
+      (group) =>
+        group.category.id === activeNearbyCategory
+    );
+
+    return selected || nearbyGroups[0];
+  }, [activeNearbyCategory, nearbyGroups]);
+
+  const visibleNearbyPlaces = useMemo(() => {
+    if (!activeNearbyGroup) {
+      return [];
+    }
+
+    if (showAllNearby) {
+      return activeNearbyGroup.places;
+    }
+
+    return activeNearbyGroup.places.slice(0, 3);
+  }, [activeNearbyGroup, showAllNearby]);
 
   const hotelName =
     language === "vi"
@@ -414,19 +547,13 @@ export default function HotelDetailClient({
                               room.amenities
                           );
 
-                    /*
-                     * Ảnh đại diện phòng:
-                     * Chỉ lấy Cover từ /admin/hinh-anh.
-                     * Không sử dụng rooms.image.
-                     */
                     const roomImage =
                       roomCovers[room.id] || null;
 
                     const stayType =
                       initialHotel.business_model
                         ?.trim()
-                        .toLowerCase() ===
-                      "monthly"
+                        .toLowerCase() === "monthly"
                         ? "month"
                         : "day";
 
@@ -455,8 +582,7 @@ export default function HotelDetailClient({
                       );
                     }
 
-                    const bookingUrl =
-                      `/tim-phong?${bookingParams.toString()}`;
+                    const bookingUrl = `/tim-phong?${bookingParams.toString()}`;
 
                     return (
                       <article
@@ -569,6 +695,7 @@ export default function HotelDetailClient({
                                       className="flex items-start gap-2 text-sm text-slate-600"
                                     >
                                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+
                                       <span>
                                         {amenity}
                                       </span>
@@ -596,8 +723,7 @@ export default function HotelDetailClient({
                                 <span className="ml-1 text-sm font-normal text-slate-500">
                                   VND
                                   {room.base_price &&
-                                    room.base_price >
-                                      0 &&
+                                    room.base_price > 0 &&
                                     priceUnit}
                                 </span>
                               </div>
@@ -621,8 +747,214 @@ export default function HotelDetailClient({
               )}
             </section>
 
+            {hasNearby && activeNearbyGroup && (
+              <section
+                id="nearby"
+                className="mt-12 scroll-mt-24 border-t border-slate-200 pt-10"
+              >
+                <div className="mb-5">
+                  <h2 className="text-2xl font-bold tracking-tight text-slate-950">
+                    {language === "vi"
+                      ? "Khám phá xung quanh"
+                      : "Explore nearby"}
+                  </h2>
+
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    {language === "vi"
+                      ? `Những địa điểm gần ${hotelName}.`
+                      : `Places near ${hotelName}.`}
+                  </p>
+                </div>
+
+                <div className="mb-5 -mx-1 overflow-x-auto px-1 pb-1">
+                  <div className="flex min-w-max gap-2">
+                    {nearbyGroups.map(
+                      ({ category }) => {
+                        const isActive =
+                          category.id ===
+                          activeNearbyGroup.category.id;
+
+                        return (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => {
+                              setActiveNearbyCategory(
+                                category.id
+                              );
+                            }}
+                            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
+                              isActive
+                                ? "border-slate-900 bg-slate-900 text-white"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            {category.icon && (
+                              <span aria-hidden="true">
+                                {category.icon}
+                              </span>
+                            )}
+
+                            <span>
+                              {language === "vi"
+                                ? category.name_vi
+                                : category.name_en ||
+                                  category.name_vi}
+                            </span>
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  {visibleNearbyPlaces.map(
+                    (place) => {
+                      const placeName =
+                        language === "vi"
+                          ? place.name_vi ||
+                            place.name_en ||
+                            ""
+                          : place.name_en ||
+                            place.name_vi ||
+                            "";
+
+                      const distance =
+                        formatDistance(
+                          place.distance_m,
+                          language
+                        );
+
+                      return (
+                        <article
+                          key={place.id}
+                          className="flex min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-sm"
+                        >
+                          {place.image ? (
+                            <div className="relative h-[92px] w-[92px] shrink-0 overflow-hidden bg-slate-100">
+                              <Image
+                                src={place.image}
+                                alt={placeName}
+                                fill
+                                sizes="92px"
+                                className="object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex h-[92px] w-[92px] shrink-0 items-center justify-center bg-slate-100">
+                              <MapPin className="h-5 w-5 text-slate-400" />
+                            </div>
+                          )}
+
+                          <div className="min-w-0 flex-1 p-3.5">
+                            <div className="flex items-start gap-2">
+                              <h3 className="min-w-0 flex-1 line-clamp-2 text-[15px] font-semibold leading-5 text-slate-900">
+                                {placeName}
+                              </h3>
+
+                              {place.google_maps_url && (
+                                <a
+                                  href={
+                                    place.google_maps_url
+                                  }
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label={
+                                    language === "vi"
+                                      ? `Chỉ đường đến ${placeName}`
+                                      : `Directions to ${placeName}`
+                                  }
+                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                                >
+                                  <Navigation className="h-4 w-4" />
+                                </a>
+                              )}
+                            </div>
+
+                            {(distance ||
+                              typeof place.walking_minutes ===
+                                "number") && (
+                              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                                {distance && (
+                                  <span className="inline-flex items-center gap-1">
+                                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                                    {distance}
+                                  </span>
+                                )}
+
+                                {typeof place.walking_minutes ===
+                                  "number" &&
+                                  place.walking_minutes >=
+                                    0 && (
+                                    <span className="inline-flex items-center gap-1">
+                                      <Clock3 className="h-3.5 w-3.5 shrink-0" />
+
+                                      {language === "vi"
+                                        ? `${place.walking_minutes} phút`
+                                        : `${place.walking_minutes} min`}
+                                    </span>
+                                  )}
+                              </div>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    }
+                  )}
+                </div>
+
+                {activeNearbyGroup.places.length >
+                  3 && (
+                  <div className="mt-5 text-center">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowAllNearby(
+                          (current) => !current
+                        )
+                      }
+                      className="inline-flex items-center rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      {showAllNearby
+                        ? language === "vi"
+                          ? "Thu gọn"
+                          : "Show less"
+                        : language === "vi"
+                          ? `Xem thêm ${
+                              activeNearbyGroup
+                                .places.length - 3
+                            } địa điểm`
+                          : `Show ${
+                              activeNearbyGroup
+                                .places.length - 3
+                            } more`}
+                    </button>
+                  </div>
+                )}
+
+                {mapUrl && (
+                  <div className="mt-5 text-center">
+                    <a
+                      href="#hotel-map"
+                      className="inline-flex items-center rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+
+                      {language === "vi"
+                        ? "Xem trên bản đồ"
+                        : "View on map"}
+                    </a>
+                  </div>
+                )}
+              </section>
+            )}
+
             {mapUrl && (
-              <section className="mt-12 border-t border-slate-200 pt-10">
+              <section
+                id="hotel-map"
+                className="mt-12 scroll-mt-24 border-t border-slate-200 pt-10"
+              >
                 <div className="mb-5">
                   <h2 className="text-2xl font-bold tracking-tight text-slate-950">
                     {language === "vi"
@@ -724,8 +1056,8 @@ export default function HotelDetailClient({
             </div>
 
             <div>
-              © {new Date().getFullYear()}{" "}
-              Huyen&apos;s Hotels &amp; Stays
+              © {new Date().getFullYear()} Huyen&apos;s
+              Hotels &amp; Stays
             </div>
           </div>
         </div>
