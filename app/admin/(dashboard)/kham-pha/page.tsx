@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -41,6 +40,7 @@ type HotelNearbyPlace = {
 };
 
 type PlaceForm = {
+  hotel_id: string;
   category_id: string;
   name_vi: string;
   name_en: string;
@@ -57,6 +57,7 @@ type PlaceForm = {
 };
 
 const EMPTY_FORM: PlaceForm = {
+  hotel_id: "",
   category_id: "",
   name_vi: "",
   name_en: "",
@@ -95,10 +96,13 @@ function getCategoryName(
 }
 
 function getInitialForm(
+  hotelId: number | null,
   categoryId: number | null
 ): PlaceForm {
   return {
     ...EMPTY_FORM,
+    hotel_id:
+      hotelId !== null ? String(hotelId) : "",
     category_id:
       categoryId !== null ? String(categoryId) : "",
   };
@@ -123,7 +127,9 @@ export default function AdminNearbyPage() {
     useState<number | null>(null);
 
   const [form, setForm] =
-    useState<PlaceForm>(getInitialForm(null));
+    useState<PlaceForm>(
+      getInitialForm(null, null)
+    );
 
   const [editingId, setEditingId] =
     useState<number | null>(null);
@@ -138,6 +144,7 @@ export default function AdminNearbyPage() {
     useState(false);
 
   const [saving, setSaving] = useState(false);
+
   const [deletingId, setDeletingId] =
     useState<number | null>(null);
 
@@ -277,7 +284,10 @@ export default function AdminNearbyPage() {
         );
 
         setForm(
-          getInitialForm(activeCategory.id)
+          getInitialForm(
+            selectedHotelId,
+            activeCategory.id
+          )
         );
       }
     }
@@ -367,7 +377,14 @@ export default function AdminNearbyPage() {
         : activeCategories[0]?.id ?? null;
 
     setEditingId(null);
-    setForm(getInitialForm(categoryId));
+
+    setForm(
+      getInitialForm(
+        selectedHotelId,
+        categoryId
+      )
+    );
+
     setError("");
     setMessage("");
   }
@@ -378,6 +395,7 @@ export default function AdminNearbyPage() {
     setSelectedCategoryId(place.category_id);
 
     setForm({
+      hotel_id: String(place.hotel_id),
       category_id: String(place.category_id),
       name_vi: place.name_vi || "",
       name_en: place.name_en || "",
@@ -423,7 +441,7 @@ export default function AdminNearbyPage() {
     setError("");
     setMessage("");
 
-    if (!selectedHotelId) {
+    if (!form.hotel_id) {
       setError("Vui lòng chọn khách sạn.");
       return;
     }
@@ -437,6 +455,28 @@ export default function AdminNearbyPage() {
       setError(
         "Vui lòng nhập tên địa điểm tiếng Việt."
       );
+      return;
+    }
+
+    const hotelId =
+      Number(form.hotel_id);
+
+    const categoryId =
+      Number(form.category_id);
+
+    if (
+      !Number.isFinite(hotelId) ||
+      hotelId <= 0
+    ) {
+      setError("Khách sạn không hợp lệ.");
+      return;
+    }
+
+    if (
+      !Number.isFinite(categoryId) ||
+      categoryId <= 0
+    ) {
+      setError("Danh mục không hợp lệ.");
       return;
     }
 
@@ -512,8 +552,8 @@ export default function AdminNearbyPage() {
     setSaving(true);
 
     const payload = {
-      hotel_id: selectedHotelId,
-      category_id: Number(form.category_id),
+      hotel_id: hotelId,
+      category_id: categoryId,
       name_vi: form.name_vi.trim(),
       name_en:
         form.name_en.trim() || null,
@@ -553,26 +593,30 @@ export default function AdminNearbyPage() {
             "Không thể thêm địa điểm."
         );
       } else {
-        setPlaces((current) =>
-          [
-            ...current,
-            data as HotelNearbyPlace,
-          ].sort((a, b) => {
-            if (
-              a.category_id !==
-              b.category_id
-            ) {
-              return (
-                a.category_id -
+        if (
+          hotelId === selectedHotelId
+        ) {
+          setPlaces((current) =>
+            [
+              ...current,
+              data as HotelNearbyPlace,
+            ].sort((a, b) => {
+              if (
+                a.category_id !==
                 b.category_id
-              );
-            }
+              ) {
+                return (
+                  a.category_id -
+                  b.category_id
+                );
+              }
 
-            return (
-              a.sort_order - b.sort_order
-            );
-          })
-        );
+              return (
+                a.sort_order - b.sort_order
+              );
+            })
+          );
+        }
 
         setMessage(
           "Đã thêm địa điểm thành công."
@@ -580,6 +624,7 @@ export default function AdminNearbyPage() {
 
         setForm(
           getInitialForm(
+            selectedHotelId,
             selectedCategoryId
           )
         );
@@ -606,29 +651,45 @@ export default function AdminNearbyPage() {
             "Không thể cập nhật địa điểm."
         );
       } else {
-        setPlaces((current) =>
-          current
-            .map((item) =>
-              item.id === editingId
-                ? (data as HotelNearbyPlace)
-                : item
-            )
-            .sort((a, b) => {
-              if (
-                a.category_id !==
-                b.category_id
-              ) {
-                return (
-                  a.category_id -
-                  b.category_id
-                );
-              }
+        const updatedPlace =
+          data as HotelNearbyPlace;
 
-              return (
-                a.sort_order - b.sort_order
-              );
-            })
-        );
+        if (
+          updatedPlace.hotel_id ===
+          selectedHotelId
+        ) {
+          setPlaces((current) =>
+            current
+              .map((item) =>
+                item.id === editingId
+                  ? updatedPlace
+                  : item
+              )
+              .sort((a, b) => {
+                if (
+                  a.category_id !==
+                  b.category_id
+                ) {
+                  return (
+                    a.category_id -
+                    b.category_id
+                  );
+                }
+
+                return (
+                  a.sort_order -
+                  b.sort_order
+                );
+              })
+          );
+        } else {
+          setPlaces((current) =>
+            current.filter(
+              (item) =>
+                item.id !== editingId
+            )
+          );
+        }
 
         setMessage(
           "Đã cập nhật địa điểm thành công."
@@ -638,6 +699,7 @@ export default function AdminNearbyPage() {
 
         setForm(
           getInitialForm(
+            selectedHotelId,
             selectedCategoryId
           )
         );
@@ -865,16 +927,26 @@ export default function AdminNearbyPage() {
                           event.target.value
                         );
 
-                      setSelectedHotelId(
+                      const nextHotelId =
                         Number.isFinite(value) &&
-                          value > 0
+                        value > 0
                           ? value
-                          : null
+                          : null;
+
+                      setSelectedHotelId(
+                        nextHotelId
                       );
 
                       setEditingId(null);
                       setMessage("");
                       setError("");
+
+                      setForm(
+                        getInitialForm(
+                          nextHotelId,
+                          selectedCategoryId
+                        )
+                      );
                     }}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-slate-500"
                   >
@@ -945,6 +1017,7 @@ export default function AdminNearbyPage() {
                             setEditingId(null);
                             setForm(
                               getInitialForm(
+                                selectedHotelId,
                                 category.id
                               )
                             );
@@ -1029,12 +1102,14 @@ export default function AdminNearbyPage() {
                   </h2>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    {selectedHotel
-                      ? getHotelName(
-                          selectedHotel,
-                          language
-                        )
-                      : "Chưa chọn khách sạn"}
+                    {editingId !== null
+                      ? "Có thể chuyển địa điểm sang khách sạn khác."
+                      : selectedHotel
+                        ? getHotelName(
+                            selectedHotel,
+                            language
+                          )
+                        : "Chưa chọn khách sạn"}
                   </p>
                 </div>
 
@@ -1051,6 +1126,46 @@ export default function AdminNearbyPage() {
 
               <div className="mt-5 grid gap-5">
                 <div className="grid gap-5 md:grid-cols-2">
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-semibold text-slate-700">
+                      Khách sạn
+                    </span>
+
+                    <select
+                      value={form.hotel_id}
+                      onChange={(event) =>
+                        updateField(
+                          "hotel_id",
+                          event.target.value
+                        )
+                      }
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+                    >
+                      <option value="">
+                        Chọn khách sạn
+                      </option>
+
+                      {hotels.map((hotel) => (
+                        <option
+                          key={hotel.id}
+                          value={hotel.id}
+                        >
+                          {getHotelName(
+                            hotel,
+                            language
+                          )}
+                        </option>
+                      ))}
+                    </select>
+
+                    {editingId !== null && (
+                      <span className="mt-1.5 block text-xs text-slate-400">
+                        Có thể đổi khách sạn của địa
+                        điểm này tại đây.
+                      </span>
+                    )}
+                  </label>
+
                   <label className="block">
                     <span className="mb-1.5 block text-sm font-semibold text-slate-700">
                       Danh mục
@@ -1104,7 +1219,9 @@ export default function AdminNearbyPage() {
                       )}
                     </select>
                   </label>
+                </div>
 
+                <div className="grid gap-5 md:grid-cols-2">
                   <label className="block">
                     <span className="mb-1.5 block text-sm font-semibold text-slate-700">
                       Thứ tự hiển thị
@@ -1123,6 +1240,8 @@ export default function AdminNearbyPage() {
                       className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
                     />
                   </label>
+
+                  <div className="hidden md:block" />
                 </div>
 
                 <div className="grid gap-5 md:grid-cols-2">
@@ -1386,7 +1505,7 @@ export default function AdminNearbyPage() {
                       onClick={handleSave}
                       disabled={
                         saving ||
-                        !selectedHotelId
+                        !form.hotel_id
                       }
                       className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -1428,9 +1547,14 @@ export default function AdminNearbyPage() {
                       setSelectedCategoryId(
                         null
                       );
+
                       setForm(
-                        getInitialForm(null)
+                        getInitialForm(
+                          selectedHotelId,
+                          null
+                        )
                       );
+
                       setEditingId(null);
                     }}
                     className="text-sm font-semibold text-slate-500 hover:text-slate-900"
