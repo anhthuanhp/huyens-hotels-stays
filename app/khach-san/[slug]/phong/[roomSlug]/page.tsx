@@ -1,6 +1,7 @@
-
 import RoomDetailClient from "./RoomDetailClient";
 import { supabase } from "../../../../lib/supabase";
+
+export const revalidate = 60;
 
 type Props = {
   params: Promise<{
@@ -20,11 +21,7 @@ type Hotel = {
   description_en: string | null;
   image: string | null;
   status: "active" | "inactive";
-  business_model:
-    | "daily"
-    | "monthly"
-    | string
-    | null;
+  business_model: "daily" | "monthly" | string | null;
 };
 
 type Room = {
@@ -35,14 +32,9 @@ type Room = {
   name_en: string;
   description_vi: string | null;
   description_en: string | null;
-
-  // Giá theo từng hình thức ở
   base_price_daily: number | null;
   base_price_monthly: number | null;
-
-  // Giữ lại base_price để tương thích dữ liệu cũ
   base_price: number | null;
-
   quantity: number | null;
   size: number | null;
   max_guests: number | null;
@@ -85,6 +77,116 @@ type RoomAmenity = {
   amenity_catalog?: AmenityCatalog | AmenityCatalog[] | null;
 };
 
+type ErrorCode =
+  | "hotel-not-found"
+  | "room-not-found"
+  | "load-error"
+  | "";
+
+const HOTEL_SELECT = `
+  id,
+  slug,
+  name_vi,
+  name_en,
+  address_vi,
+  address_en,
+  description_vi,
+  description_en,
+  image,
+  status,
+  business_model
+`;
+
+const ROOM_SELECT = `
+  id,
+  hotel_id,
+  slug,
+  name_vi,
+  name_en,
+  description_vi,
+  description_en,
+  base_price_daily,
+  base_price_monthly,
+  base_price,
+  quantity,
+  size,
+  max_guests,
+  beds_vi,
+  beds_en,
+  status
+`;
+
+const MEDIA_SELECT = `
+  id,
+  bucket,
+  path,
+  file_name,
+  public_url,
+  entity_type,
+  entity_id,
+  alt_vi,
+  alt_en,
+  is_cover,
+  sort_order,
+  status
+`;
+
+const AMENITY_SELECT = `
+  id,
+  room_id,
+  amenity_id,
+  name_vi,
+  name_en,
+  icon,
+  sort_order,
+  status,
+  amenity_catalog (
+    id,
+    name_vi,
+    name_en,
+    icon
+  )
+`;
+
+export async function generateStaticParams() {
+  const { data, error } = await supabase
+    .from("rooms")
+    .select(`
+      slug,
+      hotel_id,
+      hotels!inner (
+        slug
+      )
+    `)
+    .eq("status", "active");
+
+  if (error || !data) {
+    console.error(
+      "Room generateStaticParams error:",
+      error
+    );
+
+    return [];
+  }
+
+  return data.flatMap((item) => {
+    const hotel = Array.isArray(item.hotels)
+      ? item.hotels[0]
+      : item.hotels;
+
+    if (!hotel?.slug || !item.slug) {
+      return [];
+    }
+
+    return [
+      {
+        slug: hotel.slug,
+        roomSlug: item.slug,
+      },
+    ];
+  });
+}
+
 export default async function RoomDetailPage({
   params,
 }: Props) {
@@ -95,26 +197,30 @@ export default async function RoomDetailPage({
   let media: Media[] = [];
   let roomAmenities: RoomAmenity[] = [];
 
-  let errorCode:
-    | "hotel-not-found"
-    | "room-not-found"
-    | "load-error"
-    | "" = "";
+  let errorCode: ErrorCode = "";
 
   try {
-    const { data: hotelData, error: hotelError } =
-      await supabase
-        .from("hotels")
-        .select("*")
-        .eq("slug", slug)
-        .eq("status", "active")
-        .maybeSingle();
+    /*
+     * 1. HOTEL
+     *
+     * Chỉ lấy những cột thực sự dùng.
+     */
+    const {
+      data: hotelData,
+      error: hotelError,
+    } = await supabase
+      .from("hotels")
+      .select(HOTEL_SELECT)
+      .eq("slug", slug)
+      .eq("status", "active")
+      .maybeSingle();
 
     if (hotelError) {
       console.error(
         "Hotel query error:",
         hotelError
       );
+
       errorCode = "load-error";
     } else if (!hotelData) {
       errorCode = "hotel-not-found";
@@ -122,21 +228,27 @@ export default async function RoomDetailPage({
       hotel = hotelData as Hotel;
     }
 
+    /*
+     * 2. ROOM
+     */
     if (hotel) {
-      const { data: roomData, error: roomError } =
-        await supabase
-          .from("rooms")
-          .select("*")
-          .eq("hotel_id", hotel.id)
-          .eq("slug", roomSlug)
-          .eq("status", "active")
-          .maybeSingle();
+      const {
+        data: roomData,
+        error: roomError,
+      } = await supabase
+        .from("rooms")
+        .select(ROOM_SELECT)
+        .eq("hotel_id", hotel.id)
+        .eq("slug", roomSlug)
+        .eq("status", "active")
+        .maybeSingle();
 
       if (roomError) {
         console.error(
           "Room query error:",
           roomError
         );
+
         errorCode = "load-error";
       } else if (!roomData) {
         errorCode = "room-not-found";
@@ -145,20 +257,19 @@ export default async function RoomDetailPage({
       }
     }
 
+    /*
+     * 3. MEDIA + AMENITIES
+     *
+     * Hai query này chạy song song.
+     */
     if (room) {
       const [
-        {
-          data: mediaData,
-          error: mediaError,
-        },
-        {
-          data: amenityData,
-          error: amenityError,
-        },
+        mediaResult,
+        amenityResult,
       ] = await Promise.all([
         supabase
           .from("media")
-          .select("*")
+          .select(MEDIA_SELECT)
           .eq("entity_type", "room")
           .eq("entity_id", room.id)
           .eq("status", "active")
@@ -174,22 +285,7 @@ export default async function RoomDetailPage({
 
         supabase
           .from("room_amenities")
-          .select(`
-            id,
-            room_id,
-            amenity_id,
-            name_vi,
-            name_en,
-            icon,
-            sort_order,
-            status,
-            amenity_catalog (
-              id,
-              name_vi,
-              name_en,
-              icon
-            )
-          `)
+          .select(AMENITY_SELECT)
           .eq("room_id", room.id)
           .eq("status", "active")
           .order("sort_order", {
@@ -200,25 +296,29 @@ export default async function RoomDetailPage({
           }),
       ]);
 
-      if (mediaError) {
+      if (mediaResult.error) {
         console.error(
           "Media query error:",
-          mediaError
+          mediaResult.error
         );
+
         errorCode = "load-error";
       } else {
-        media = (mediaData ?? []) as Media[];
+        media =
+          (mediaResult.data ?? []) as Media[];
       }
 
-      if (amenityError) {
+      if (amenityResult.error) {
         console.error(
           "Room amenities query error:",
-          amenityError
+          amenityResult.error
         );
+
         errorCode = "load-error";
       } else {
         roomAmenities =
-          (amenityData ?? []) as RoomAmenity[];
+          (amenityResult.data ??
+            []) as RoomAmenity[];
       }
     }
   } catch (error) {
@@ -226,6 +326,7 @@ export default async function RoomDetailPage({
       "Room detail server error:",
       error
     );
+
     errorCode = "load-error";
   }
 
