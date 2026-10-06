@@ -22,7 +22,7 @@ export async function generateMetadata({
   // Lấy thông tin khách sạn
   const { data: hotel } = await supabase
     .from("hotels")
-    .select("name_vi, name_en, address_vi")
+    .select("id, name_vi, name_en, address_vi")
     .eq("slug", slug)
     .eq("status", "active")
     .maybeSingle();
@@ -244,7 +244,9 @@ export async function generateStaticParams() {
     const hotel = Array.isArray(item.hotels)
       ? item.hotels[0]
       : item.hotels;
+
     if (!hotel?.slug || !item.slug) return [];
+
     return [{ slug: hotel.slug, roomSlug: item.slug }];
   });
 }
@@ -253,6 +255,7 @@ export default async function RoomDetailPage({
   params,
 }: Props) {
   const { slug, roomSlug } = await params;
+
   let hotel: Hotel | null = null;
   let room: Room | null = null;
   let media: Media[] = [];
@@ -306,6 +309,7 @@ export default async function RoomDetailPage({
           .order("is_cover", { ascending: false })
           .order("sort_order", { ascending: true })
           .order("id", { ascending: true }),
+
         supabase
           .from("room_amenities")
           .select(AMENITY_SELECT)
