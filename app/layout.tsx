@@ -1,4 +1,3 @@
-
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -24,46 +23,29 @@ type LayoutProps = {
   children: React.ReactNode;
 };
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://huyenhotels.com";
-
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://huyenhotels.com";
 const siteName = "Huyen's Hotels & Stays";
 
-const defaultTitle =
-  "Huyen's Hotels & Stays | Khách sạn & lưu trú tại TP.HCM";
-
-const defaultDescription =
-  "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại TP.HCM. Không gian lưu trú tiện nghi, vị trí thuận tiện và đặt phòng trực tiếp.";
+// === Tối ưu Title & Meta chính ===
+const defaultTitle = "Huyen's Hotels & Stays | Khách sạn Quận 1 TP.HCM — Gần Bến Thành, Nguyễn Huệ";
+const defaultDescription = "Khách sạn, homestay, căn hộ dịch vụ tại trung tâm Quận 1 TP.HCM. Gần chợ Bến Thành, phố đi bộ Nguyễn Huệ. Phòng sạch, giá tốt, đặt phòng trực tiếp.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-
   title: defaultTitle,
-
   description: defaultDescription,
-
   applicationName: siteName,
-
-  authors: [
-    {
-      name: siteName,
-    },
-  ],
-
+  authors: [{ name: siteName }],
   creator: siteName,
   publisher: siteName,
-
   verification: {
     google: "O57H556eHBb9rgobX6XVlkAIEeGlPXpWmwD0Wj6shvk",
   },
-
   formatDetection: {
     telephone: true,
     address: true,
     email: true,
   },
-
   openGraph: {
     type: "website",
     siteName,
@@ -71,29 +53,24 @@ export const metadata: Metadata = {
     title: defaultTitle,
     description: defaultDescription,
     url: siteUrl,
-
     images: [
       {
         url: "/hero/hero-1.webp",
         width: 1600,
         height: 900,
-        alt:
-          "Huyen's Hotels & Stays - Khách sạn, guesthouse và homestay tại TP.HCM",
+        alt: "Huyen's Hotels — Khách sạn trung tâm Quận 1, gần Bến Thành",
       },
     ],
   },
-
   twitter: {
     card: "summary_large_image",
     title: defaultTitle,
     description: defaultDescription,
     images: ["/hero/hero-1.webp"],
   },
-
   robots: {
     index: true,
     follow: true,
-
     googleBot: {
       index: true,
       follow: true,
@@ -104,26 +81,41 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: LayoutProps) {
+export default function RootLayout({ children }: LayoutProps) {
   return (
-    <html
-      lang="vi"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="vi" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-white text-neutral-900 font-sans">
+        {/* === Schema Hotel — Google hiểu ngay thông tin === */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Hotel",
+              name: "Huyen's Hotels & Stays",
+              url: siteUrl,
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: "18A/139 Nguyễn Thị Minh Khai",
+                addressLocality: "Thành phố Hồ Chí Minh",
+                addressRegion: "Quận 1",
+                addressCountry: "VN",
+              },
+              telephone: "+84 902095669",
+              priceRange: "$$",
+              description: "Khách sạn, homestay và căn hộ dịch vụ tại trung tâm Quận 1 TP.HCM, gần chợ Bến Thành và phố đi bộ Nguyễn Huệ.",
+            }),
+          }}
+        />
+
         <VisitorTracker />
         <BackToTopButton />
-
         <Suspense fallback={null}>
           <SiteHeader />
         </Suspense>
-
         <main className="flex-1">
           {children}
         </main>
-
         <LazyWidgets />
       </body>
     </html>

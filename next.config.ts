@@ -1,5 +1,6 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
@@ -9,6 +10,8 @@ const nextConfig = {
       },
     ],
   },
+  cleanDistDir: false, // Tắt hẳn việc tự động xóa thư mục
+  output: "standalone", // Giảm thiểu việc ghi/xóa file
 };
 
-module.exports = nextConfig;
+export default nextConfig;
