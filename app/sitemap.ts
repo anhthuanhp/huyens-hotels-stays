@@ -1,4 +1,3 @@
-
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 
@@ -8,17 +7,30 @@ const baseUrl =
 
 const siteUrl = baseUrl.replace(/\/+$/, "");
 
+type HotelRow = {
+  id: number;
+  slug: string;
+  updated_at: string | null;
+};
+
+type RoomRow = {
+  hotel_id: number;
+  slug: string;
+  updated_at: string | null;
+};
+
+type BlogPostRow = {
+  slug: string;
+  date: string | null;
+  updated_at: string | null;
+};
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticUrls: MetadataRoute.Sitemap = [
     {
       url: siteUrl,
       changeFrequency: "daily",
       priority: 1,
-    },
-    {
-      url: `${siteUrl}/phong`,
-      changeFrequency: "weekly",
-      priority: 0.8,
     },
     {
       url: `${siteUrl}/kham-pha-huyens`,
@@ -60,66 +72,99 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  let activeHotels: { id: number; slug: string }[] = [];
-  let activeRooms: { hotel_id: number; slug: string }[] = [];
-  let activeBlogPosts: {
-    slug: string;
-    date: string | null;
-    updated_at: string | null;
-  }[] = [];
+  let activeHotels: HotelRow[] = [];
+  let activeRooms: RoomRow[] = [];
+  let activeBlogPosts: BlogPostRow[] = [];
 
   if (!supabaseUrl || !supabaseKey) {
     console.error(
       "Sitemap: Supabase environment variables are missing; returning static URLs only."
     );
-  } else {
-    try {
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      const [hotelsResult, roomsResult, blogPostsResult] =
-        await Promise.all([
-          supabase
-            .from("hotels")
-            .select("id, slug")
-            .eq("status", "active"),
-          supabase
-            .from("rooms")
-            .select("hotel_id, slug")
-            .eq("status", "active"),
-          supabase
-            .from("blog_posts")
-            .select("slug, date, updated_at")
-            .eq("status", "active")
-            .order("date", { ascending: false }),
-        ]);
 
-      if (hotelsResult.error) {
-        console.error("Sitemap: failed to load hotels:", hotelsResult.error);
-      } else {
-        activeHotels = hotelsResult.data ?? [];
-      }
+    return staticUrls;
+  }
 
-      if (roomsResult.error) {
-        console.error("Sitemap: failed to load rooms:", roomsResult.error);
-      } else {
-        activeRooms = roomsResult.data ?? [];
-      }
+  try {
+    const supabase = createClient(
+      supabaseUrl,
+      supabaseKey
+    );
 
-      if (blogPostsResult.error) {
-        console.error("Sitemap: failed to load blog posts:", blogPostsResult.error);
-      } else {
-        activeBlogPosts = blogPostsResult.data ?? [];
-      }
-    } catch (error) {
-      console.error("Sitemap: Supabase request failed:", error);
+    const [
+      hotelsResult,
+      roomsResult,
+      blogPostsResult,
+    ] = await Promise.all([
+      supabase
+        .from("hotels")
+        .select("id, slug, updated_at")
+        .eq("status", "active"),
+
+      supabase
+        .from("rooms")
+        .select("hotel_id, slug, updated_at")
+        .eq("status", "active"),
+
+      supabase
+        .from("blog_posts")
+        .select("slug, date, updated_at")
+        .eq("status", "active")
+        .order("date", {
+          ascending: false,
+        }),
+    ]);
+
+    if (hotelsResult.error) {
+      console.error(
+        "Sitemap: failed to load hotels:",
+        hotelsResult.error
+      );
+    } else {
+      activeHotels = (hotelsResult.data ?? []) as HotelRow[];
     }
+
+    if (roomsResult.error) {
+      console.error(
+        "Sitemap: failed to load rooms:",
+        roomsResult.error
+      );
+    } else {
+      activeRooms = (roomsResult.data ?? []) as RoomRow[];
+    }
+
+    if (blogPostsResult.error) {
+      console.error(
+        "Sitemap: failed to load blog posts:",
+        blogPostsResult.error
+      );
+    } else {
+      activeBlogPosts =
+        (blogPostsResult.data ?? []) as BlogPostRow[];
+    }
+  } catch (error) {
+    console.error(
+      "Sitemap: Supabase request failed:",
+      error
+    );
+
+    return staticUrls;
   }
 
   const hotelUrls: MetadataRoute.Sitemap =
-    activeHotels.map((hotel) => ({
-      url: `${siteUrl}/khach-san/${hotel.slug}`,
-      changeFrequency: "weekly" as const,
-      priority: 0.9,
-    }));
+    activeHotels
+      .filter(
+        (hotel) =>
+          typeof hotel.slug === "string" &&
+          hotel.slug.trim().length > 0
+      )
+      .map((hotel) => ({
+        url: `${siteUrl}/khach-san/${hotel.slug}`,
+        lastModified: hotel.updated_at
+          ? new Date(hotel.updated_at)
+          : undefined,
+        changeFrequency: "weekly" as const,
+        priority: 0.9,
+      }));
 
   const activeHotelIds = new Set(
     activeHotels.map((hotel) => hotel.id)
@@ -134,33 +179,45 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const roomUrls: MetadataRoute.Sitemap =
     activeRooms
-      .filter((room) =>
-        activeHotelIds.has(room.hotel_id)
+      .filter(
+        (room) =>
+          activeHotelIds.has(room.hotel_id) &&
+          typeof room.slug === "string" &&
+          room.slug.trim().length > 0 &&
+          hotelSlugById.has(room.hotel_id)
       )
       .map((room) => {
-        const hotelSlug =
-          hotelSlugById.get(room.hotel_id);
+        const hotelSlug = hotelSlugById.get(
+          room.hotel_id
+        );
 
         return {
           url: `${siteUrl}/khach-san/${hotelSlug}/phong/${room.slug}`,
+          lastModified: room.updated_at
+            ? new Date(room.updated_at)
+            : undefined,
           changeFrequency: "weekly" as const,
-          priority: 0.8,
+          priority: 0.6,
         };
       });
 
   const blogUrls: MetadataRoute.Sitemap =
-    activeBlogPosts.map((post) => ({
-      url: `${siteUrl}/blog/${post.slug}`,
-
-      lastModified: post.updated_at
-        ? new Date(post.updated_at)
-        : post.date
-          ? new Date(post.date)
-          : undefined,
-
-      changeFrequency: "monthly" as const,
-      priority: 0.7,
-    }));
+    activeBlogPosts
+      .filter(
+        (post) =>
+          typeof post.slug === "string" &&
+          post.slug.trim().length > 0
+      )
+      .map((post) => ({
+        url: `${siteUrl}/blog/${post.slug}`,
+        lastModified: post.updated_at
+          ? new Date(post.updated_at)
+          : post.date
+            ? new Date(post.date)
+            : undefined,
+        changeFrequency: "monthly" as const,
+        priority: 0.7,
+      }));
 
   return [
     ...staticUrls,
