@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import HotelDetailClient from "./HotelDetailClient";
@@ -79,13 +80,83 @@ type PageProps = {
   }>;
 };
 
+/* =========================================================
+   SEO CONFIG
+   Chỉ phục vụ SEO metadata.
+   Không ảnh hưởng dữ liệu Supabase hoặc giao diện.
+========================================================= */
+
+const HOTEL_SEO: Record<
+  string,
+  {
+    title: string;
+    keywords: string[];
+  }
+> = {
+  "anh-kim-hotel": {
+    title:
+      "Anh Kim Hotel | Gần Bùi Viện, Bến Thành & Trung tâm TP.HCM",
+    keywords: [
+      "Anh Kim Hotel",
+      "Anh Kim Hotel TP.HCM",
+      "khách sạn gần Bùi Viện",
+      "khách sạn gần Bến Thành",
+      "khách sạn Cô Bắc",
+      "khách sạn trung tâm TP.HCM",
+      "lưu trú gần Bùi Viện",
+      "lưu trú trung tâm TP.HCM",
+    ],
+  },
+
+  "ae-guesthouse": {
+    title:
+      "A&E Guesthouse | Gần Bùi Viện, Phạm Ngũ Lão & Bến Thành",
+    keywords: [
+      "A&E Guesthouse",
+      "A&E Guesthouse TP.HCM",
+      "guesthouse gần Bùi Viện",
+      "guesthouse Phạm Ngũ Lão",
+      "khách sạn gần Bùi Viện",
+      "khách sạn gần Phạm Ngũ Lão",
+      "lưu trú gần Bến Thành",
+      "lưu trú trung tâm TP.HCM",
+    ],
+  },
+
+  "huyen-house": {
+    title:
+      "Huyen House | Lưu trú tại Trung tâm TP.HCM",
+    keywords: [
+      "Huyen House",
+      "Huyen House TP.HCM",
+      "khách sạn trung tâm TP.HCM",
+      "lưu trú trung tâm TP.HCM",
+      "chỗ ở trung tâm TP.HCM",
+      "khách sạn gần Bến Thành",
+      "lưu trú TP.HCM",
+    ],
+  },
+
+  huyenhomestay: {
+    title:
+      "Huyenhomestay | Homestay tại Trung tâm TP.HCM",
+    keywords: [
+      "Huyenhomestay",
+      "Huyenhomestay TP.HCM",
+      "homestay TP.HCM",
+      "homestay trung tâm TP.HCM",
+      "lưu trú trung tâm TP.HCM",
+      "chỗ ở TP.HCM",
+    ],
+  },
+};
+
 function isActiveStatus(
   status: string | null
 ): boolean {
   return (
     typeof status === "string" &&
-    status.trim().toLowerCase() ===
-      "active"
+    status.trim().toLowerCase() === "active"
   );
 }
 
@@ -104,22 +175,132 @@ function getRoomAmenities(
           typeof item === "string" &&
           item.trim().length > 0
       )
-      .map((item) =>
-        item.trim()
-      );
+      .map((item) => item.trim());
   }
 
   if (typeof source === "string") {
     return source
       .split(",")
-      .map((item) =>
-        item.trim()
-      )
+      .map((item) => item.trim())
       .filter(Boolean);
   }
 
   return [];
 }
+
+/* =========================================================
+   SEO IMAGE
+========================================================= */
+
+function normalizeImageUrl(
+  image: string | null | undefined,
+  siteUrl: string
+): string | undefined {
+  if (!image) {
+    return undefined;
+  }
+
+  const value = image.trim();
+
+  if (!value) {
+    return undefined;
+  }
+
+  if (
+    value.startsWith("http://") ||
+    value.startsWith("https://")
+  ) {
+    return value;
+  }
+
+  if (value.startsWith("/")) {
+    return `${siteUrl}${value}`;
+  }
+
+  return `${siteUrl}/${value}`;
+}
+
+/* =========================================================
+   SEO DESCRIPTION
+========================================================= */
+
+function cleanDescription(
+  value: string
+): string {
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/\n+/g, " ")
+    .trim();
+}
+
+function truncateDescription(
+  value: string,
+  maxLength = 158
+): string {
+  const cleaned = cleanDescription(value);
+
+  if (cleaned.length <= maxLength) {
+    return cleaned;
+  }
+
+  const shortened =
+    cleaned.slice(0, maxLength - 1);
+
+  const lastSpace =
+    shortened.lastIndexOf(" ");
+
+  return (
+    shortened.slice(
+      0,
+      lastSpace > 80
+        ? lastSpace
+        : shortened.length
+    ) + "…"
+  );
+}
+
+function createHotelMetaDescription(
+  hotel: Hotel
+): string {
+  const hotelName =
+    hotel.name_vi ||
+    hotel.name_en ||
+    "Huyen's Hotels & Stays";
+
+  const description =
+    hotel.description_vi ||
+    hotel.description_en ||
+    "";
+
+  const address =
+    hotel.address_vi ||
+    hotel.address_en ||
+    "";
+
+  const parts = [
+    description,
+    address
+      ? `Địa chỉ: ${address}.`
+      : "",
+    "Xem phòng, tiện nghi, giá và thông tin lưu trú tại TP.HCM.",
+  ].filter(Boolean);
+
+  const combined =
+    parts.join(" ");
+
+  if (combined) {
+    return truncateDescription(
+      combined
+    );
+  }
+
+  return `Khám phá ${hotelName}, xem phòng, tiện nghi, giá và thông tin lưu trú tại TP.HCM cùng Huyen's Hotels & Stays.`;
+}
+
+/* =========================================================
+   STRUCTURED DATA
+   Giữ nguyên schema hiện tại.
+========================================================= */
 
 function createHotelStructuredData(
   hotel: Hotel,
@@ -129,6 +310,9 @@ function createHotelStructuredData(
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     "https://huyenhotels.com";
+
+  const siteUrl =
+    baseUrl.replace(/\/+$/, "");
 
   const hotelName =
     hotel.name_vi ||
@@ -143,16 +327,20 @@ function createHotelStructuredData(
       ".";
 
   const hotelUrl =
-    baseUrl +
+    siteUrl +
     "/khach-san/" +
     hotel.slug;
+
+  const hotelImage =
+    normalizeImageUrl(
+      hotel.image,
+      siteUrl
+    );
 
   const roomStructuredData: StructuredRoom[] =
     rooms
       .filter((room) =>
-        isActiveStatus(
-          room.status
-        )
+        isActiveStatus(room.status)
       )
       .map((room) => {
         const roomName =
@@ -166,7 +354,7 @@ function createHotelStructuredData(
           undefined;
 
         const roomUrl =
-          baseUrl +
+          siteUrl +
           "/khach-san/" +
           hotel.slug +
           "/phong/" +
@@ -190,9 +378,15 @@ function createHotelStructuredData(
             roomDescription;
         }
 
-        if (room.image) {
+        const roomImage =
+          normalizeImageUrl(
+            room.image,
+            siteUrl
+          );
+
+        if (roomImage) {
           roomData.image =
-            room.image;
+            roomImage;
         }
 
         if (
@@ -292,8 +486,7 @@ function createHotelStructuredData(
     description:
       hotelDescription,
     url: hotelUrl,
-    image:
-      hotel.image || undefined,
+    image: hotelImage,
     address: {
       "@type":
         "PostalAddress",
@@ -354,14 +547,14 @@ function createHotelStructuredData(
         "@type": "ListItem",
         position: 1,
         name: "Trang chủ",
-        item: baseUrl,
+        item: siteUrl,
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "Khách sạn",
         item:
-          baseUrl +
+          siteUrl +
           "/phong",
       },
       {
@@ -405,6 +598,127 @@ function createHotelStructuredData(
     "@context":
       "https://schema.org",
     "@graph": graph,
+  };
+}
+
+/* =========================================================
+   SEO METADATA
+========================================================= */
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  const hotel =
+    await getCachedHotel(slug);
+
+  if (!hotel) {
+    return {
+      title:
+        "Khách sạn tại TP.HCM | Huyen's Hotels & Stays",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://huyenhotels.com";
+
+  const siteUrl =
+    baseUrl.replace(/\/+$/, "");
+
+  const canonicalUrl =
+    `${siteUrl}/khach-san/${hotel.slug}`;
+
+  const seoConfig =
+    HOTEL_SEO[hotel.slug];
+
+  const hotelName =
+    hotel.name_vi ||
+    hotel.name_en ||
+    "Huyen's Hotels & Stays";
+
+  const title =
+    seoConfig?.title ||
+    `${hotelName} | Huyen's Hotels & Stays`;
+
+  const description =
+    createHotelMetaDescription(
+      hotel
+    );
+
+  const keywords =
+    seoConfig?.keywords ||
+    [
+      hotelName,
+      "khách sạn TP.HCM",
+      "khách sạn trung tâm TP.HCM",
+      "lưu trú TP.HCM",
+      "Huyen's Hotels & Stays",
+    ];
+
+  const image =
+    normalizeImageUrl(
+      hotel.image,
+      siteUrl
+    );
+
+  return {
+    title,
+    description,
+    keywords,
+
+    alternates: {
+      canonical: canonicalUrl,
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview":
+          "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
+
+    openGraph: {
+      type: "website",
+      locale: "vi_VN",
+      url: canonicalUrl,
+      siteName:
+        "Huyen's Hotels & Stays",
+      title,
+      description,
+      ...(image
+        ? {
+            images: [
+              {
+                url: image,
+                alt: hotelName,
+              },
+            ],
+          }
+        : {}),
+    },
+
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(image
+        ? {
+            images: [image],
+          }
+        : {}),
+    },
   };
 }
 

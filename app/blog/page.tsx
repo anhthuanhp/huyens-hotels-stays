@@ -9,7 +9,17 @@ const siteUrl = (
   "https://huyenhotels.com"
 ).replace(/\/+$/, "");
 
-const siteName = "Huyen's Hotels & Stays";
+const siteName =
+  "Huyen's Hotels & Stays";
+
+const blogUrl =
+  `${siteUrl}/blog`;
+
+const blogTitle =
+  "Blog du lịch TP.HCM | Huyen's Hotels & Stays";
+
+const blogDescription =
+  "Khám phá kinh nghiệm du lịch TP.HCM, ẩm thực, cuộc sống địa phương và những kinh nghiệm lưu trú hữu ích từ Huyen's Hotels & Stays.";
 
 type BlogPost = {
   id: number;
@@ -34,13 +44,16 @@ function getSupabaseServerClient() {
   );
 }
 
-async function getPosts(): Promise<BlogPost[]> {
-  const supabase = getSupabaseServerClient();
+async function getPosts(): Promise<
+  BlogPost[]
+> {
+  const supabase =
+    getSupabaseServerClient();
 
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select(
-      `
+  const { data, error } =
+    await supabase
+      .from("blog_posts")
+      .select(`
         id,
         slug,
         title_vi,
@@ -54,125 +67,389 @@ async function getPosts(): Promise<BlogPost[]> {
         read_time,
         featured,
         status
-      `
-    )
-    .eq("status", "active")
-    .order("date", { ascending: false });
+      `)
+      .eq("status", "active")
+      .order("date", {
+        ascending: false,
+      });
 
   if (error) {
-    console.error("Lỗi tải danh sách Blog:", error);
+    console.error(
+      "Lỗi tải danh sách Blog:",
+      error
+    );
+
     return [];
   }
 
-  return (data as BlogPost[]) || [];
+  return (
+    (data as BlogPost[]) ||
+    []
+  );
 }
 
+/* =========================================================
+   SEO METADATA
+========================================================= */
+
 export const metadata: Metadata = {
-  title: "Blog du lịch TP.HCM | Huyen's Hotels & Stays",
+  title: blogTitle,
+
   description:
-    "Khám phá kinh nghiệm du lịch TP.HCM, ẩm thực, cuộc sống địa phương và những kinh nghiệm lưu trú hữu ích từ Huyen's Hotels & Stays.",
+    blogDescription,
+
+  keywords: [
+    "blog du lịch TP.HCM",
+    "du lịch TP.HCM",
+    "kinh nghiệm du lịch TP.HCM",
+    "ẩm thực TP.HCM",
+    "địa điểm du lịch TP.HCM",
+    "kinh nghiệm lưu trú TP.HCM",
+    "Ho Chi Minh City travel",
+    "Huyen's Hotels & Stays",
+  ],
 
   alternates: {
-    canonical: `${siteUrl}/blog`,
-  },
-
-  openGraph: {
-    type: "website",
-    url: `${siteUrl}/blog`,
-    title: "Blog du lịch TP.HCM | Huyen's Hotels & Stays",
-    description:
-      "Khám phá kinh nghiệm du lịch TP.HCM, ẩm thực, cuộc sống địa phương và những kinh nghiệm lưu trú hữu ích.",
-    siteName,
-    locale: "vi_VN",
-  },
-
-  twitter: {
-    card: "summary",
-    title: "Blog du lịch TP.HCM | Huyen's Hotels & Stays",
-    description:
-      "Khám phá kinh nghiệm du lịch TP.HCM, ẩm thực, cuộc sống địa phương và những kinh nghiệm lưu trú hữu ích.",
+    canonical:
+      blogUrl,
   },
 
   robots: {
     index: true,
     follow: true,
+
     googleBot: {
       index: true,
       follow: true,
-      "max-image-preview": "large",
+      "max-image-preview":
+        "large",
       "max-snippet": -1,
-      "max-video-preview": -1,
+      "max-video-preview":
+        -1,
     },
+  },
+
+  openGraph: {
+    type: "website",
+
+    url:
+      blogUrl,
+
+    title:
+      blogTitle,
+
+    description:
+      blogDescription,
+
+    siteName:
+      siteName,
+
+    locale:
+      "vi_VN",
+
+    images: [
+      {
+        url:
+          `${siteUrl}/images/huyen-hotel-logo-v1.png`,
+        alt:
+          siteName,
+      },
+    ],
+  },
+
+  twitter: {
+    card:
+      "summary_large_image",
+
+    title:
+      blogTitle,
+
+    description:
+      blogDescription,
+
+    images: [
+      `${siteUrl}/images/huyen-hotel-logo-v1.png`,
+    ],
   },
 };
 
+/* =========================================================
+   PAGE
+========================================================= */
+
 export default async function BlogPage() {
-  const posts = await getPosts();
+  const posts =
+    await getPosts();
 
-  const blogStructuredData = {
-    "@context": "https://schema.org",
-    "@type": "Blog",
-    "@id": `${siteUrl}/blog#blog`,
-    url: `${siteUrl}/blog`,
-    name: "Blog du lịch TP.HCM | Huyen's Hotels & Stays",
-    description:
-      "Khám phá kinh nghiệm du lịch TP.HCM, ẩm thực, cuộc sống địa phương và những kinh nghiệm lưu trú hữu ích.",
+  /*
+   * Chỉ lấy các bài viết thực tế
+   * từ Supabase để tạo ItemList.
+   *
+   * Không hard-code URL bài viết.
+   */
+  const itemList =
+    posts
+      .slice(0, 50)
+      .map(
+        (post, index) => ({
+          "@type":
+            "ListItem",
 
-    publisher: {
-      "@type": "Organization",
-      name: siteName,
-      url: siteUrl,
-      logo: {
-        "@type": "ImageObject",
-        url: `${siteUrl}/hero/hero-1.webp`,
-      },
-    },
+          position:
+            index + 1,
 
-    blogPost: posts.slice(0, 20).map((post) => ({
-      "@type": "BlogPosting",
-      headline: post.title_vi,
-      url: `${siteUrl}/blog/${post.slug}`,
-      datePublished: post.date,
+          url:
+            `${siteUrl}/blog/${post.slug}`,
 
-      ...(post.image
-        ? {
-            image: post.image.startsWith("http")
-              ? post.image
-              : `${siteUrl}${
-                  post.image.startsWith("/")
-                    ? post.image
-                    : `/${post.image}`
-                }`,
-          }
-        : {}),
+          name:
+            post.title_vi,
+        })
+      );
 
-      ...(post.excerpt_vi
-        ? {
-            description: post.excerpt_vi,
-          }
-        : {}),
+  const blogPosts =
+    posts
+      .slice(0, 20)
+      .map(
+        (post) => {
+          const imageUrl =
+            post.image
+              ? post.image.startsWith(
+                  "http://"
+                ) ||
+                post.image.startsWith(
+                  "https://"
+                )
+                ? post.image
+                : `${siteUrl}${
+                    post.image.startsWith(
+                      "/"
+                    )
+                      ? post.image
+                      : `/${post.image}`
+                  }`
+              : undefined;
 
-      author: {
-        "@type": "Organization",
-        name: siteName,
-        url: siteUrl,
-      },
-    })),
-  };
+          return {
+            "@type":
+              "BlogPosting",
+
+            "@id":
+              `${siteUrl}/blog/${post.slug}#article`,
+
+            headline:
+              post.title_vi,
+
+            url:
+              `${siteUrl}/blog/${post.slug}`,
+
+            datePublished:
+              post.date,
+
+            ...(imageUrl
+              ? {
+                  image:
+                    imageUrl,
+                }
+              : {}),
+
+            ...(post.excerpt_vi
+              ? {
+                  description:
+                    post.excerpt_vi,
+                }
+              : {}),
+
+            ...(post.category_vi
+              ? {
+                  articleSection:
+                    post.category_vi,
+                }
+              : {}),
+
+            author: {
+              "@type":
+                "Organization",
+
+              name:
+                siteName,
+
+              url:
+                siteUrl,
+            },
+
+            publisher: {
+              "@type":
+                "Organization",
+
+              name:
+                siteName,
+
+              url:
+                siteUrl,
+
+              logo: {
+                "@type":
+                  "ImageObject",
+
+                url:
+                  `${siteUrl}/images/huyen-hotel-logo-v1.png`,
+              },
+            },
+
+            mainEntityOfPage: {
+              "@type":
+                "WebPage",
+
+              "@id":
+                `${siteUrl}/blog/${post.slug}`,
+            },
+
+            inLanguage:
+              "vi-VN",
+          };
+        }
+      );
+
+  const blogStructuredData =
+    {
+      "@context":
+        "https://schema.org",
+
+      "@graph": [
+        {
+          "@type":
+            "Blog",
+
+          "@id":
+            `${blogUrl}#blog`,
+
+          url:
+            blogUrl,
+
+          name:
+            blogTitle,
+
+          description:
+            blogDescription,
+
+          inLanguage:
+            "vi-VN",
+
+          publisher: {
+            "@type":
+              "Organization",
+
+            name:
+              siteName,
+
+            url:
+              siteUrl,
+
+            logo: {
+              "@type":
+                "ImageObject",
+
+              url:
+                `${siteUrl}/images/huyen-hotel-logo-v1.png`,
+            },
+          },
+        },
+
+        {
+          "@type":
+            "ItemList",
+
+          "@id":
+            `${blogUrl}#itemlist`,
+
+          name:
+            "Các bài viết du lịch TP.HCM",
+
+          url:
+            blogUrl,
+
+          numberOfItems:
+            itemList.length,
+
+          itemList:
+            itemList,
+        },
+
+        ...blogPosts,
+      ],
+    };
+
+  const breadcrumbStructuredData =
+    {
+      "@context":
+        "https://schema.org",
+
+      "@type":
+        "BreadcrumbList",
+
+      "@id":
+        `${blogUrl}#breadcrumb`,
+
+      itemListElement: [
+        {
+          "@type":
+            "ListItem",
+
+          position: 1,
+
+          name:
+            "Trang chủ",
+
+          item:
+            siteUrl,
+        },
+
+        {
+          "@type":
+            "ListItem",
+
+          position: 2,
+
+          name:
+            "Blog",
+
+          item:
+            blogUrl,
+        },
+      ],
+    };
 
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(blogStructuredData).replace(
-            /</g,
-            "\\u003c"
-          ),
+          __html:
+            JSON.stringify(
+              blogStructuredData
+            ).replace(
+              /</g,
+              "\\u003c"
+            ),
         }}
       />
 
-      <BlogPageClient posts={posts} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              breadcrumbStructuredData
+            ).replace(
+              /</g,
+              "\\u003c"
+            ),
+        }}
+      />
+
+      <BlogPageClient
+        posts={posts}
+      />
     </>
   );
 }
