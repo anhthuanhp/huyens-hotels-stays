@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -107,16 +108,17 @@ export default function Header() {
           <Link
             href="/"
             onClick={closeMobileMenu}
-            className="flex shrink-0 flex-col leading-none text-white drop-shadow-lg"
+            className="flex shrink-0 items-center drop-shadow-lg"
             aria-label="Huyen's Hotels & Stays"
           >
-            <span className="text-lg font-semibold tracking-tight sm:text-xl">
-              HUYEN'S
-            </span>
-
-            <span className="mt-1 text-[8px] font-medium uppercase tracking-[0.22em] text-white/80 sm:text-[9px]">
-              Hotels &amp; Stays
-            </span>
+            <Image
+              src="/images/huyen-hotel-logo-v1.png"
+              alt="Huyen's Hotels & Stays"
+              width={180}
+              height={60}
+              priority
+              className="h-auto w-[90px] sm:w-[105px] lg:w-[120px]"
+            />
           </Link>
 
           {/* =====================================================
@@ -475,4 +477,3 @@ export default function Header() {
     </header>
   );
 }
-

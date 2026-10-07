@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -97,12 +98,7 @@ export default function Footer() {
                   </>
                 )}
               </p>
-
-              <p className="pt-2">
-                {isVi
-                  ? "Đã đăng ký Bộ Công Thương"
-                  : "Registered with the Ministry of Industry and Trade"}
-              </p>
+             
             </div>
           </div>
 
@@ -138,6 +134,15 @@ export default function Footer() {
                 {isVi
                   ? "Chính sách bảo mật"
                   : "Privacy Policy"}
+              </Link>
+
+              <Link
+                href="/chinh-sach-khac"
+                className="block transition hover:text-white"
+              >
+                {isVi
+                  ? "Các chính sách khác"
+                  : "Other Policies"}
               </Link>
             </div>
           </div>
