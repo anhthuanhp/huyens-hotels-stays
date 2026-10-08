@@ -1,4 +1,3 @@
-
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -39,8 +38,9 @@ type ClientRoom = {
 };
 
 type StructuredRoom = {
-  "@type": "HotelRoom";
+  "@type": ["HotelRoom", "Product"];
   "@id": string;
+  identifier: string;
   name: string;
   description?: string;
   url: string;
@@ -69,6 +69,14 @@ type StructuredRoom = {
     price: number;
     availability: string;
     url: string;
+    businessFunction: string;
+    priceSpecification: {
+      "@type": "UnitPriceSpecification";
+      price: number;
+      priceCurrency: "VND";
+      unitCode: "DAY";
+      unitText: string;
+    };
     itemOffered: {
       "@id": string;
     };
@@ -381,8 +389,12 @@ function createHotelStructuredData(
           `${roomUrl}#room`;
 
         const roomData: StructuredRoom = {
-          "@type": "HotelRoom",
+          "@type": [
+            "HotelRoom",
+            "Product",
+          ],
           "@id": roomId,
+          identifier: String(room.id),
           name: roomName,
           url: roomUrl,
         };
@@ -480,6 +492,20 @@ function createHotelStructuredData(
             availability:
               "https://schema.org/InStock",
             url: roomUrl,
+            businessFunction:
+              "http://purl.org/goodrelations/v1#LeaseOut",
+            priceSpecification: {
+              "@type":
+                "UnitPriceSpecification",
+              price:
+                room.base_price,
+              priceCurrency:
+                "VND",
+              unitCode:
+                "DAY",
+              unitText:
+                "per night",
+            },
             itemOffered: {
               "@id": roomId,
             },
