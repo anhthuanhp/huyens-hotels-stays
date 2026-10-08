@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -38,7 +39,7 @@ type ClientRoom = {
 };
 
 type StructuredRoom = {
-  "@type": ["HotelRoom", "Product"];
+  "@type": "HotelRoom";
   "@id": string;
   name: string;
   description?: string;
@@ -91,6 +92,7 @@ const HOTEL_SEO: Record<
   {
     title: string;
     keywords: string[];
+    localDescription: string;
   }
 > = {
   "anh-kim-hotel": {
@@ -101,11 +103,15 @@ const HOTEL_SEO: Record<
       "Anh Kim Hotel TP.HCM",
       "khách sạn gần Bùi Viện",
       "khách sạn gần Bến Thành",
+      "khách sạn gần Chợ Bến Thành",
       "khách sạn Cô Bắc",
       "khách sạn trung tâm TP.HCM",
       "lưu trú gần Bùi Viện",
+      "lưu trú gần Bến Thành",
       "lưu trú trung tâm TP.HCM",
     ],
+    localDescription:
+      "thuận tiện di chuyển đến Bùi Viện, Chợ Bến Thành và các điểm tham quan tại trung tâm TP.HCM",
   },
 
   "ae-guesthouse": {
@@ -115,39 +121,55 @@ const HOTEL_SEO: Record<
       "A&E Guesthouse",
       "A&E Guesthouse TP.HCM",
       "guesthouse gần Bùi Viện",
-      "guesthouse Phạm Ngũ Lão",
+      "guesthouse gần Phạm Ngũ Lão",
+      "guesthouse gần Bến Thành",
+      "guesthouse gần Chợ Bến Thành",
       "khách sạn gần Bùi Viện",
       "khách sạn gần Phạm Ngũ Lão",
+      "lưu trú gần Bùi Viện",
       "lưu trú gần Bến Thành",
       "lưu trú trung tâm TP.HCM",
     ],
+    localDescription:
+      "thuận tiện di chuyển đến Bùi Viện, Phạm Ngũ Lão, Chợ Bến Thành và các điểm tham quan tại trung tâm TP.HCM",
   },
 
   "huyen-house": {
     title:
-      "Huyen House | Lưu trú tại Trung tâm TP.HCM",
+      "Huyen House | Gần Nguyễn Thị Minh Khai & Đại sứ quán Mỹ",
     keywords: [
       "Huyen House",
       "Huyen House TP.HCM",
+      "khách sạn Nguyễn Thị Minh Khai",
+      "lưu trú Nguyễn Thị Minh Khai",
+      "khách sạn gần Đại sứ quán Mỹ",
+      "khách sạn gần Lãnh sự quán Mỹ",
+      "khách sạn gần Bến Thành",
       "khách sạn trung tâm TP.HCM",
       "lưu trú trung tâm TP.HCM",
       "chỗ ở trung tâm TP.HCM",
-      "khách sạn gần Bến Thành",
-      "lưu trú TP.HCM",
     ],
+    localDescription:
+      "nằm tại khu vực Nguyễn Thị Minh Khai, thuận tiện đến Đại sứ quán Mỹ, Chợ Bến Thành và các điểm trung tâm TP.HCM",
   },
 
   huyenhomestay: {
     title:
-      "Huyenhomestay | Homestay tại Trung tâm TP.HCM",
+      "Huyen Homestay | Gần Nguyễn Thị Minh Khai & Đại sứ quán Mỹ",
     keywords: [
-      "Huyenhomestay",
-      "Huyenhomestay TP.HCM",
-      "homestay TP.HCM",
+      "Huyen Homestay",
+      "Huyen Homestay TP.HCM",
+      "homestay Nguyễn Thị Minh Khai",
+      "homestay gần Đại sứ quán Mỹ",
+      "homestay gần Lãnh sự quán Mỹ",
+      "homestay gần Bến Thành",
       "homestay trung tâm TP.HCM",
+      "lưu trú Nguyễn Thị Minh Khai",
       "lưu trú trung tâm TP.HCM",
-      "chỗ ở TP.HCM",
+      "chỗ ở trung tâm TP.HCM",
     ],
+    localDescription:
+      "nằm tại khu vực Nguyễn Thị Minh Khai, thuận tiện đến Đại sứ quán Mỹ, Chợ Bến Thành và các điểm trung tâm TP.HCM",
   },
 };
 
@@ -260,7 +282,10 @@ function truncateDescription(
 }
 
 function createHotelMetaDescription(
-  hotel: Hotel
+  hotel: Hotel,
+  seoConfig?: {
+    localDescription: string;
+  }
 ): string {
   const hotelName =
     hotel.name_vi ||
@@ -272,15 +297,10 @@ function createHotelMetaDescription(
     hotel.description_en ||
     "";
 
-  const address =
-    hotel.address_vi ||
-    hotel.address_en ||
-    "";
-
   const parts = [
     description,
-    address
-      ? `Địa chỉ: ${address}.`
+    seoConfig?.localDescription
+      ? seoConfig.localDescription + "."
       : "",
     "Xem phòng, tiện nghi, giá và thông tin lưu trú tại TP.HCM.",
   ].filter(Boolean);
@@ -294,12 +314,13 @@ function createHotelMetaDescription(
     );
   }
 
-  return `Khám phá ${hotelName}, xem phòng, tiện nghi, giá và thông tin lưu trú tại TP.HCM cùng Huyen's Hotels & Stays.`;
+  return `Khám phá ${hotelName}, ${seoConfig?.localDescription || "tại trung tâm TP.HCM"}. Xem phòng, tiện nghi và giá lưu trú.`;
 }
 
 /* =========================================================
    STRUCTURED DATA
-   Giữ nguyên schema hiện tại.
+   Chỉ phục vụ SEO.
+   Không thay đổi dữ liệu hoặc giao diện.
 ========================================================= */
 
 function createHotelStructuredData(
@@ -319,17 +340,17 @@ function createHotelStructuredData(
     hotel.name_en ||
     "Huyen's Hotels & Stays";
 
+  const seoConfig =
+    HOTEL_SEO[hotel.slug];
+
   const hotelDescription =
-    hotel.description_vi ||
-    hotel.description_en ||
-    "Thông tin lưu trú tại " +
-      hotelName +
-      ".";
+    createHotelMetaDescription(
+      hotel,
+      seoConfig
+    );
 
   const hotelUrl =
-    siteUrl +
-    "/khach-san/" +
-    hotel.slug;
+    `${siteUrl}/khach-san/${hotel.slug}`;
 
   const hotelImage =
     normalizeImageUrl(
@@ -354,20 +375,13 @@ function createHotelStructuredData(
           undefined;
 
         const roomUrl =
-          siteUrl +
-          "/khach-san/" +
-          hotel.slug +
-          "/phong/" +
-          room.slug;
+          `${siteUrl}/khach-san/${hotel.slug}/phong/${room.slug}`;
 
         const roomId =
-          roomUrl + "#room";
+          `${roomUrl}#room`;
 
         const roomData: StructuredRoom = {
-          "@type": [
-            "HotelRoom",
-            "Product",
-          ],
+          "@type": "HotelRoom",
           "@id": roomId,
           name: roomName,
           url: roomUrl,
@@ -481,12 +495,16 @@ function createHotelStructuredData(
   > = {
     "@type": "Hotel",
     "@id":
-      hotelUrl + "#hotel",
+      `${hotelUrl}#hotel`,
     name: hotelName,
     description:
       hotelDescription,
     url: hotelUrl,
-    image: hotelImage,
+    ...(hotelImage
+      ? {
+          image: [hotelImage],
+        }
+      : {}),
     address: {
       "@type":
         "PostalAddress",
@@ -494,8 +512,6 @@ function createHotelStructuredData(
         hotel.address_vi ||
         hotel.address_en ||
         undefined,
-      addressLocality:
-        "Ho Chi Minh City",
       addressCountry: "VN",
     },
   };
@@ -522,6 +538,22 @@ function createHotelStructuredData(
     };
   }
 
+  hotelStructuredData.parentOrganization = {
+    "@type": "Organization",
+    "@id":
+      `${siteUrl}#organization`,
+    name:
+      "Huyen's Hotels & Stays",
+    url: siteUrl,
+  };
+
+  if (
+    hotel.map_url
+  ) {
+    hotelStructuredData.hasMap =
+      hotel.map_url;
+  }
+
   if (
     roomStructuredData.length > 0
   ) {
@@ -540,8 +572,7 @@ function createHotelStructuredData(
     "@type":
       "BreadcrumbList",
     "@id":
-      hotelUrl +
-      "#breadcrumb",
+      `${hotelUrl}#breadcrumb`,
     itemListElement: [
       {
         "@type": "ListItem",
@@ -554,8 +585,7 @@ function createHotelStructuredData(
         position: 2,
         name: "Khách sạn",
         item:
-          siteUrl +
-          "/phong",
+          `${siteUrl}/phong`,
       },
       {
         "@type": "ListItem",
@@ -577,7 +607,7 @@ function createHotelStructuredData(
     graph.push({
       "@type": "FAQPage",
       "@id":
-        hotelUrl + "#faq",
+        `${hotelUrl}#faq`,
       mainEntity:
         validFaqs.map(
           (faq) => ({
@@ -648,7 +678,8 @@ export async function generateMetadata({
 
   const description =
     createHotelMetaDescription(
-      hotel
+      hotel,
+      seoConfig
     );
 
   const keywords =
@@ -657,6 +688,7 @@ export async function generateMetadata({
       hotelName,
       "khách sạn TP.HCM",
       "khách sạn trung tâm TP.HCM",
+      "khách sạn gần Bến Thành",
       "lưu trú TP.HCM",
       "Huyen's Hotels & Stays",
     ];

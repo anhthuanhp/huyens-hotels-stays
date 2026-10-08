@@ -38,14 +38,14 @@ export const HOME_FAQ_GROUPS: HomeFaqGroup[] = [
       {
         questionVi: "Tôi có cần thanh toán trước khi nhận phòng không?",
         questionEn: "Do I need to pay before check-in?",
-        answerVi: "Điều kiện thanh toán chưa được công bố thống nhất trên website và có thể tùy kênh đặt. Vui lòng xác nhận với khách sạn trước khi hoàn tất đặt phòng.",
-        answerEn: "Payment terms are not published as one site-wide policy and may depend on the booking channel. Please confirm with the hotel before completing your booking.",
+        answerVi: "Website không yêu cầu thanh toán dưới bất kỳ hình thức nào. Vui lòng xác nhận với trực tiếp với khách sạn.",
+        answerEn: "The website does not require payment in any form. Please confirm directly with the hotel..",
       },
       {
         questionVi: "Tôi có thể yêu cầu giữ phòng trước khi thanh toán không?",
         questionEn: "Can I ask the hotel to hold a room before payment?",
-        answerVi: "Website chưa công bố chính sách giữ phòng trước thanh toán. Hãy liên hệ khách sạn để xác nhận phòng và thời hạn giữ (nếu có).",
-        answerEn: "The website does not publish a policy for holding rooms before payment. Contact the hotel to confirm availability and any hold period.",
+        answerVi: "Bạn có thể yêu cầu giữ phòng, tuy nhiên trường hợp này bạn phải thanh toán một khoản tiền đặt cọc, và nên liên hệ đúng với khách sạn.",
+        answerEn: "You can request to hold a room; however, this requires a deposit, and you should contact the hotel directly..",
       },
       {
         questionVi: "Tôi có thể thay đổi ngày lưu trú sau khi đặt phòng không?",
@@ -56,8 +56,8 @@ export const HOME_FAQ_GROUPS: HomeFaqGroup[] = [
       {
         questionVi: "Tôi có thể hủy phòng không? Chính sách hủy như thế nào?",
         questionEn: "Can I cancel my booking? What is the cancellation policy?",
-        answerVi: "Điều kiện hủy và hoàn tiền phụ thuộc đặt phòng cụ thể. Website hiện chưa có chính sách hủy chi tiết; vui lòng xác nhận với nơi bạn đã đặt trước khi hủy.",
-        answerEn: "Cancellation and refund terms depend on the booking. The website does not currently provide detailed cancellation terms; confirm with your booking provider before cancelling.",
+        answerVi: "Điều kiện hủy và hoàn tiền phụ thuộc đặt phòng cụ thể và chính sách hoàn-hủy của khách sạn; vui lòng xác nhận với nơi bạn đã đặt trước khi hủy.",
+        answerEn: "Cancellation and refund conditions depend on the specific booking and the hotel's cancellation and refund policy; please confirm with your booking provider before cancelling.",
       },
       {
         questionVi: "Tôi có nhận được xác nhận đặt phòng sau khi đặt không?",
@@ -146,14 +146,14 @@ export const HOME_FAQ_GROUPS: HomeFaqGroup[] = [
       {
         questionVi: "Trẻ em có tính thêm phí không?",
         questionEn: "Is there an extra charge for children?",
-        answerVi: "Phụ phí trẻ em chưa có quy định chung được công bố. Vui lòng hỏi khách sạn về độ tuổi và mức phí áp dụng cho đặt phòng của bạn.",
-        answerEn: "No site-wide child supplement is published. Ask the hotel which age limits and fees apply to your booking.",
+        answerVi: "Phụ phí trẻ em hầu như được miễn phí. Vui lòng cung cấp cho khách sạn về độ tuổi của trẻ em.",
+        answerEn: "Child surcharges are generally waived. Please inform the hotel of the children's ages..",
       },
       {
         questionVi: "Tôi có thể yêu cầu giường phụ không?",
         questionEn: "Can I request an extra bed?",
-        answerVi: "Bạn có thể ghi yêu cầu vào phần ghi chú khi đặt phòng. Khách sạn cần xác nhận khả năng bố trí và phụ phí (nếu có).",
-        answerEn: "You can add the request to your booking note. The hotel must confirm availability and any applicable fee.",
+        answerVi: "Khách sạn chúng tôi không cung cấp thêm giường phụ.",
+        answerEn: "We do not provide extra beds.",
       },
       {
         questionVi: "Tôi có thể yêu cầu phòng ở tầng thấp/tầng cao không?",
@@ -200,8 +200,8 @@ export const HOME_FAQ_GROUPS: HomeFaqGroup[] = [
       {
         questionVi: "Tôi có thể chuyển khoản trước không?",
         questionEn: "Can I pay by bank transfer in advance?",
-        answerVi: "Website chưa công bố thông tin tài khoản hoặc quy trình chuyển khoản chung. Chỉ chuyển khoản sau khi xác nhận thông tin thanh toán qua kênh chính thức của khách sạn.",
-        answerEn: "The website does not publish general bank transfer details or instructions. Transfer only after confirming payment information through the hotel’s official channel.",
+        answerVi: "Trên website không yêu cầu chuyển khoản trước. Chỉ chuyển khoản sau khi xác nhận thông tin thanh toán qua kênh chính thức của khách sạn.",
+        answerEn: "There is no requirement to make a bank transfer in advance on the website. Transfer only after confirming payment information through the hotel’s official channel.",
       },
       {
         questionVi: "Giá phòng đã bao gồm thuế và phí chưa?",
@@ -230,32 +230,32 @@ export const HOME_FAQ_GROUPS: HomeFaqGroup[] = [
       {
         questionVi: "Từ khách sạn đến Bùi Viện mất bao lâu?",
         questionEn: "How long does it take to get from a hotel to Bui Vien Street?",
-        answerVi: "Thời gian phụ thuộc khách sạn, phương tiện và giao thông; website chưa có thời gian di chuyển đã xác minh. Xem địa chỉ khách sạn và kiểm tra bản đồ theo giờ khởi hành.",
-        answerEn: "Travel time depends on the hotel, transport, and traffic; the website does not provide a verified estimate. Check the hotel address and a map for your departure time.",
+        answerVi: "Thời gian phụ thuộc khách sạn, phương tiện và giao thông; Xem địa chỉ khách sạn và kiểm tra bản đồ theo giờ khởi hành.",
+        answerEn: "Travel time depends on the hotel, transport, and traffic; Check the hotel address and a map for your departure time.",
       },
       {
         questionVi: "Từ khách sạn đến chợ Bến Thành mất bao lâu?",
         questionEn: "How long does it take to get from a hotel to Ben Thanh Market?",
-        answerVi: "Thời gian phụ thuộc khách sạn, phương tiện và giao thông; website chưa có thời gian di chuyển đã xác minh. Xem địa chỉ khách sạn và kiểm tra bản đồ theo giờ khởi hành.",
-        answerEn: "Travel time depends on the hotel, transport, and traffic; the website does not provide a verified estimate. Check the hotel address and a map for your departure time.",
+        answerVi: "Thời gian phụ thuộc khách sạn, phương tiện và giao thông; Xem địa chỉ khách sạn và kiểm tra bản đồ theo giờ khởi hành.",
+        answerEn: "Travel time depends on the hotel, transport, and traffic; Check the hotel address and a map for your departure time.",
       },
       {
         questionVi: "Từ khách sạn đến phố đi bộ Nguyễn Huệ mất bao lâu?",
         questionEn: "How long does it take to get from a hotel to Nguyen Hue Walking Street?",
-        answerVi: "Thời gian phụ thuộc khách sạn, phương tiện và giao thông; website chưa có thời gian di chuyển đã xác minh. Xem địa chỉ khách sạn và kiểm tra bản đồ theo giờ khởi hành.",
-        answerEn: "Travel time depends on the hotel, transport, and traffic; the website does not provide a verified estimate. Check the hotel address and a map for your departure time.",
+        answerVi: "Thời gian phụ thuộc khách sạn, phương tiện và giao thông; Xem địa chỉ khách sạn và kiểm tra bản đồ theo giờ khởi hành.",
+        answerEn: "Travel time depends on the hotel, transport, and traffic; Check the hotel address and a map for your departure time.",
       },
       {
         questionVi: "Từ sân bay Tân Sơn Nhất đến khách sạn mất bao lâu?",
         questionEn: "How long does it take to get from Tan Son Nhat Airport to a hotel?",
-        answerVi: "Thời gian di chuyển thay đổi theo khách sạn, phương tiện và giao thông. Website chưa có thời gian ước tính đã xác minh; hãy kiểm tra bản đồ vào thời điểm đến dự kiến.",
-        answerEn: "Travel time varies by hotel, transport, and traffic. The website does not provide a verified estimate; check a map for your expected arrival time.",
+        answerVi: "Thời gian di chuyển thay đổi theo khách sạn, phương tiện và giao thông. hãy kiểm tra bản đồ vào thời điểm đến dự kiến.",
+        answerEn: "Travel time varies by hotel, transport, and traffic. check a map for your expected arrival time.",
       },
       {
         questionVi: "Khách sạn có hỗ trợ đưa đón sân bay không?",
         questionEn: "Does the hotel provide airport transfers?",
-        answerVi: "Dịch vụ đưa đón sân bay chưa được xác nhận chung cho các khách sạn. Vui lòng hỏi khách sạn bạn chọn trước khi đặt xe.",
-        answerEn: "Airport transfers are not confirmed as a service across all hotels. Ask your chosen hotel before arranging transport.",
+        answerVi: "Chúng tôi có cung cấp dịch vụ đưa đón tại sân bay. Vui lòng hỏi khách sạn bạn chọn trước khi đặt xe.",
+        answerEn: "We provide airport transfer services.. Ask your chosen hotel before arranging transport.",
       },
       {
         questionVi: "Gần khách sạn có nhà hàng, quán cà phê và cửa hàng tiện lợi không?",
@@ -266,8 +266,8 @@ export const HOME_FAQ_GROUPS: HomeFaqGroup[] = [
       {
         questionVi: "Có chỗ gửi xe gần khách sạn không?",
         questionEn: "Is parking available near the hotel?",
-        answerVi: "Thông tin bãi đỗ xe chưa được xác nhận chung. Hãy hỏi khách sạn về chỗ gửi xe, khoảng cách và phí trước khi đến.",
-        answerEn: "Parking is not confirmed as a site-wide amenity. Ask the hotel about nearby parking, distance, and fees before arrival.",
+        answerVi: "Có và còn tùy vào từng khách sạn. Hãy hỏi khách sạn về chỗ gửi xe, khoảng cách và phí trước khi đến.",
+        answerEn: "Yes, though it depends on the specific hotel.. Ask the hotel about nearby parking, distance, and fees before arrival.",
       },
     ],
   },
@@ -302,8 +302,8 @@ export const HOME_FAQ_GROUPS: HomeFaqGroup[] = [
       {
         questionVi: "Phòng có máy sấy tóc không?",
         questionEn: "Do the rooms have a hair dryer?",
-        answerVi: "Website chưa xác nhận máy sấy tóc cho mọi phòng. Vui lòng xem tiện nghi của loại phòng hoặc hỏi khách sạn.",
-        answerEn: "The website does not confirm hair dryers in every room. Check the room amenities or ask the hotel.",
+        answerVi: "Có máy sấy tóc tại tất cả các phòng. Vui lòng xem tiện nghi của loại phòng hoặc hỏi khách sạn.",
+        answerEn: "Hairdryers are available in all rooms. Check the room amenities or ask the hotel.",
       },
       {
         questionVi: "Khách sạn có thang máy không?",
@@ -320,8 +320,8 @@ export const HOME_FAQ_GROUPS: HomeFaqGroup[] = [
       {
         questionVi: "Có dịch vụ giặt ủi không?",
         questionEn: "Is laundry service available?",
-        answerVi: "Dịch vụ giặt ủi chưa được xác nhận chung cho các khách sạn. Liên hệ khách sạn để hỏi dịch vụ, thời gian và mức phí.",
-        answerEn: "Laundry service is not confirmed across all hotels. Contact the hotel to ask about service, timing, and fees.",
+        answerVi: "Chúng tôi có cung cấp dịch vụ giặt là có tính phí, và bạn cũng có thể tự giặt là tại một số khash sạn miễn phí. Liên hệ khách sạn để hỏi dịch vụ, thời gian và mức phí.",
+        answerEn: "We offer paid laundry services, and at some hotels, you can also do your own laundry for free. Contact the hotel to ask about service, timing, and fees.",
       },
     ],
   },
@@ -344,20 +344,20 @@ export const HOME_FAQ_GROUPS: HomeFaqGroup[] = [
       {
         questionVi: "Thuê dài ngày có được ưu đãi không?",
         questionEn: "Are discounts available for long stays?",
-        answerVi: "Website chưa công bố ưu đãi dài ngày chung. Giá/ưu đãi có thể tùy khách sạn và thời gian thuê; vui lòng hỏi trước khi đặt.",
-        answerEn: "The website does not publish a general long-stay discount. Rates or offers may depend on the hotel and length of stay; ask before booking.",
+        answerVi: "Có, chúng tôi thường đề suất giảm phí từ 5%-10%; vui lòng hỏi trước khi đặt.",
+        answerEn: "Yes, we often suggest a discount of 5%–10%; please ask before booking.",
       },
       {
         questionVi: "Giá thuê tháng đã bao gồm điện, nước và Wi-Fi chưa?",
         questionEn: "Does the monthly rate include electricity, water, and Wi-Fi?",
-        answerVi: "Các khoản điện, nước và Wi-Fi chưa có quy định bao gồm chung được công bố. Hãy xác nhận các khoản này với khách sạn trước khi thuê.",
-        answerEn: "The website does not publish a site-wide inclusion policy for utilities or Wi-Fi. Confirm these items with the hotel before renting.",
+        answerVi: "Giá đã bao gồm mọi dịch vụ có sẵn tại khách sạn. Hãy xác nhận các khoản này với khách sạn trước khi thuê.",
+        answerEn: "The price includes all services available at the hotel. Confirm these items with the hotel before renting.",
       },
       {
         questionVi: "Thuê phòng theo tháng cần đặt cọc không?",
         questionEn: "Is a deposit required for a monthly stay?",
-        answerVi: "Điều kiện đặt cọc chưa được công bố chung. Vui lòng hỏi khách sạn về số tiền, thời điểm và điều kiện hoàn cọc.",
-        answerEn: "Deposit terms are not published site-wide. Ask the hotel about the amount, timing, and refund conditions.",
+        answerVi: "Không, bạn phải thanh toán tiền thuê trước. Vui lòng hỏi khách sạn về số tiền, thời điểm và điều kiện hoàn cọc.",
+        answerEn: "No, you have to pay the rent in advance. Ask the hotel about the amount, timing, and refund conditions.",
       },
       {
         questionVi: "Tôi có thể gia hạn thời gian lưu trú không?",

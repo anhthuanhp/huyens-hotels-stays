@@ -83,27 +83,24 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps) {
   return (
-    <html lang="vi" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="vi"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col bg-white text-neutral-900 font-sans">
-        {/* === Schema Hotel — Google hiểu ngay thông tin === */}
+        {/* === Schema Organization — Nhận diện thương hiệu Huyen's Hotels & Stays === */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "Hotel",
-              name: "Huyen's Hotels & Stays",
+              "@type": "Organization",
+              "@id": `${siteUrl}#organization`,
+              name: siteName,
               url: siteUrl,
-              address: {
-                "@type": "PostalAddress",
-                streetAddress: "18A/139 Nguyễn Thị Minh Khai",
-                addressLocality: "Thành phố Hồ Chí Minh",
-                addressRegion: "Quận 1",
-                addressCountry: "VN",
-              },
               telephone: "+84 902095669",
-              priceRange: "$$",
-              description: "Khách sạn, homestay và căn hộ dịch vụ tại trung tâm Quận 1 TP.HCM, gần chợ Bến Thành và phố đi bộ Nguyễn Huệ.",
+              description:
+                "Huyen's Hotels & Stays cung cấp khách sạn, homestay và căn hộ dịch vụ tại trung tâm Thành phố Hồ Chí Minh.",
             }),
           }}
         />

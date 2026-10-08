@@ -114,6 +114,68 @@ type Props = {
   initialNearby: HotelNearbyData;
 };
 
+/* =========================================================
+  SEO LOCAL CONTENT
+  Chỉ phục vụ H1 và nội dung giới thiệu địa phương.
+  Không ảnh hưởng booking hoặc dữ liệu khách sạn.
+========================================================= */
+
+const HOTEL_LOCAL_SEO: Record<
+  string,
+  {
+    vi: string;
+    en: string;
+  }
+> = {
+  "anh-kim-hotel": {
+    vi: "Khách sạn tại khu vực Cô Bắc, thuận tiện di chuyển đến Bùi Viện, Bến Thành và các điểm tham quan ở trung tâm TP.HCM.",
+    en: "A hotel in the Co Bac area, conveniently located for Bui Vien, Ben Thanh and central Ho Chi Minh City attractions.",
+  },
+
+  "ae-guesthouse": {
+    vi: "Guesthouse gần Bùi Viện và Phạm Ngũ Lão, thuận tiện đến Bến Thành và các điểm tham quan ở trung tâm TP.HCM.",
+    en: "A guesthouse near Bui Vien and Pham Ngu Lao, convenient for Ben Thanh and central Ho Chi Minh City attractions.",
+  },
+
+  "huyen-house": {
+    vi: "Lưu trú tại khu vực Nguyễn Thị Minh Khai, thuận tiện di chuyển đến Bến Thành, Đại sứ quán Mỹ và các điểm trung tâm TP.HCM.",
+    en: "Stay in the Nguyen Thi Minh Khai area, conveniently located near Ben Thanh, the US Consulate and central Ho Chi Minh City.",
+  },
+
+  huyenhomestay: {
+    vi: "Homestay tại khu vực Nguyễn Thị Minh Khai, thuận tiện di chuyển đến Bến Thành, Đại sứ quán Mỹ và trung tâm TP.HCM.",
+    en: "A homestay in the Nguyen Thi Minh Khai area, conveniently located near Ben Thanh, the US Consulate and central Ho Chi Minh City.",
+  },
+};
+
+const HOTEL_H1_SEO: Record<
+  string,
+  {
+    vi: string;
+    en: string;
+  }
+> = {
+  "anh-kim-hotel": {
+    vi: "Anh Kim Hotel – Gần Bùi Viện và Bến Thành",
+    en: "Anh Kim Hotel – Near Bui Vien and Ben Thanh",
+  },
+
+  "ae-guesthouse": {
+    vi: "A&E Guesthouse – Gần Bùi Viện, Phạm Ngũ Lão và Bến Thành",
+    en: "A&E Guesthouse – Near Bui Vien, Pham Ngu Lao and Ben Thanh",
+  },
+
+  "huyen-house": {
+    vi: "Huyen House – Gần Nguyễn Thị Minh Khai, Bến Thành và Đại sứ quán Mỹ",
+    en: "Huyen House – Near Nguyen Thi Minh Khai, Ben Thanh and the US Consulate",
+  },
+
+  huyenhomestay: {
+    vi: "Huyen Homestay – Gần Nguyễn Thị Minh Khai, Bến Thành và Đại sứ quán Mỹ",
+    en: "Huyen Homestay – Near Nguyen Thi Minh Khai, Ben Thanh and the US Consulate",
+  },
+};
+
 function extractMapUrl(value: string | null): string | null {
   if (!value) {
     return null;
@@ -449,6 +511,18 @@ export default function HotelDetailClient({
         initialHotel.description_vi ||
         "";
 
+  const localSeoContent =
+    HOTEL_LOCAL_SEO[initialHotel.slug];
+
+  const seoH1 =
+    HOTEL_H1_SEO[initialHotel.slug];
+
+  const displayH1 =
+    seoH1?.[language] || hotelName;
+
+  const displayLocalDescription =
+    localSeoContent?.[language] || "";
+
   const mapUrl = extractMapUrl(
     initialHotel.map_url
   );
@@ -465,7 +539,7 @@ export default function HotelDetailClient({
           <div className="min-w-0">
             <section>
               <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-                {hotelName}
+                {displayH1}
               </h1>
 
               {hotelAddress && (
@@ -479,6 +553,12 @@ export default function HotelDetailClient({
                 <div className="mt-5 whitespace-pre-line text-[15px] leading-7 text-slate-600">
                   {hotelDescription}
                 </div>
+              )}
+
+              {displayLocalDescription && (
+                <p className="mt-3 text-[15px] leading-7 text-slate-600">
+                  {displayLocalDescription}
+                </p>
               )}
             </section>
 

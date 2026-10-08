@@ -61,7 +61,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-sky-700 bg-sky-900 px-6 py-12 text-white">
       <div className="mx-auto max-w-7xl">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
           {/* THÔNG TIN HUYEN'S */}
           <div>
             <Link href="/" className="block">
@@ -84,6 +84,12 @@ export default function Footer() {
               </p>
 
               <p>
+                {isVi
+                  ? "Mã số thuế: 0318433728"
+                  : "Tax ID: 0318433728"}
+              </p>
+
+              <p>
                 {isVi ? (
                   <>
                     Địa chỉ: 18A/139 Nguyễn Thị Minh Khai,
@@ -98,7 +104,6 @@ export default function Footer() {
                   </>
                 )}
               </p>
-             
             </div>
           </div>
 
@@ -207,53 +212,6 @@ export default function Footer() {
                   buihongnhung83@gmail.com
                 </span>
               </div>
-            </div>
-          </div>
-
-          {/* THEO DÕI */}
-          <div>
-            <h3 className="text-sm font-semibold text-white">
-              {isVi
-                ? "Theo dõi chúng tôi"
-                : "Follow Us"}
-            </h3>
-
-            <div className="mt-4 space-y-3 text-sm text-white/75">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block transition hover:text-white"
-              >
-                Facebook
-              </a>
-
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block transition hover:text-white"
-              >
-                Instagram
-              </a>
-
-              <a
-                href="https://tiktok.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block transition hover:text-white"
-              >
-                TikTok
-              </a>
-
-              <a
-                href="https://maps.google.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block transition hover:text-white"
-              >
-                Google Maps
-              </a>
             </div>
           </div>
         </div>

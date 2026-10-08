@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -464,13 +463,16 @@ export default function HomeClient({
                               slide.image_url
                             }
                             alt={
-                              isFirst
-                                ? title ||
-                                  "Huyen's Hotels & Stays"
-                                : ""
+                              title ||
+                              "Huyen's Hotels & Stays"
                             }
                             fill
                             preload={isFirst}
+                            loading={
+                              isFirst
+                                ? "eager"
+                                : "lazy"
+                            }
                             quality={80}
                             sizes="(max-width: 640px) 100vw, (max-width: 1280px) calc(100vw - 32px), 1280px"
                             className="object-cover"
@@ -1128,6 +1130,7 @@ export default function HomeClient({
             )}
           </div>
         </section>
+
         {/* HỎI ĐÁP TRƯỚC KHI ĐẶT PHÒNG */}
         <section
           id="cau-hoi-thuong-gap"
@@ -1179,9 +1182,16 @@ export default function HomeClient({
                   </summary>
                   <div className="border-t border-neutral-200 px-2 sm:px-4">
                     {group.items.map((item) => (
-                      <details key={item.questionEn} className="group/item border-b border-neutral-100 px-3 py-4 last:border-b-0">
+                      <details
+                        key={item.questionEn}
+                        className="group/item border-b border-neutral-100 px-3 py-4 last:border-b-0"
+                      >
                         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium leading-6 text-neutral-900 marker:hidden">
-                          <span>{isVi ? item.questionVi : item.questionEn}</span>
+                          <span>
+                            {isVi
+                              ? item.questionVi
+                              : item.questionEn}
+                          </span>
                           <span
                             aria-hidden="true"
                             className="shrink-0 text-lg text-sky-700 transition-transform group-open/item:rotate-45"
@@ -1190,21 +1200,34 @@ export default function HomeClient({
                           </span>
                         </summary>
                         <p className="mt-3 pr-7 text-sm leading-6 text-neutral-600">
-                          {isVi ? item.answerVi : item.answerEn}
+                          {isVi
+                            ? item.answerVi
+                            : item.answerEn}
                         </p>
                         {group.titleEn === "Location & transport" &&
                           item.questionEn === "Where are Huyen’s hotels located?" && (
                             <ul className="mt-3 space-y-2 pr-7 text-sm leading-6 text-neutral-600">
                               {hotels.map((hotel) => {
-                                const address = isVi ? hotel.address_vi : hotel.address_en;
-                                if (!address) return null;
+                                const address = isVi
+                                  ? hotel.address_vi
+                                  : hotel.address_en;
+
+                                if (!address) {
+                                  return null;
+                                }
+
                                 return (
                                   <li key={hotel.id}>
                                     <Link
                                       href={`/khach-san/${hotel.slug}`}
                                       className="font-medium text-sky-800 hover:underline"
                                     >
-                                      {t(hotel.name_vi, hotel.name_en) as string}
+                                      {
+                                        t(
+                                          hotel.name_vi,
+                                          hotel.name_en
+                                        ) as string
+                                      }
                                     </Link>
                                     {`: ${address}`}
                                   </li>
@@ -1224,17 +1247,28 @@ export default function HomeClient({
                 {isVi
                   ? "Cần xác nhận thông tin theo khách sạn hoặc kênh đặt phòng? Gọi "
                   : "Need to confirm details for a hotel or booking channel? Call "}
-                <a className="font-semibold text-sky-800 hover:underline" href="tel:+84902095669">
+                <a
+                  className="font-semibold text-sky-800 hover:underline"
+                  href="tel:+84902095669"
+                >
                   +84 902 095 669
                 </a>
                 {isVi ? " hoặc " : " or "}
-                <a className="font-semibold text-sky-800 hover:underline" href="mailto:buihongnhung83@gmail.com">
+                <a
+                  className="font-semibold text-sky-800 hover:underline"
+                  href="mailto:buihongnhung83@gmail.com"
+                >
                   buihongnhung83@gmail.com
                 </a>.
               </p>
               <p className="mt-2">
-                <Link href="#hotels" className="font-semibold text-sky-800 hover:underline">
-                  {isVi ? "Xem các khách sạn và địa chỉ →" : "View hotels and addresses →"}
+                <Link
+                  href="#hotels"
+                  className="font-semibold text-sky-800 hover:underline"
+                >
+                  {isVi
+                    ? "Xem các khách sạn và địa chỉ →"
+                    : "View hotels and addresses →"}
                 </Link>
               </p>
             </div>
