@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -476,6 +477,15 @@ function createHotelStructuredData(
             );
         }
 
+        /*
+         * Google yêu cầu Product phải có ít nhất một trong:
+         * - offers
+         * - review
+         * - aggregateRating
+         *
+         * Không thay đổi cấu trúc dữ liệu phòng.
+         * Schema sử dụng room.base_price hiện có.
+         */
         if (
           typeof room.base_price ===
             "number" &&
