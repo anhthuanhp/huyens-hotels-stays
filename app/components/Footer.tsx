@@ -209,7 +209,7 @@ export default function Footer() {
                   <span className="font-medium">
                     Email:
                   </span>{" "}
-                  buihongnhung83@gmail.com
+                  contact@huyenhotels.com; reception@huyenhotels.com
                 </span>
               </div>
             </div>
