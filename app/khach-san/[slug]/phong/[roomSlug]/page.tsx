@@ -744,10 +744,7 @@ export default async function RoomDetailPage({
       string,
       unknown
     > = {
-      "@type": [
-        "HotelRoom",
-        "Product",
-      ],
+      "@type": "HotelRoom",
       "@id":
         roomUrl + "#room",
       name: roomName,

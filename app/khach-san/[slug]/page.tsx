@@ -539,12 +539,13 @@ function createHotelStructuredData(
         }
       : {}),
     address: {
-      "@type":
-        "PostalAddress",
+      "@type": "PostalAddress",
       streetAddress:
         hotel.address_vi ||
         hotel.address_en ||
         undefined,
+      addressLocality: "Ho Chi Minh City",
+      addressRegion: "Ho Chi Minh City",
       addressCountry: "VN",
     },
   };
