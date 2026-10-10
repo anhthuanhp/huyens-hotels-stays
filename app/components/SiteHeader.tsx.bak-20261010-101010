@@ -45,67 +45,36 @@ function getBackLink(pathname: string, language: Language): BackLink {
   };
 }
 
-function VietnamFlag() {
-  return (
-    <svg
-      viewBox="0 0 30 20"
-      className="h-[13px] w-[19px] shrink-0 rounded-[2px] shadow-sm"
-      aria-hidden="true"
-    >
-      <rect width="30" height="20" fill="#DA251D" />
-      <path
-        d="M15 3.5 17.1 9h5.8l-4.7 3.4 1.8 5.6-5-3.5-5 3.5 1.8-5.6L7.1 9h5.8z"
-        fill="#FFDD00"
-      />
-    </svg>
-  );
-}
-
-function UKFlag() {
-  return (
-    <svg
-      viewBox="0 0 30 20"
-      className="h-[13px] w-[19px] shrink-0 rounded-[2px] shadow-sm"
-      aria-hidden="true"
-    >
-      <rect width="30" height="20" fill="#012169" />
-      <path
-        d="M0 0 30 20 M30 0 0 20"
-        stroke="#FFFFFF"
-        strokeWidth="4"
-      />
-      <path
-        d="M0 0 30 20 M30 0 0 20"
-        stroke="#C8102E"
-        strokeWidth="1.5"
-      />
-      <path d="M15 0v20 M0 10h30" stroke="#FFFFFF" strokeWidth="6" />
-      <path d="M15 0v20 M0 10h30" stroke="#C8102E" strokeWidth="3" />
-    </svg>
-  );
-}
-
 export default function SiteHeader() {
   const pathname = usePathname() ?? "/";
   const [language, setLanguage] = useState<Language>("vi");
 
   useEffect(() => {
-    const syncLanguage = (event?: Event) => {
-      const detail = (event as CustomEvent<Language> | undefined)?.detail;
-      const stored = window.localStorage.getItem("huyen-language");
-      const next = detail === "vi" || detail === "en" ? detail : stored;
+    const savedLanguage = window.localStorage.getItem("huyen-language");
 
-      if (next === "vi" || next === "en") {
-        setLanguage(next);
+    if (savedLanguage === "vi" || savedLanguage === "en") {
+      setLanguage(savedLanguage);
+    }
+
+    const handleLanguageChange = (event: Event) => {
+      const customEvent = event as CustomEvent<Language>;
+      const nextLanguage = customEvent.detail;
+
+      if (nextLanguage === "vi" || nextLanguage === "en") {
+        setLanguage(nextLanguage);
+      } else {
+        const stored = window.localStorage.getItem("huyen-language");
+
+        if (stored === "vi" || stored === "en") {
+          setLanguage(stored);
+        }
       }
     };
 
-    syncLanguage();
-
-    window.addEventListener("language-change", syncLanguage);
+    window.addEventListener("language-change", handleLanguageChange);
 
     return () => {
-      window.removeEventListener("language-change", syncLanguage);
+      window.removeEventListener("language-change", handleLanguageChange);
     };
   }, []);
 
@@ -148,51 +117,42 @@ export default function SiteHeader() {
         <div className="flex items-center gap-3 sm:gap-5">
           <Link
             href={back.href}
-            className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-slate-900 sm:gap-2 sm:text-sm"
+            className="inline-flex min-h-10 items-center gap-2 text-xs font-medium text-slate-600 transition hover:text-slate-950 sm:text-sm"
           >
             <span aria-hidden="true">←</span>
             <span>{back.label}</span>
           </Link>
 
-          <nav
-            aria-label="Language selection"
-            className="flex shrink-0 items-center gap-2 text-sm sm:gap-3"
+          <div
+            className="flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 p-1"
+            aria-label="Choose language"
           >
             <button
               type="button"
               onClick={() => changeLanguage("vi")}
               aria-pressed={language === "vi"}
-              className={`inline-flex min-h-10 items-center gap-1.5 transition sm:gap-2 ${
+              className={`min-h-8 rounded-full px-3 text-xs font-semibold transition sm:px-4 sm:text-sm ${
                 language === "vi"
-                  ? "font-semibold text-sky-600"
-                  : "font-medium text-slate-400 hover:text-slate-700"
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-white hover:text-slate-900"
               }`}
             >
-              <VietnamFlag />
-              <span>VI</span>
+              VI
             </button>
-
-            <span
-              aria-hidden="true"
-              className="select-none text-slate-300"
-            >
-              |
-            </span>
 
             <button
               type="button"
               onClick={() => changeLanguage("en")}
               aria-pressed={language === "en"}
-              className={`inline-flex min-h-10 items-center gap-1.5 transition sm:gap-2 ${
+              className={`min-h-8 rounded-full px-3 text-xs font-semibold transition sm:px-4 sm:text-sm ${
                 language === "en"
-                  ? "font-semibold text-sky-600"
-                  : "font-medium text-slate-400 hover:text-slate-700"
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-white hover:text-slate-900"
               }`}
             >
-              <UKFlag />
-              <span>EN</span>
+              EN
             </button>
-          </nav>
+          </div>
         </div>
       </div>
     </header>
