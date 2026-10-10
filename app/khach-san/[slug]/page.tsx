@@ -39,7 +39,7 @@ type ClientRoom = {
 };
 
 type StructuredRoom = {
-  "@type": ["HotelRoom", "Product"];
+  "@type": "HotelRoom";
   "@id": string;
   identifier: string;
   name: string;
@@ -390,10 +390,7 @@ function createHotelStructuredData(
           `${roomUrl}#room`;
 
         const roomData: StructuredRoom = {
-          "@type": [
-            "HotelRoom",
-            "Product",
-          ],
+          "@type": "HotelRoom",
           "@id": roomId,
           identifier: String(room.id),
           name: roomName,
