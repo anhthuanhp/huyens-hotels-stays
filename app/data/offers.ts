@@ -34,7 +34,7 @@ export const offers: Offer[] = [
       "Rates and conditions may vary by property.",
       "Cannot be combined with selected other promotions.",
     ],
-    image: "/images/hotels/anh-kim.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/anh-kim-hotel/anh-kim-hotel-khach-san-anh-dai-dien-01-m97.webp",
     hotelSlugs: [
       "anh-kim-hotel",
       "ae-guesthouse",
@@ -64,7 +64,7 @@ export const offers: Offer[] = [
       "Subject to room availability.",
       "Please check the applicable conditions when booking.",
     ],
-    image: "/images/hotels/huyen-house.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/huyen-house/huyen-house-khach-san-anh-dai-dien-01-m96.webp",
     hotelSlugs: [
       "huyen-house",
       "huyenhomestay",
@@ -92,7 +92,7 @@ export const offers: Offer[] = [
       "Limited promotional inventory.",
       "Final rates are confirmed at the time of booking.",
     ],
-    image: "/images/hotels/ae-guesthouse.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/ae-guesthouse/ae-guesthouse-khach-san-anh-dai-dien-01-m147.webp",
     hotelSlugs: [
       "ae-guesthouse",
       "anh-kim-hotel",

@@ -37,6 +37,8 @@ export type Room = {
   beds_vi: string | null;
   beds_en: string | null;
   base_price: number | null;
+  base_price_daily: number | null;
+  base_price_monthly: number | null;
   quantity: number | null;
   amenities_vi: unknown;
   amenities_en: unknown;
@@ -296,6 +298,8 @@ export async function getCachedRoomsAndFaqs(
                 beds_vi,
                 beds_en,
                 base_price,
+                base_price_daily,
+                base_price_monthly,
                 quantity,
                 amenities_vi,
                 amenities_en,

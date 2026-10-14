@@ -140,7 +140,7 @@ className="block"
 <div className="p-4 sm:hidden">
 <div className="relative float-left mr-3 mb-2 aspect-[4/3] w-[25%] overflow-hidden rounded-lg bg-slate-100">
 {post.image ? (
-<Image src={post.image} alt={title} fill sizes="25vw" className="object-cover transition duration-500 group-hover:scale-105" />
+<Image src={post.image} alt={title} fill sizes="(max-width: 640px) 96px, (max-width: 1024px) 33vw, 25vw" className="object-cover transition duration-500 group-hover:scale-105" />
 ) : (
 <div className="flex h-full w-full items-center justify-center px-1 text-center text-[9px] leading-3 text-slate-400">
 Huyen's Hotels & Stays
@@ -519,7 +519,6 @@ return (
                       language
                     )}
                     fill
-                    priority
                     sizes="(max-width: 1024px) 100vw, 50vw"
                     className="object-cover transition duration-500 group-hover:scale-105"
                   />

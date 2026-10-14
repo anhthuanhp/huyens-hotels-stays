@@ -1,5 +1,7 @@
 "use client";
 
+import { buildSeoImageName } from "../../../lib/image-seo";
+
 import {
   ChangeEvent,
   FormEvent,
@@ -607,21 +609,7 @@ export default function TraiNghiemAdminPage() {
           error: undefined,
         });
 
-        const extension =
-          item.file.name.includes(".")
-            ? item.file.name
-                .split(".")
-                .pop()
-                ?.toLowerCase() || "jpg"
-            : "jpg";
-
-        /*
-         * UUID chỉ dùng cho tên file Storage.
-         *
-         * Không dùng UUID làm media.id vì media.id
-         * là bigint identity trong PostgreSQL.
-         */
-        const uniqueName = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
+        const uniqueName = buildSeoImageName(["huyens-hotels-stays", activity.title_vi || activity.title_en || "trai-nghiem", "anh", String(startingOrder + index + 1)], item.file.name, crypto.randomUUID().slice(0, 8));
 
         const path = `${folder}/${uniqueName}`;
 
@@ -669,7 +657,7 @@ export default function TraiNghiemAdminPage() {
           const mediaRecord = {
             bucket: BUCKET,
             path,
-            file_name: item.file.name,
+            file_name: uniqueName,
             public_url: publicUrl,
 
             /*

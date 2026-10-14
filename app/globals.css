@@ -16,3 +16,52 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+
+/* Touch targets and readable type for the public mobile site. */
+@media (max-width: 767px) {
+  body:has(header[data-public-site]) :is(button, summary, select, textarea,
+    input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+    a) {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  body:has(header[data-public-site]) a
+    :is(svg, img) {
+    flex-shrink: 0;
+  }
+
+  body:has(header[data-public-site]) a:not([class*="block"]):not([class*="flex"]):not([class*="absolute"]) {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  body:has(header[data-public-site]) footer a {
+    display: flex;
+    align-items: center;
+  }
+
+  body:has(header[data-public-site]) :is([class~="text-xs"], [class~="text-[9px]"], [class~="text-[10px]"],
+    [class~="text-[11px]"], [class~="text-[12px]"], [class~="text-[13px]"]) {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  body:has(header[data-public-site]) :is([class~="text-sm"], [class~="text-[15px]"], input, select, textarea) {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  body:has(header[data-public-site]) [class*="flex"]:has(> button ~ button):not([class*="gap-"]) {
+    gap: 8px;
+  }
+
+  /* Only enlarge small gaps between controls, keeping larger existing gaps. */
+  body:has(header[data-public-site]) :is([class~="gap-0"], [class~="gap-1"], [class~="gap-1.5"]):has(> :is(button, a, summary, input, select)) {
+    gap: 8px;
+  }
+
+  body:has(header[data-public-site]) :is([class~="space-y-1"], [class~="space-y-1.5"]):has(> :is(button, a, summary)) > :not(:last-child) {
+    margin-block-end: 8px;
+  }
+}

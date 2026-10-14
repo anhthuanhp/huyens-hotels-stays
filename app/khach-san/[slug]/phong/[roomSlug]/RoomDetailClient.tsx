@@ -1445,7 +1445,7 @@ export default function RoomDetailClient({
                 <>
                   {/* DATES */}
 
-                  <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-1">
+                  <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-800">
                     {language ===
@@ -1603,7 +1603,7 @@ export default function RoomDetailClient({
 
               {/* GUESTS */}
 
-              <div className="mt-5 grid grid-cols-2 gap-4">
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-800">
                     {language ===

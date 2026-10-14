@@ -473,7 +473,7 @@ export default function HomeClient({
                                 ? "eager"
                                 : "lazy"
                             }
-                            quality={80}
+                            quality={75}
                             sizes="(max-width: 640px) 100vw, (max-width: 1280px) calc(100vw - 32px), 1280px"
                             className="object-cover"
                           />

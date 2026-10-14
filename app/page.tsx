@@ -1,3 +1,4 @@
+import { staticMetadata } from "./lib/seo";
 import type { Metadata } from "next";
 import { cache } from "react";
 import {
@@ -17,14 +18,12 @@ const SITE_URL = (
 
 const SITE_NAME = "Huyen's Hotels & Stays";
 
-const SEO_TITLE =
-  "Khách sạn, Homestay TP.HCM | Huyen's Hotels & Stays";
-
-const SEO_DESCRIPTION =
-  "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay tại TP.HCM. Khám phá phòng nghỉ tiện nghi, vị trí thuận tiện và đặt phòng trực tiếp.";
+const homeMetadata = staticMetadata("/");
+const SEO_TITLE = (homeMetadata.title as { absolute: string }).absolute;
+const SEO_DESCRIPTION = homeMetadata.description!;
 
 const FALLBACK_OG_IMAGE =
-  `${SITE_URL}/hero/hero-1.webp`;
+  `${SITE_URL}/images/huyens-hotels-stays-logo.webp`;
 
 type Hotel = {
   id: number;

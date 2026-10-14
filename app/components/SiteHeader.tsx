@@ -128,15 +128,15 @@ export default function SiteHeader() {
   const back = getBackLink(pathname, language);
 
   return (
-    <header className="relative z-40 border-b border-slate-200 bg-white">
-      <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+    <header data-public-site className="relative z-40 border-b border-slate-200 bg-white">
+      <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
         <Link
           href="/"
           aria-label="Huyen's Hotels & Stays"
           className="flex shrink-0 items-center"
         >
           <Image
-            src="/images/huyen-hotel-logo-v1.png"
+            src="/images/huyens-hotels-stays-logo.webp"
             alt="Huyen's Hotels & Stays"
             width={180}
             height={60}
@@ -145,13 +145,14 @@ export default function SiteHeader() {
           />
         </Link>
 
-        <div className="flex items-center gap-3 sm:gap-5">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-5">
           <Link
             href={back.href}
-            className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-slate-900 sm:gap-2 sm:text-sm"
+            className="inline-flex min-h-12 items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-900 sm:gap-2 sm:text-sm"
           >
             <span aria-hidden="true">←</span>
-            <span>{back.label}</span>
+            <span className="sm:hidden">{language === "vi" ? "Quay lại" : "Back"}</span>
+            <span className="hidden sm:inline">{back.label}</span>
           </Link>
 
           <nav
@@ -162,7 +163,7 @@ export default function SiteHeader() {
               type="button"
               onClick={() => changeLanguage("vi")}
               aria-pressed={language === "vi"}
-              className={`inline-flex min-h-10 items-center gap-1.5 transition sm:gap-2 ${
+              className={`inline-flex min-h-12 min-w-12 items-center justify-center gap-1.5 transition sm:gap-2 ${
                 language === "vi"
                   ? "font-semibold text-sky-600"
                   : "font-medium text-slate-400 hover:text-slate-700"
@@ -183,7 +184,7 @@ export default function SiteHeader() {
               type="button"
               onClick={() => changeLanguage("en")}
               aria-pressed={language === "en"}
-              className={`inline-flex min-h-10 items-center gap-1.5 transition sm:gap-2 ${
+              className={`inline-flex min-h-12 items-center gap-1.5 transition sm:gap-2 ${
                 language === "en"
                   ? "font-semibold text-sky-600"
                   : "font-medium text-slate-400 hover:text-slate-700"

@@ -1,3 +1,4 @@
+import { staticMetadata } from "../lib/seo";
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import BlogPageClient from "./BlogPageClient";
@@ -15,11 +16,9 @@ const siteName =
 const blogUrl =
   `${siteUrl}/blog`;
 
-const blogTitle =
-  "Blog du lịch TP.HCM | Huyen's Hotels & Stays";
-
-const blogDescription =
-  "Khám phá kinh nghiệm du lịch TP.HCM, ẩm thực, cuộc sống địa phương và những kinh nghiệm lưu trú hữu ích từ Huyen's Hotels & Stays.";
+const blogMetadata = staticMetadata("/blog");
+const blogTitle = (blogMetadata.title as { absolute: string }).absolute;
+const blogDescription = blogMetadata.description!;
 
 type BlogPost = {
   id: number;
@@ -150,7 +149,7 @@ export const metadata: Metadata = {
     images: [
       {
         url:
-          `${siteUrl}/images/huyen-hotel-logo-v1.png`,
+          `${siteUrl}/images/huyens-hotels-stays-logo.webp`,
         alt:
           siteName,
       },
@@ -168,7 +167,7 @@ export const metadata: Metadata = {
       blogDescription,
 
     images: [
-      `${siteUrl}/images/huyen-hotel-logo-v1.png`,
+      `${siteUrl}/images/huyens-hotels-stays-logo.webp`,
     ],
   },
 };
@@ -292,7 +291,7 @@ export default async function BlogPage() {
                   "ImageObject",
 
                 url:
-                  `${siteUrl}/images/huyen-hotel-logo-v1.png`,
+                  `${siteUrl}/images/huyens-hotels-stays-logo.webp`,
               },
             },
 
@@ -350,7 +349,7 @@ export default async function BlogPage() {
                 "ImageObject",
 
               url:
-                `${siteUrl}/images/huyen-hotel-logo-v1.png`,
+                `${siteUrl}/images/huyens-hotels-stays-logo.webp`,
             },
           },
         },

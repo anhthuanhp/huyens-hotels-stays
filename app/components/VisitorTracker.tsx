@@ -3,7 +3,6 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { supabase } from "../lib/supabase";
 
 function getDeviceType() {
   if (typeof window === "undefined") {
@@ -53,6 +52,7 @@ export default function VisitorTracker() {
 
         if (!sessionId) return;
 
+        const { supabase } = await import("../lib/supabase");
         await supabase.from("website_visits").insert({
           session_id: sessionId,
           page_path: pathname,
@@ -64,7 +64,8 @@ export default function VisitorTracker() {
       }
     };
 
-    recordVisit();
+    const pending = window.setTimeout(() => void recordVisit(), 1500);
+    return () => window.clearTimeout(pending);
   }, [pathname]);
 
   return null;

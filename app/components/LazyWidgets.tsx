@@ -1,18 +1,20 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
-// ssr: false chỉ dùng được trong client component, nên cần file bọc này.
-// Hai widget nổi được tải sau khi trang đã hydrate xong, không nằm trong
-// JS ban đầu của mọi trang.
 const ContactFloat = dynamic(() => import("./ContactFloat"), { ssr: false });
 const AIAssistant = dynamic(() => import("./AIAssistant"), { ssr: false });
 
 export default function LazyWidgets() {
-  return (
-    <>
-      <ContactFloat />
-      <AIAssistant />
-    </>
-  );
+  const pathname = usePathname();
+  const [assistantRequested, setAssistantRequested] = useState(false);
+  useEffect(() => {
+    const open = () => setAssistantRequested(true);
+    window.addEventListener("open-ai-assistant", open);
+    return () => window.removeEventListener("open-ai-assistant", open);
+  }, []);
+  if (pathname?.startsWith("/admin")) return null;
+  return <><ContactFloat />{assistantRequested && <AIAssistant initiallyOpen />}</>;
 }

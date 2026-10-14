@@ -1753,7 +1753,7 @@ function TimPhongContent() {
                   : "Guests"}
               </label>
 
-              <div className="flex h-12 items-center gap-4 rounded-xl border border-neutral-200 bg-white px-3">
+              <div className="flex min-h-12 flex-col items-stretch gap-2 rounded-xl border border-neutral-200 bg-white p-3 sm:h-12 sm:flex-row sm:items-center sm:gap-4 sm:py-0">
                 <div className="flex flex-1 items-center justify-between gap-2">
                   <span className="text-sm text-neutral-600">
                     {language ===
@@ -1804,7 +1804,7 @@ function TimPhongContent() {
                   </div>
                 </div>
 
-                <div className="h-6 w-px bg-neutral-200" />
+                <div className="hidden h-6 w-px bg-neutral-200 sm:block" />
 
                 <div className="flex flex-1 items-center justify-between gap-2">
                   <span className="text-sm text-neutral-600">
@@ -2375,7 +2375,7 @@ function TimPhongLoading() {
   return (
     <main className="min-h-screen bg-neutral-50">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="h-8 w-64 animate-pulse rounded-lg bg-neutral-200" />
+        <h1 className="text-3xl font-bold text-slate-900">Tìm phòng theo ngày hoặc tháng</h1>
 
         <div className="mt-6 h-48 animate-pulse rounded-2xl bg-neutral-200" />
 

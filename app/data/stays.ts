@@ -41,12 +41,12 @@ export const stays: Stay[] = [
     descriptionEn:
       "A convenient stay for guests exploring the heart of Ho Chi Minh City.",
 
-    cover: "/images/hotels/anh-kim.jpg",
+    cover: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/anh-kim-hotel/anh-kim-hotel-khach-san-anh-dai-dien-01-m97.webp",
 
     gallery: [
-      "/images/hotels/anh-kim.jpg",
-      "/images/hotels/anh-kim.jpg",
-      "/images/hotels/anh-kim.jpg",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/anh-kim-hotel/anh-kim-hotel-khach-san-anh-dai-dien-01-m97.webp",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/anh-kim-hotel/anh-kim-hotel-khach-san-anh-dai-dien-01-m97.webp",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/anh-kim-hotel/anh-kim-hotel-khach-san-anh-dai-dien-01-m97.webp",
     ],
 
     featured: true,
@@ -70,12 +70,12 @@ export const stays: Stay[] = [
     descriptionEn:
       "A welcoming stay for short trips and discovering the city.",
 
-    cover: "/images/hotels/ae-guesthouse.jpg",
+    cover: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/ae-guesthouse/ae-guesthouse-khach-san-anh-dai-dien-01-m147.webp",
 
     gallery: [
-      "/images/hotels/ae-guesthouse.jpg",
-      "/images/hotels/ae-guesthouse.jpg",
-      "/images/hotels/ae-guesthouse.jpg",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/ae-guesthouse/ae-guesthouse-khach-san-anh-dai-dien-01-m147.webp",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/ae-guesthouse/ae-guesthouse-khach-san-anh-dai-dien-01-m147.webp",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/ae-guesthouse/ae-guesthouse-khach-san-anh-dai-dien-01-m147.webp",
     ],
 
     featured: true,
@@ -99,12 +99,12 @@ export const stays: Stay[] = [
     descriptionEn:
       "A private and welcoming space designed for comfortable stays.",
 
-    cover: "/images/hotels/huyen-house.jpg",
+    cover: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/huyen-house/huyen-house-khach-san-anh-dai-dien-01-m96.webp",
 
     gallery: [
-      "/images/hotels/huyen-house.jpg",
-      "/images/hotels/huyen-house.jpg",
-      "/images/hotels/huyen-house.jpg",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/huyen-house/huyen-house-khach-san-anh-dai-dien-01-m96.webp",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/huyen-house/huyen-house-khach-san-anh-dai-dien-01-m96.webp",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/huyen-house/huyen-house-khach-san-anh-dai-dien-01-m96.webp",
     ],
 
     featured: true,
@@ -128,12 +128,12 @@ export const stays: Stay[] = [
     descriptionEn:
       "A flexible stay for guests who want to experience the city their own way.",
 
-    cover: "/images/hotels/huyenhomestay.jpg",
+    cover: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/huyenhomestay/huyenhomestay-khach-san-anh-dai-dien-01-m94.webp",
 
     gallery: [
-      "/images/hotels/huyenhomestay.jpg",
-      "/images/hotels/huyenhomestay.jpg",
-      "/images/hotels/huyenhomestay.jpg",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/huyenhomestay/huyenhomestay-khach-san-anh-dai-dien-01-m94.webp",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/huyenhomestay/huyenhomestay-khach-san-anh-dai-dien-01-m94.webp",
+      "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/huyenhomestay/huyenhomestay-khach-san-anh-dai-dien-01-m94.webp",
     ],
 
     featured: true,

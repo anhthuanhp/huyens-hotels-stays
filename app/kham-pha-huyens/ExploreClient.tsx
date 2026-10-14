@@ -705,7 +705,7 @@ export default function ExploreClient({ hotels, heroSlides }: ExploreClientProps
 
               <div className="mt-4 space-y-2 text-sm text-neutral-500">
                 <a
-                  href="/chinh-sach-thanh-toan"
+                  href="/chinh-sach-khac"
                   className="block transition hover:text-blue-900"
                 >
                   {isVi
@@ -714,7 +714,7 @@ export default function ExploreClient({ hotels, heroSlides }: ExploreClientProps
                 </a>
 
                 <a
-                  href="/chinh-sach-hoan-huy"
+                  href="/chinh-sach-huy-phong"
                   className="block transition hover:text-blue-900"
                 >
                   {isVi

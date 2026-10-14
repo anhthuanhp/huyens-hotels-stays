@@ -42,7 +42,7 @@ export const experiences: Experience[] = [
       "Experience the city through local food, from familiar street dishes to neighborhood favorites.",
     locationVi: "Trung tâm thành phố",
     locationEn: "Central Ho Chi Minh City",
-    image: "/images/hotels/ae-guesthouse.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/ae-guesthouse/ae-guesthouse-khach-san-anh-dai-dien-01-m147.webp",
     hotelSlugs: [
       "anh-kim-hotel",
       "ae-guesthouse",
@@ -60,7 +60,7 @@ export const experiences: Experience[] = [
       "Take your time, enjoy a coffee and experience the rhythm of the city at your own pace.",
     locationVi: "TP. Hồ Chí Minh",
     locationEn: "Ho Chi Minh City",
-    image: "/images/hotels/huyen-house.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/hotels/huyen-house/huyen-house-khach-san-anh-dai-dien-01-m96.webp",
     hotelSlugs: [
       "huyen-house",
       "huyenhomestay",

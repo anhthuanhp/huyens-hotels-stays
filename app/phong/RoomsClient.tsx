@@ -286,7 +286,7 @@ export default function RoomsClient({ rooms, roomCovers }: RoomsClientProps) {
                               href={roomUrl}
                               className="mt-1 block text-2xl font-semibold text-slate-900 transition hover:text-sky-600"
                             >
-                              {roomName}
+                              <h3>{roomName}</h3>
                             </Link>
 
                             {hotelAddress && (

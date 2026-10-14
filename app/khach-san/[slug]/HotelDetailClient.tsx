@@ -138,12 +138,12 @@ const HOTEL_LOCAL_SEO: Record<
   },
 
   "huyen-house": {
-    vi: "Lưu trú tại khu vực Nguyễn Thị Minh Khai, thuận tiện di chuyển đến Bến Thành, Đại sứ quán Mỹ và các điểm trung tâm TP.HCM.",
+    vi: "Lưu trú tại khu vực Nguyễn Thị Minh Khai, thuận tiện di chuyển đến Bến Thành, Tổng Lãnh sự quán Mỹ và các điểm trung tâm TP.HCM.",
     en: "Stay in the Nguyen Thi Minh Khai area, conveniently located near Ben Thanh, the US Consulate and central Ho Chi Minh City.",
   },
 
   huyenhomestay: {
-    vi: "Homestay tại khu vực Nguyễn Thị Minh Khai, thuận tiện di chuyển đến Bến Thành, Đại sứ quán Mỹ và trung tâm TP.HCM.",
+    vi: "Homestay tại khu vực Nguyễn Thị Minh Khai, thuận tiện di chuyển đến Bến Thành, Tổng Lãnh sự quán Mỹ và trung tâm TP.HCM.",
     en: "A homestay in the Nguyen Thi Minh Khai area, conveniently located near Ben Thanh, the US Consulate and central Ho Chi Minh City.",
   },
 };
@@ -166,12 +166,12 @@ const HOTEL_H1_SEO: Record<
   },
 
   "huyen-house": {
-    vi: "Huyen House – Gần Nguyễn Thị Minh Khai, Bến Thành và Đại sứ quán Mỹ",
+    vi: "Huyen House – Gần Nguyễn Thị Minh Khai, Bến Thành và Tổng Lãnh sự quán Mỹ",
     en: "Huyen House – Near Nguyen Thi Minh Khai, Ben Thanh and the US Consulate",
   },
 
   huyenhomestay: {
-    vi: "Huyen Homestay – Gần Nguyễn Thị Minh Khai, Bến Thành và Đại sứ quán Mỹ",
+    vi: "Huyen Homestay – Gần Nguyễn Thị Minh Khai, Bến Thành và Tổng Lãnh sự quán Mỹ",
     en: "Huyen Homestay – Near Nguyen Thi Minh Khai, Ben Thanh and the US Consulate",
   },
 };
@@ -800,18 +800,19 @@ export default function HotelDetailClient({
                                   language
                                 )}
 
-                                <span className="ml-1 text-sm font-normal text-slate-500">
-                                  VND
-                                  {room.base_price &&
-                                    room.base_price > 0 &&
-                                    priceUnit}
-                                </span>
+                                {typeof room.base_price === "number" &&
+                                  Number.isFinite(room.base_price) &&
+                                  room.base_price > 0 && (
+                                    <span className="ml-1 text-sm font-normal text-slate-500">
+                                      VND{priceUnit}
+                                    </span>
+                                  )}
                               </div>
                             </div>
 
                             <Link
                               href={bookingUrl}
-                              prefetch={true}
+                              prefetch={false}
                               className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
                             >
                               {language === "vi"

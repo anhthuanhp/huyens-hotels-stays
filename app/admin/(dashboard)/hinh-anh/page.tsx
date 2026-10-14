@@ -1,6 +1,8 @@
 
 "use client";
 
+import { buildSeoImageName, slugifyImageName } from "../../../lib/image-seo";
+
 import {
   ChangeEvent,
   useEffect,
@@ -449,9 +451,7 @@ export default function HinhAnhPage() {
         );
       }
 
-      const timestamp = Date.now();
-
-      const filePath = `hero-${position}-${timestamp}.webp`;
+      const filePath = buildSeoImageName(["huyens-hotels-stays", "khach-san-tp-hcm", "hero", String(position)], heroFile.name, crypto.randomUUID().slice(0, 8));
 
       const { error: uploadError } =
         await supabase.storage
@@ -534,9 +534,7 @@ export default function HinhAnhPage() {
     setHeroMessage("");
 
     try {
-      const timestamp = Date.now();
-
-      const newPath = `hero-${slide.position}-${timestamp}.webp`;
+      const newPath = buildSeoImageName(["huyens-hotels-stays", slide.title_vi || slide.title_en || "khach-san-tp-hcm", "hero", String(slide.position)], file.name, crypto.randomUUID().slice(0, 8));
 
       const { error: uploadError } =
         await supabase.storage
@@ -1336,40 +1334,16 @@ export default function HinhAnhPage() {
         const item =
           uploadItems[index];
 
-        const extension =
-          item.file.name
-            .split(".")
-            .pop()
-            ?.toLowerCase() ||
-          "jpg";
-
-        const safeName =
-          item.file.name
-            .replace(
-              /\.[^/.]+$/,
-              ""
-            )
-            .toLowerCase()
-            .replace(
-              /[^a-z0-9-_]+/g,
-              "-"
-            )
-            .replace(
-              /-+/g,
-              "-"
-            )
-            .replace(
-              /^-|-$/g,
-              ""
-            ) || "image";
-
-        const uniqueName =
-          `${Date.now()}-${index}-${safeName}.${extension}`;
+        const uniqueName = buildSeoImageName([
+          selectedHotel?.slug || "huyens-hotels-stays",
+          entityType === "room" ? selectedRoom?.name_vi || selectedRoom?.name_en || "phong" : "khach-san",
+          "anh", String(startingOrder + index + 1).padStart(2, "0"),
+        ], item.file.name, crypto.randomUUID().slice(0, 8));
 
         const folder =
           entityType === "hotel"
-            ? `hotels/${entitySlug}`
-            : `rooms/${entitySlug}`;
+            ? `hotels/${entitySlug.split("/").map(slugifyImageName).join("/")}`
+            : `rooms/${entitySlug.split("/").map(slugifyImageName).join("/")}`;
 
         const path =
           `${folder}/${uniqueName}`;
@@ -1400,8 +1374,7 @@ export default function HinhAnhPage() {
           uploadedRecords.push({
             bucket,
             path,
-            file_name:
-              item.file.name,
+            file_name: uniqueName,
             public_url:
               publicUrlData.publicUrl,
             entity_type:
@@ -1409,9 +1382,9 @@ export default function HinhAnhPage() {
             entity_id:
               currentEntityId,
             alt_vi:
-              item.altVi || null,
+              item.altVi.trim() || `${entityType === "room" ? selectedRoom?.name_vi : selectedHotel?.name_vi} – ảnh ${startingOrder + index + 1}`,
             alt_en:
-              item.altEn || null,
+              item.altEn.trim() || `${entityType === "room" ? selectedRoom?.name_en : selectedHotel?.name_en} – photo ${startingOrder + index + 1}`,
             is_cover:
               shouldBeCover,
             sort_order:

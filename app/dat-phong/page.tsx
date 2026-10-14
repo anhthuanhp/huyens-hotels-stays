@@ -970,87 +970,7 @@ function BookingPageContent() {
         );
       }
 
-      try {
-        const telegramResponse =
-          await fetch(
-            "/api/telegram-booking",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-              body: JSON.stringify({
-                bookingCode:
-                  result.booking
-                    .bookingCode,
-                hotelName:
-                  language === "vi"
-                    ? result.booking
-                        .hotelNameVi
-                    : result.booking
-                        .hotelNameEn,
-                fullName:
-                  result.booking
-                    .fullName,
-                phone:
-                  result.booking.phone,
-                email:
-                  result.booking.email,
-                stayType:
-                  result.booking
-                    .stayType,
-                checkIn:
-                  result.booking.checkIn,
-                checkOut:
-                  result.booking.checkOut,
-                months:
-                  result.booking.months,
-                nights:
-                  result.booking.nights,
-                adults:
-                  result.booking.adults,
-                children:
-                  result.booking.children,
-                rooms:
-                  selectedRoomDetails.map(
-                    (room) => ({
-                      name:
-                        language ===
-                        "vi"
-                          ? room.name_vi
-                          : room.name_en,
-                      quantity:
-                        room.selectedQuantity,
-                    }),
-                  ),
-                totalAmount:
-                  result.booking
-                    .totalAmount,
-                note:
-                  result.booking.note,
-              }),
-            },
-          );
-
-        if (!telegramResponse.ok) {
-          const telegramResult =
-            await telegramResponse
-              .json()
-              .catch(() => null);
-
-          console.error(
-            "Telegram notification failed:",
-            telegramResult,
-          );
-        }
-      } catch (telegramError) {
-        console.error(
-          "Telegram notification error:",
-          telegramError,
-        );
-      }
-
+      // The booking API sends Telegram after saving; do not send a second notification here.
       setConfirmed(
         result.booking,
       );
@@ -1317,6 +1237,7 @@ function BookingPageContent() {
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="mx-auto max-w-6xl px-4 py-16 text-center sm:px-6 lg:px-8">
+          <h1 className="mb-6 text-2xl font-bold">Xác nhận yêu cầu đặt phòng</h1>
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" />
 
           <p className="mt-5 text-sm text-slate-500">
@@ -1903,7 +1824,8 @@ export default function BookingPage() {
       fallback={
         <main className="min-h-screen bg-slate-50">
           <div className="mx-auto max-w-6xl px-4 py-16 text-center">
-            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" />
+            <h1 className="mb-6 text-2xl font-bold">Xác nhận yêu cầu đặt phòng</h1>
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" />
 
             <p className="mt-5 text-sm text-slate-500">
               Đang tải...

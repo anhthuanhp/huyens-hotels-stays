@@ -1,9 +1,19 @@
+import { BLOG_SEO, seoDescription } from "../../lib/seo";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { cache } from "react";
 
 import BlogDetailClient from "./BlogDetailClient";
+
+export const revalidate = 60;
+export const dynamic = "force-static";
+
+export async function generateStaticParams() {
+  const { data, error } = await getSupabaseServerClient().from("blog_posts").select("slug").eq("status", "active");
+  if (error) throw new Error(`Cannot generate blog paths: ${error.message}`);
+  return (data || []).filter((post) => typeof post.slug === "string" && post.slug.trim()).map((post) => ({ slug: post.slug }));
+}
 
 type BlogPost = {
   id: number;
@@ -259,17 +269,9 @@ export async function generateMetadata({
       post.title_en
     );
 
-  const rawDescription =
-    cleanText(
-      post.excerpt_vi ||
-        post.excerpt_en ||
-        "Khám phá những câu chuyện, kinh nghiệm du lịch và trải nghiệm tại TP.HCM."
-    );
-
-  const description =
-    truncateDescription(
-      rawDescription
-    );
+  const copy = BLOG_SEO[post.slug];
+  const metaTitle = `${copy?.title || titleVi || titleEn} | Huyen's`;
+  const description = seoDescription(copy?.description || `${titleVi || titleEn}. ${cleanText(post.excerpt_vi || post.excerpt_en || post.content_vi || post.content_en)}`);
 
   const imageUrl =
     getImageUrl(
@@ -305,7 +307,7 @@ export async function generateMetadata({
 
   return {
     title:
-      `${titleVi} | Huyen's Hotels & Stays`,
+      metaTitle,
 
     description,
 
@@ -337,8 +339,7 @@ export async function generateMetadata({
       url:
         canonicalUrl,
 
-      title:
-        titleVi,
+      title: metaTitle,
 
       description,
 
@@ -378,8 +379,7 @@ export async function generateMetadata({
           ? "summary_large_image"
           : "summary",
 
-      title:
-        titleVi,
+      title: metaTitle,
 
       description,
 
@@ -512,7 +512,7 @@ export default async function BlogDetailPage({
             "ImageObject",
 
           url:
-            `${cleanSiteUrl}/images/huyen-hotel-logo-v1.png`,
+            `${cleanSiteUrl}/images/huyens-hotels-stays-logo.webp`,
         },
       },
 

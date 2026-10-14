@@ -43,7 +43,7 @@ export const rooms: Room[] = [
     descriptionEn:
       "A comfortable room designed for business trips and short stays in the heart of the city.",
 
-    image: "/images/hotels/anh-kim.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/rooms/anh-kim-hotel/standard-double/anh-kim-hotel-phong-standard-double-anh-dai-dien-07-m137.webp",
 
     size: 22,
     maxGuests: 2,
@@ -84,7 +84,7 @@ export const rooms: Room[] = [
     descriptionEn:
       "A more spacious room with additional comfort for a relaxing city stay.",
 
-    image: "/images/hotels/anh-kim.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/rooms/anh-kim-hotel/deluxe-double/anh-kim-hotel-phong-double-co-cua-so-anh-dai-dien-05-m198.webp",
 
     size: 28,
     maxGuests: 2,
@@ -130,7 +130,7 @@ export const rooms: Room[] = [
     descriptionEn:
       "A clean and comfortable room suitable for travelers and short stays.",
 
-    image: "/images/hotels/ae-guesthouse.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/rooms/ae-guesthouse/standard-room/ae-guesthouse-phong-studio-without-window-anh-dai-dien-01-m117.webp",
 
     size: 20,
     maxGuests: 2,
@@ -171,7 +171,7 @@ export const rooms: Room[] = [
     descriptionEn:
       "A spacious room designed for families or small groups.",
 
-    image: "/images/hotels/ae-guesthouse.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/rooms/ae-guesthouse/family-room/ae-guesthouse-phong-family-cho-3-nguoi-anh-dai-dien-01-m156.webp",
 
     size: 32,
     maxGuests: 4,
@@ -217,7 +217,7 @@ export const rooms: Room[] = [
     descriptionEn:
       "A cozy and private space designed for a comfortable stay.",
 
-    image: "/images/hotels/huyen-house.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/rooms/huyen-house/cozy-room/huyen-house-phong-cozy-cho-1-nguoi-anh-dai-dien-03-m78.jpg",
 
     size: 20,
     maxGuests: 2,
@@ -258,7 +258,7 @@ export const rooms: Room[] = [
     descriptionEn:
       "A spacious room for families or groups of friends.",
 
-    image: "/images/hotels/huyen-house.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/rooms/huyen-house/family-house/huyen-house-phong-deluxe-double-anh-dai-dien-06-m86.jpg",
 
     size: 35,
     maxGuests: 4,
@@ -304,7 +304,7 @@ export const rooms: Room[] = [
     descriptionEn:
       "A private space for guests looking for a comfortable and relaxing stay.",
 
-    image: "/images/hotels/huyenhomestay.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/rooms/huyenhomestay/private-room/huyenhomestay-phong-double-co-cua-so-anh-dai-dien-02-m222.webp",
 
     size: 22,
     maxGuests: 2,
@@ -345,7 +345,7 @@ export const rooms: Room[] = [
     descriptionEn:
       "A spacious room suitable for families or groups.",
 
-    image: "/images/hotels/huyenhomestay.jpg",
+    image: "https://lltfkvpgzxybvzpqpjqk.supabase.co/storage/v1/object/public/website-media/rooms/huyenhomestay/family-homestay/huyenhomestay-phong-family-co-ban-cong-anh-dai-dien-01-m88.webp",
 
     size: 34,
     maxGuests: 4,

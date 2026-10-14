@@ -25,6 +25,7 @@ type ChatMessage = {
 };
 
 type AIAssistantProps = {
+  initiallyOpen?: boolean;
   language?: Language;
 };
 
@@ -203,6 +204,7 @@ function getHotelName(
 
 export default function AIAssistant({
   language: languageProp,
+  initiallyOpen = false,
 }: AIAssistantProps) {
   const [language, setLanguage] =
     useState<Language>(
@@ -210,7 +212,7 @@ export default function AIAssistant({
     );
 
   const [isOpen, setIsOpen] =
-    useState(false);
+    useState(initiallyOpen);
 
   const [input, setInput] =
     useState("");

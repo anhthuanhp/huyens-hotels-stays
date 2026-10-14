@@ -109,9 +109,9 @@ export default function Footer() {
 
           {/* CHÍNH SÁCH */}
           <div>
-            <h3 className="text-sm font-semibold text-white">
+            <p className="text-sm font-semibold text-white">
               {isVi ? "Chính sách" : "Policies"}
-            </h3>
+            </p>
 
             <div className="mt-4 space-y-3 text-sm text-white/75">
               <Link
@@ -154,11 +154,11 @@ export default function Footer() {
 
           {/* THÔNG TIN LIÊN HỆ */}
           <div>
-            <h3 className="text-sm font-semibold text-white">
+            <p className="text-sm font-semibold text-white">
               {isVi
                 ? "Thông tin liên hệ"
                 : "Contact Information"}
-            </h3>
+            </p>
 
             <div className="mt-4 space-y-3 text-sm text-white/75">
               <div className="flex items-center gap-3">

@@ -1,3 +1,4 @@
+import { cleanSeoText, seoDescription } from "../../../../lib/seo";
 import RoomDetailClient from "./RoomDetailClient";
 import { supabase } from "../../../../lib/supabase";
 import type { Metadata } from "next";
@@ -51,32 +52,6 @@ function cleanText(
     .trim();
 }
 
-function truncateDescription(
-  value: string,
-  maxLength = 158
-): string {
-  const cleaned = cleanText(value);
-
-  if (cleaned.length <= maxLength) {
-    return cleaned;
-  }
-
-  const shortened =
-    cleaned.slice(0, maxLength - 1);
-
-  const lastSpace =
-    shortened.lastIndexOf(" ");
-
-  return (
-    shortened.slice(
-      0,
-      lastSpace > 80
-        ? lastSpace
-        : shortened.length
-    ) + "…"
-  );
-}
-
 /* =========================================================
    SEO METADATA
    Chỉ bổ sung SEO, không thay đổi luồng dữ liệu hiện tại.
@@ -95,7 +70,7 @@ export async function generateMetadata({
   const { data: hotel } = await supabase
     .from("hotels")
     .select(
-      "id, name_vi, name_en, address_vi, address_en"
+      "id, name_vi, name_en, address_vi, address_en, business_model"
     )
     .eq("slug", slug)
     .eq("status", "active")
@@ -123,6 +98,7 @@ export async function generateMetadata({
         description_vi,
         description_en,
         base_price_daily,
+        base_price_monthly,
         size,
         max_guests
       `
@@ -174,24 +150,10 @@ export async function generateMetadata({
         room.description_en
     );
 
-  const priceText =
-    typeof room.base_price_daily ===
-      "number" &&
-    Number.isFinite(
-      room.base_price_daily
-    ) &&
-    room.base_price_daily > 0
-      ? `Từ ${new Intl.NumberFormat(
-          "vi-VN",
-          {
-            style: "currency",
-            currency: "VND",
-            maximumFractionDigits: 0,
-          }
-        ).format(
-          room.base_price_daily
-        )}/đêm`
-      : "";
+  const monthly = hotel.business_model?.trim().toLowerCase() === "monthly";
+  const currentPrice = monthly ? room.base_price_monthly : room.base_price_daily;
+  const priceText = typeof currentPrice === "number" && Number.isFinite(currentPrice) && currentPrice > 0
+    ? `Giá từ ${new Intl.NumberFormat("vi-VN").format(currentPrice)} VND/${monthly ? "tháng" : "đêm"}.` : "";
 
   const sizeText =
     typeof room.size === "number" &&
@@ -221,21 +183,14 @@ export async function generateMetadata({
     "trung tâm TP.HCM";
 
   const title =
-    `${roomName} | ${hotelName} | Huyen's Hotels & Stays`;
+    `${cleanSeoText(roomName)} – ${hotelName} | Huyen's`;
 
-  const descriptionParts = [
-    roomDescription,
-    priceText,
-    sizeText,
-    guestText,
-    `Lưu trú tại ${locationText}.`,
-    "Xem phòng và đặt trực tiếp.",
-  ].filter(Boolean);
-
-  const description =
-    truncateDescription(
-      descriptionParts.join(" ")
-    );
+  const description = seoDescription([
+    `${cleanSeoText(roomName)} tại ${hotelName}.`,
+    [sizeText, guestText].filter(Boolean).join(", ") + ".",
+    priceText, `Địa chỉ: ${locationText}.`,
+    roomDescription || "Xem tiện nghi và gửi yêu cầu đặt phòng trực tiếp.",
+  ].filter(Boolean).join(" "));
 
   /*
    * SEO keywords.
@@ -805,22 +760,12 @@ export default async function RoomDetailPage({
       };
     }
 
-    if (
-      typeof room.base_price_daily ===
-        "number" &&
-      Number.isFinite(
-        room.base_price_daily
-      ) &&
-      room.base_price_daily > 0
-    ) {
+    const monthlyPrice = hotel.business_model?.trim().toLowerCase() === "monthly";
+    const schemaPrice = monthlyPrice ? room.base_price_monthly : room.base_price_daily;
+    if (typeof schemaPrice === "number" && Number.isFinite(schemaPrice) && schemaPrice > 0) {
       roomSchema.offers = {
-        "@type": "Offer",
-        priceCurrency: "VND",
-        price:
-          room.base_price_daily,
-        availability:
-          "https://schema.org/InStock",
-        url: roomUrl,
+        "@type": "Offer", priceCurrency: "VND", price: schemaPrice, url: roomUrl,
+        priceSpecification: { "@type": "UnitPriceSpecification", price: schemaPrice, priceCurrency: "VND", unitCode: monthlyPrice ? "MON" : "DAY", unitText: monthlyPrice ? "per month" : "per night" },
       };
     }
 

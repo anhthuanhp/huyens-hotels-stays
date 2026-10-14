@@ -1,5 +1,7 @@
 "use client";
 
+import { buildSeoImageName } from "../../../lib/image-seo";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
@@ -432,7 +434,7 @@ export default function VietBlogPage() {
     try {
       const extension = getFileExtension(file);
       const safeSlug = slugify(slug) || "blog";
-      const uniqueName = `${safeSlug}-${Date.now()}-${crypto.randomUUID()}.${extension}`;
+      const uniqueName = buildSeoImageName([safeSlug, "anh-bai-viet"], `image.${extension}`, crypto.randomUUID().slice(0, 8));
       const storagePath = `blog/${uniqueName}`;
 
       const { error: uploadError } = await supabase.storage

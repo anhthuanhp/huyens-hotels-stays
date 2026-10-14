@@ -99,7 +99,7 @@ export default function Header() {
   const isVi = language === "vi";
 
   return (
-    <header className="absolute left-0 top-0 z-50 w-full">
+    <header data-public-site className="absolute left-0 top-0 z-50 w-full">
       <div className="px-4 pt-0 sm:px-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-1 py-2 sm:px-2">
           {/* =====================================================
@@ -112,7 +112,7 @@ export default function Header() {
             aria-label="Huyen's Hotels & Stays"
           >
             <Image
-              src="/images/huyen-hotel-logo-v1.png"
+              src="/images/huyens-hotels-stays-logo.webp"
               alt="Huyen's Hotels & Stays"
               width={180}
               height={60}
@@ -333,7 +333,7 @@ export default function Header() {
           ref={mobileMenuRef}
           className="absolute right-4 top-[calc(100%+8px)] w-60 overflow-hidden rounded-xl border border-white/20 bg-black/85 shadow-xl backdrop-blur-md sm:right-6 lg:hidden"
         >
-          <nav className="flex flex-col">
+          <nav className="flex flex-col gap-2 p-2">
             <Link
               href="/"
               onClick={closeMobileMenu}
