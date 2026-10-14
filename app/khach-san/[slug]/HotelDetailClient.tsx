@@ -300,7 +300,7 @@ function getPriceUnit(
     return language === "vi" ? "/tháng" : "/month";
   }
 
-  return language === "vi" ? "/ngày" : "/day";
+  return language === "vi" ? "/đêm" : "/night";
 }
 
 function formatDistance(

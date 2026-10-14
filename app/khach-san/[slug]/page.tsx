@@ -452,7 +452,7 @@ function createHotelStructuredData(
               unitCode:
                 hotel.business_model?.trim().toLowerCase() === "monthly" ? "MON" : "DAY",
               unitText:
-                hotel.business_model?.trim().toLowerCase() === "monthly" ? "per month" : "per day",
+                hotel.business_model?.trim().toLowerCase() === "monthly" ? "per month" : "per night",
             },
             itemOffered: {
               "@id": roomId,

@@ -612,8 +612,8 @@ function BookingPageContent() {
         ? "Theo tháng"
         : "Monthly stay"
       : language === "vi"
-        ? "Theo ngày"
-        : "Daily stay";
+        ? "Theo đêm"
+        : "Nightly stay";
 
   const stayDurationLabel =
     stayType === "month"
@@ -998,8 +998,8 @@ function BookingPageContent() {
           ? "Theo tháng"
           : "Monthly stay"
         : language === "vi"
-          ? "Theo ngày"
-          : "Daily stay";
+          ? "Theo đêm"
+          : "Nightly stay";
 
     const confirmedRooms =
       confirmed.rooms?.reduce(

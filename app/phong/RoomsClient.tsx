@@ -308,8 +308,8 @@ export default function RoomsClient({ rooms, roomCovers }: RoomsClientProps) {
                           <div className="rounded-xl bg-slate-50 p-4">
                             <p className="text-xs font-medium text-slate-500">
                               {language === "vi"
-                                ? "Giá ngày / đêm"
-                                : "Daily / night"}
+                                ? "Giá mỗi đêm"
+                                : "Per night"}
                             </p>
 
                             <p className="mt-1 text-lg font-bold text-slate-900">

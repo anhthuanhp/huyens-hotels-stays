@@ -294,7 +294,7 @@ export default function AdminRoomsPage() {
       !Number.isFinite(basePriceDaily) ||
       basePriceDaily < 0
     ) {
-      window.alert("Giá ngày không hợp lệ.");
+      window.alert("Giá mỗi đêm không hợp lệ.");
       return;
     }
 
@@ -573,7 +573,7 @@ export default function AdminRoomsPage() {
                 </th>
 
                 <th className="px-5 py-4">
-                  Giá/ngày
+                  Giá/đêm
                 </th>
 
                 <th className="px-5 py-4">
@@ -873,7 +873,7 @@ export default function AdminRoomsPage() {
                     />
                   </Field>
 
-                  <Field label="Giá ngày / đêm (VNĐ)">
+                  <Field label="Giá mỗi đêm (VNĐ)">
                     <input
                       type="number"
                       min="0"
@@ -891,7 +891,7 @@ export default function AdminRoomsPage() {
                     />
 
                     <div className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-                      Giá dùng khi khách đặt theo ngày.
+                      Giá dùng khi khách đặt theo đêm.
                     </div>
                   </Field>
 
@@ -943,14 +943,14 @@ export default function AdminRoomsPage() {
                   </div>
 
                   <p className="mt-1 text-xs leading-5 text-sky-700">
-                    Mỗi loại phòng có thể bán đồng thời theo ngày
+                    Mỗi loại phòng có thể bán đồng thời theo đêm
                     và theo tháng. Hai mức giá được lưu riêng cho từng phòng.
                   </p>
 
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-lg bg-white p-3">
                       <div className="text-xs text-slate-500">
-                        Giá ngày
+                        Giá mỗi đêm
                       </div>
 
                       <div className="mt-1 font-semibold text-emerald-700">

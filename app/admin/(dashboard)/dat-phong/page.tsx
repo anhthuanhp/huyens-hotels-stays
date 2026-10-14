@@ -1058,7 +1058,7 @@ return (
                         </th>
 
                         <th className="px-4 py-3 text-right">
-                          {selectedBooking.stay_type === "month" ? "Giá/tháng" : "Giá/ngày"}
+                          {selectedBooking.stay_type === "month" ? "Giá/tháng" : "Giá/đêm"}
                         </th>
 
                         <th className="px-4 py-3 text-center">

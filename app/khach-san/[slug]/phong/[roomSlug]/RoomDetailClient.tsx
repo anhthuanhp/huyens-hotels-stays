@@ -1416,8 +1416,8 @@ export default function RoomDetailClient({
                     }`}
                   >
                     {language === "vi"
-                      ? "Ngày"
-                      : "Daily"}
+                      ? "Đêm"
+                      : "Nightly"}
                   </button>
 
                   <button

@@ -1471,8 +1471,8 @@ function TimPhongContent() {
                 }`}
               >
                 {language === "vi"
-                  ? "Theo ngày"
-                  : "Daily"}
+                  ? "Theo đêm"
+                  : "Nightly"}
               </button>
 
               <button
@@ -2375,7 +2375,7 @@ function TimPhongLoading() {
   return (
     <main className="min-h-screen bg-neutral-50">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-slate-900">Tìm phòng theo ngày hoặc tháng</h1>
+        <h1 className="text-3xl font-bold text-slate-900">Tìm phòng theo đêm hoặc tháng</h1>
 
         <div className="mt-6 h-48 animate-pulse rounded-2xl bg-neutral-200" />
 
