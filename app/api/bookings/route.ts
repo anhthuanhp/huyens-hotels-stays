@@ -1,6 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
+// Allow the database operation and bounded Telegram retries to finish on Vercel.
+export const maxDuration = 30;
+
 type BookingRoomInput = {
   roomSlug: string;
   quantity: number;
@@ -71,12 +74,15 @@ async function sendBookingTelegramNotification(data: {
   children: number;
   rooms: Array<{ name: string; quantity: number; unitPrice: number }>;
   totalAmount: number;
-}): Promise<void> {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+}): Promise<{ status: "sent" | "failed" | "not_configured" }> {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
   if (!botToken || !chatId) {
-    console.error("Booking Telegram notification skipped: missing bot configuration.");
-    return;
+    console.error("Booking Telegram notification not configured:", {
+      bookingCode: data.bookingCode,
+      missing: [!botToken && "TELEGRAM_BOT_TOKEN", !chatId && "TELEGRAM_CHAT_ID"].filter(Boolean),
+    });
+    return { status: "not_configured" };
   }
 
   const monthly = data.stayType === "month";
@@ -110,11 +116,11 @@ async function sendBookingTelegramNotification(data: {
       const response = await fetch("https://api.telegram.org/bot" + botToken + "/sendMessage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text: message }),
+        body: JSON.stringify({ chat_id: chatId, text: message.slice(0, 4096) }),
         signal: AbortSignal.timeout(4000),
       });
       const result = await response.json() as { ok?: boolean; description?: string };
-      if (response.ok && result.ok) return;
+      if (response.ok && result.ok) return { status: "sent" };
 
       lastError = result.description ?? `HTTP ${response.status}`;
       const retryable = response.status === 429 || response.status >= 500;
@@ -127,7 +133,11 @@ async function sendBookingTelegramNotification(data: {
     await new Promise((resolve) => setTimeout(resolve, attempt * 700));
   }
 
-  console.error("Booking Telegram notification failed after 3 attempts:", lastError);
+  console.error("Booking Telegram notification failed:", {
+    bookingCode: data.bookingCode,
+    error: lastError,
+  });
+  return { status: "failed" };
 }
 
 export async function POST(request: Request) {
@@ -293,7 +303,7 @@ export async function POST(request: Request) {
       totalAmount: Number(rpcResult.totalAmount ?? booking.totalAmount ?? booking.total_amount ?? 0),
     };
 
-    await sendBookingTelegramNotification({
+    const telegramNotification = await sendBookingTelegramNotification({
       bookingCode: String(bookingResponse.bookingCode),
       hotelName: hotel.name_vi || hotel.name_en || hotel.slug,
       fullName,
@@ -318,7 +328,7 @@ export async function POST(request: Request) {
       totalAmount: bookingResponse.totalAmount,
     });
 
-    return NextResponse.json({ success: true, booking: bookingResponse });
+    return NextResponse.json({ success: true, booking: bookingResponse, telegramNotification });
   } catch (error) {
     console.error("POST /api/bookings failed:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Có lỗi xảy ra khi tạo đặt phòng." }, { status: 500 });
