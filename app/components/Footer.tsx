@@ -78,10 +78,6 @@ export default function Footer() {
               </div>
             </Link>
 
-            <a href={FACEBOOK_PAGE_URL} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-12 items-center gap-2 text-sm text-white/90 hover:text-white hover:underline">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-sm font-bold" aria-hidden="true">f</span>
-              {isVi ? "Facebook Huyen’s Hotels & Stays" : "Follow Huyen’s Hotels & Stays on Facebook"}
-            </a>
             <div className="mt-5 space-y-2 text-sm leading-6 text-white/75">
               <p>
                 {isVi
@@ -167,6 +163,11 @@ export default function Footer() {
             </p>
 
             <div className="mt-4 space-y-3 text-sm text-white/75">
+            <a href={FACEBOOK_PAGE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 text-sm text-white/90 hover:text-white hover:underline">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-sm font-bold" aria-hidden="true">f</span>
+              {isVi ? "Facebook Huyen’s Hotels & Stays" : "Follow Huyen’s Hotels & Stays on Facebook"}
+            </a>
+
               <div className="flex items-center gap-3">
                 <Phone
                   className="h-4 w-4 shrink-0 text-white"
