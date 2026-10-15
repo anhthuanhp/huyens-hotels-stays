@@ -59,7 +59,9 @@ type CustomerReview = {
   guest_country: string | null;
 };
 
+type LatestPost = { id: number; slug: string; title_vi: string; title_en: string; excerpt_vi: string | null; excerpt_en: string | null };
 type HomeClientProps = {
+  latestPosts?: LatestPost[];
   heroSlides: HeroSlide[];
   hotels: Hotel[];
   hotelCovers: Record<number, string>;
@@ -192,6 +194,7 @@ export default function HomeClient({
   hotelCovers,
   hotelOTAs,
   customerReviews,
+  latestPosts = [],
 }: HomeClientProps) {
   /*
    * Luôn render "vi" ở lần render đầu tiên để server và client
@@ -489,7 +492,7 @@ export default function HomeClient({
                                 id="hero-heading"
                                 className="text-xl font-bold leading-tight drop-shadow-md sm:text-3xl lg:text-4xl"
                               >
-                                {title}
+                                {isVi ? "Khách sạn & homestay Quận 1 cũ, Sài Gòn" : "Hotels & homestays in central Saigon"}
                               </h1>
                             ) : (
                               <p className="text-xl font-bold leading-tight drop-shadow-md sm:text-3xl lg:text-4xl">
@@ -518,8 +521,7 @@ export default function HomeClient({
                       className="text-xl font-bold leading-tight sm:text-3xl lg:text-4xl"
                     >
                       {isVi
-                        ? "Huyen's Hotels & Stays"
-                        : "Huyen's Hotels & Stays"}
+                        ? "Khách sạn & homestay Quận 1 cũ, Sài Gòn" : "Hotels & homestays in central Saigon"}
                     </h1>
 
                     <p className="mt-2 text-sm sm:text-lg">
@@ -1134,6 +1136,20 @@ export default function HomeClient({
           </div>
         </section>
 
+        <section className="bg-sky-50 px-4 py-14 sm:px-6" aria-labelledby="home-blog-heading">
+          <div className="mx-auto max-w-7xl">
+            <h2 id="home-blog-heading" className="text-2xl font-bold text-sky-900">{isVi ? "Kinh nghiệm lưu trú & khám phá Sài Gòn" : "Saigon stay tips & local experiences"}</h2>
+            <p className="mt-3 leading-7 text-neutral-600">{isVi ? "Chọn nơi ở theo lịch công tác, đi học, sự kiện và những trải nghiệm địa phương." : "Plan accommodation around work, study, events and local experiences."}</p>
+            <div className="mt-6 grid gap-5 md:grid-cols-3">
+              {latestPosts.map(post => <article key={post.id} className="rounded-xl border border-sky-100 bg-white p-5">
+                <h3 className="text-lg font-semibold text-sky-900"><Link href={"/blog/" + post.slug} className="hover:underline">{isVi ? post.title_vi : post.title_en || post.title_vi}</Link></h3>
+                <p className="mt-3 text-sm leading-6 text-neutral-600">{isVi ? post.excerpt_vi : post.excerpt_en || post.excerpt_vi}</p>
+              </article>)}
+            </div>
+            <Link href="/blog" className="mt-6 inline-flex min-h-12 items-center font-semibold text-sky-800 underline">{isVi ? "Xem tất cả bài viết →" : "Read all articles →"}</Link>
+          </div>
+        </section>
+
         {/* HỎI ĐÁP TRƯỚC KHI ĐẶT PHÒNG */}
         <section
           id="cau-hoi-thuong-gap"
@@ -1207,6 +1223,12 @@ export default function HomeClient({
                             ? item.answerVi
                             : item.answerEn}
                         </p>
+                        {item.questionEn === "How long does it take to get from a hotel to Bui Vien Street?" && (
+                          <p className="mt-3 flex flex-wrap gap-4 text-sm font-medium text-sky-800">
+                            <Link href="/khach-san/ae-guesthouse" className="underline">A&amp;E Guesthouse — Đỗ Quang Đẩu</Link>
+                            <Link href="/khach-san/anh-kim-hotel" className="underline">Anh Kim Hotel — Cô Bắc</Link>
+                          </p>
+                        )}
                         {group.titleEn === "Location & transport" &&
                           item.questionEn === "Where are Huyen’s hotels located?" && (
                             <ul className="mt-3 space-y-2 pr-7 text-sm leading-6 text-neutral-600">

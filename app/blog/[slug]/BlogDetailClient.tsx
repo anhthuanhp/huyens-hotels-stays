@@ -2,6 +2,7 @@
 "use client";
 
 import Image from "next/image";
+import { parseBlogContent, splitBlogLinks } from "../../lib/blog-content";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -89,12 +90,7 @@ export default function BlogDetailClient({
     ? post.content_vi
     : post.content_en;
 
-  const content = contentText
-    ? contentText
-        .split(/\r?\n\r?\n/)
-        .map((paragraph) => paragraph.trim())
-        .filter(Boolean)
-    : [];
+  const content = parseBlogContent(contentText || "");
 
   const formattedDate = new Date(
     `${post.date}T00:00:00`
@@ -165,14 +161,15 @@ export default function BlogDetailClient({
       <article className="mx-auto max-w-[820px] px-6 pb-16">
         <div className="space-y-7">
           {content.length > 0 ? (
-            content.map((paragraph, index) => (
-              <p
-                key={`${post.id}-${index}`}
-                className="text-lg leading-9 text-slate-700"
-              >
-                {paragraph}
-              </p>
-            ))
+            content.map((block, index) => block.type === "heading" ? (
+  <h2 key={post.id + "-" + index} className="pt-4 text-2xl font-semibold leading-snug text-slate-900">{block.text}</h2>
+) : (
+  <p key={post.id + "-" + index} className="whitespace-pre-line text-lg leading-9 text-slate-700">
+    {splitBlogLinks(block.text).map((part, partIndex) => part.href ? (
+      <span key={partIndex}><a href={part.href} className="break-words font-medium text-sky-800 underline underline-offset-4">{part.text}</a>{part.suffix}</span>
+    ) : <span key={partIndex}>{part.text}</span>)}
+  </p>
+))
           ) : (
             <p className="text-lg leading-9 text-slate-500">
               {isVi

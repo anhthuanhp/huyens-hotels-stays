@@ -143,8 +143,8 @@ const HOTEL_LOCAL_SEO: Record<
   },
 
   huyenhomestay: {
-    vi: "Thuê phòng theo tháng tại khu vực Nguyễn Thị Minh Khai, TP.HCM. Xem giá tháng từng loại phòng và liên hệ xác nhận thời hạn thuê, tiền cọc, điện nước cùng dịch vụ đi kèm.",
-    en: "Monthly room rental in the Nguyen Thi Minh Khai area of Ho Chi Minh City. Compare room types and monthly rates, then confirm the rental period, deposit, utilities and included services.",
+    vi: "Lưu trú ngắn hoặc dài ngày tại khu vực Nguyễn Thị Minh Khai, TP.HCM. Xem phòng theo ngày; nếu cần thuê tháng, hãy liên hệ xác nhận giá, thời hạn thuê, tiền cọc và dịch vụ đi kèm.",
+    en: "Short and longer stays in the Nguyen Thi Minh Khai area of Ho Chi Minh City. View daily rooms; for a monthly arrangement, contact the property to confirm rates, duration, deposit and included services.",
   },
 };
 
@@ -171,8 +171,8 @@ const HOTEL_H1_SEO: Record<
   },
 
   huyenhomestay: {
-    vi: "Huyen Homestay – Thuê phòng theo tháng tại TP.HCM",
-    en: "Huyen Homestay – Monthly room rental in Ho Chi Minh City",
+    vi: "Huyen Homestay – Lưu trú dài ngày tại TP.HCM",
+    en: "Huyen Homestay – Long stays in Ho Chi Minh City",
   },
 };
 

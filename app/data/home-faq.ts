@@ -230,8 +230,8 @@ export const HOME_FAQ_GROUPS: HomeFaqGroup[] = [
       {
         questionVi: "Từ khách sạn đến Bùi Viện mất bao lâu?",
         questionEn: "How long does it take to get from a hotel to Bui Vien Street?",
-        answerVi: "Thời gian phụ thuộc khách sạn, phương tiện và giao thông. Xem địa chỉ khách sạn và kiểm tra bản đồ theo giờ khởi hành.",
-        answerEn: "Travel time depends on the hotel, transport, and traffic. Check the hotel address and a map for your departure time.",
+        answerVi: "Để khám phá khu Bùi Viện, bạn có thể xem A&E Guesthouse tại 26/3 Đỗ Quang Đẩu hoặc Anh Kim Hotel tại 310 Cô Bắc. Kiểm tra tuyến đường từ đúng địa chỉ; thời gian phụ thuộc phương tiện và giao thông.",
+        answerEn: "For the Bui Vien area, compare A&E Guesthouse at 26/3 Do Quang Dau and Anh Kim Hotel at 310 Co Bac. Check the route from the exact address; travel time depends on transport and traffic.",
       },
       {
         questionVi: "Từ khách sạn đến chợ Bến Thành mất bao lâu?",

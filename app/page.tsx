@@ -126,6 +126,14 @@ function getSupabase(): SupabaseClient {
    HERO
 ========================================================= */
 
+async function getLatestPosts() {
+  const { data, error } = await getSupabase().from("blog_posts")
+    .select("id, slug, title_vi, title_en, excerpt_vi, excerpt_en")
+    .eq("status", "active").order("date", { ascending: false }).order("id", { ascending: false }).limit(3);
+  if (error) { console.error("Home blog:", error.message); return []; }
+  return data || [];
+}
+
 const getHeroSlides = cache(
   async (): Promise<HeroSlide[]> => {
     const { data, error } =
@@ -434,10 +442,11 @@ async function getHomepageData() {
   /*
    * Các query độc lập chạy song song.
    */
-  const [heroSlides, hotels, customerReviews] = await Promise.all([
+  const [heroSlides, hotels, customerReviews, latestPosts] = await Promise.all([
     getHeroSlides(),
     getHotels(),
     getCustomerReviews(),
+    getLatestPosts(),
   ]);
 
   const hotelIds =
@@ -479,6 +488,7 @@ async function getHomepageData() {
     hotelCovers,
     hotelOTAs,
     customerReviews,
+    latestPosts,
   };
 }
 
@@ -728,6 +738,7 @@ export default async function HomePage() {
     hotelCovers,
     hotelOTAs,
     customerReviews,
+    latestPosts,
   } = await getHomepageData();
 
   return (
@@ -751,6 +762,7 @@ export default async function HomePage() {
         hotelCovers={hotelCovers}
         hotelOTAs={hotelOTAs}
         customerReviews={customerReviews}
+        latestPosts={latestPosts}
       />
     </>
   );
