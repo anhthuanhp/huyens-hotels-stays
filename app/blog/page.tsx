@@ -68,9 +68,8 @@ async function getPosts(): Promise<
         status
       `)
       .eq("status", "active")
-      .order("date", {
-        ascending: false,
-      });
+      .order("date", { ascending: false })
+      .order("id", { ascending: false });
 
   if (error) {
     console.error(

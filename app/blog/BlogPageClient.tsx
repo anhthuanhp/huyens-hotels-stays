@@ -143,7 +143,7 @@ className="block"
 <Image src={post.image} alt={title} fill sizes="(max-width: 640px) 96px, (max-width: 1024px) 33vw, 25vw" className="object-cover transition duration-500 group-hover:scale-105" />
 ) : (
 <div className="flex h-full w-full items-center justify-center px-1 text-center text-[9px] leading-3 text-slate-400">
-Huyen's Hotels & Stays
+Huyen&apos;s Hotels &amp; Stays
 </div>
 )}
 </div>
@@ -363,8 +363,7 @@ post.category_en === category.en
 .filter(
 (post) =>
 post.id !== featuredPost?.id
-)
-.slice(0, 3),
+),
 }));
 }, [posts, featuredPost]);
 
@@ -390,7 +389,7 @@ return (
 
       <div className="max-w-3xl">
         <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">
-          Huyen's Hotels & Stays
+          Huyen&apos;s Hotels &amp; Stays
         </p>
 
         <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
