@@ -390,10 +390,11 @@ export default function HomeClient({
         >
           <div className="mx-auto max-w-7xl">
             <div
-              className="relative h-[320px] overflow-hidden rounded-2xl bg-neutral-900 sm:h-[360px] lg:h-[420px]"
+              className="relative z-30 h-[320px] rounded-2xl bg-neutral-900 sm:h-[360px] lg:h-[420px]"
             >
               <Header />
 
+              <div className="absolute inset-0 overflow-hidden rounded-2xl">
               {heroSlides.length > 0 ? (
                 heroSlides.map(
                   (slide, index) => {
@@ -529,6 +530,8 @@ export default function HomeClient({
                   </div>
                 </div>
               )}
+
+              </div>
 
               {heroCss && (
                 <style

@@ -293,6 +293,7 @@ export default function Header() {
                   : "Open menu"
               }
               aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
               className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-neutral-900 shadow-md transition hover:bg-neutral-100 lg:hidden"
             >
               <span className="relative block h-5 w-5">
@@ -331,7 +332,8 @@ export default function Header() {
       {mobileMenuOpen && (
         <div
           ref={mobileMenuRef}
-          className="absolute right-4 top-[calc(100%+8px)] w-60 overflow-hidden rounded-xl border border-white/20 bg-black/85 shadow-xl backdrop-blur-md sm:right-6 lg:hidden"
+          id="mobile-navigation"
+          className="absolute right-4 top-[calc(100%+8px)] max-h-[calc(100dvh-7rem)] w-60 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-xl border border-white/20 bg-black/85 shadow-xl backdrop-blur-md sm:right-6 lg:hidden"
         >
           <nav className="flex flex-col gap-2 p-2">
             <Link
