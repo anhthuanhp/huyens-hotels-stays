@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { FACEBOOK_PAGE_URL } from "../lib/social";
 import EmailLink from "../components/EmailLink";
 
 type Language = "vi" | "en";
@@ -174,6 +175,10 @@ return (
         </p>
 
         <div className="mt-8 space-y-4">
+          <a href={FACEBOOK_PAGE_URL} target="_blank" rel="noopener noreferrer" className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md">
+            <div className="text-sm text-neutral-500">Facebook</div>
+            <div className="mt-1 text-lg font-semibold text-neutral-900">{isVi ? "Theo dõi Huyen’s Hotels & Stays" : "Follow Huyen’s Hotels & Stays"}</div>
+          </a>
           <a
             href="tel:0902095669"
             className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"

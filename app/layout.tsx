@@ -1,3 +1,4 @@
+import { FACEBOOK_PAGE_URL } from "./lib/social";
 import type { Metadata } from "next";
 import "./globals.css";
 import VisitorTracker from "./components/VisitorTracker";
@@ -84,6 +85,7 @@ export default function RootLayout({ children }: LayoutProps) {
               "@type": "Organization",
               "@id": `${siteUrl}#organization`,
               name: siteName,
+              sameAs: [FACEBOOK_PAGE_URL],
               url: siteUrl,
               telephone: "+84 902095669",
               description:
