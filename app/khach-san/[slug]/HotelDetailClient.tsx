@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import HotelBookingSidebar from "./HotelBookingSidebar";
+import HotelGuides from "../../components/HotelGuides";
 
 type Language = "vi" | "en";
 
@@ -561,6 +562,8 @@ export default function HotelDetailClient({
                 </p>
               )}
             </section>
+
+            <HotelGuides slug={initialHotel.slug} language={language} />
 
             <section
               id="rooms"
