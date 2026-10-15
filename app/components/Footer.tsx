@@ -207,17 +207,15 @@ export default function Footer() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Mail
-                  className="h-4 w-4 shrink-0 text-white"
-                  strokeWidth={1.8}
-                />
-                <span className="break-all">
-                  <span className="font-medium">
-                    Email:
-                  </span>{" "}
-                  <EmailLink address="contact@huyenhotels.com" />; <EmailLink address="reception@huyenhotels.com" />
-                </span>
+              <div className="flex items-start gap-3">
+                <Mail className="mt-1 h-4 w-4 shrink-0 text-white" strokeWidth={1.8} />
+                <div className="flex min-w-0 items-start gap-1">
+                  <span className="shrink-0 font-medium">Email:</span>
+                  <div className="min-w-0 space-y-1 break-all">
+                    <div><EmailLink address="contact@huyenhotels.com" /></div>
+                    <div><EmailLink address="reception@huyenhotels.com" /></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
