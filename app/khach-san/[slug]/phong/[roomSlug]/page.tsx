@@ -1,3 +1,4 @@
+import { districtOnePlace } from "../../../../lib/local-schema";
 import { cleanSeoText, seoDescription } from "../../../../lib/seo";
 import RoomDetailClient from "./RoomDetailClient";
 import { supabase } from "../../../../lib/supabase";
@@ -701,6 +702,7 @@ export default async function RoomDetailPage({
       "@id":
         roomUrl + "#room",
       name: roomName,
+      containedInPlace: { "@id": `${siteUrl}/khach-san/${slug}#hotel` },
       description:
         roomDescription ||
         `${roomName} tại ${hotelName}.`,
@@ -776,6 +778,7 @@ export default async function RoomDetailPage({
           "@id":
             `${siteUrl}/khach-san/${slug}#hotel`,
           name: hotelName,
+          containedInPlace: districtOnePlace,
           url:
             `${siteUrl}/khach-san/${slug}`,
         },

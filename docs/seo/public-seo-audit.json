@@ -1,13 +1,31 @@
 {
   "base": "http://localhost:3100",
-  "checked": 36,
-  "passed": 36,
+  "checked": 45,
+  "passed": 45,
   "pages": [
+    {
+      "path": "/khach-san-quan-1-cu",
+      "status": 200,
+      "title": "Khách sạn Quận 1 cũ Sài Gòn | Huyen's Hotels & Stays",
+      "description": "Tìm hiểu cách chọn khách sạn Quận 1 cũ, trung tâm Sài Gòn cùng Huyen's. So sánh vị trí, loại phòng và chính sách trước khi gửi yêu cầu đặt phòng.",
+      "canonical": "https://huyenhotels.com/khach-san-quan-1-cu",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "images": 1,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
     {
       "path": "/",
       "status": 200,
-      "title": "Khách sạn và homestay TP.HCM | Huyen's Hotels & Stays",
-      "description": "Tìm khách sạn, guesthouse và homestay tại TP.HCM cùng Huyen's Hotels & Stays. Xem vị trí, loại phòng, giá ngày hoặc tháng và gửi yêu cầu đặt phòng.",
+      "title": "Khách sạn & homestay Quận 1 cũ, Sài Gòn | Huyen’s",
+      "description": "Khám phá khách sạn và homestay Huyen’s tại Quận 1 cũ, trung tâm Sài Gòn. Xem cơ sở ở Cô Bắc, Đỗ Quang Đẩu, Nguyễn Thị Minh Khai và đặt phòng trực tiếp.",
       "canonical": "https://huyenhotels.com",
       "h1": 1,
       "headings": [
@@ -28,8 +46,15 @@
         3,
         3,
         2,
+        2,
+        3,
+        3,
+        3,
         2
       ],
+      "images": 12,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -58,6 +83,9 @@
         3,
         2
       ],
+      "images": 15,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -82,6 +110,9 @@
         3,
         3
       ],
+      "images": 5,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -95,6 +126,9 @@
         1,
         2
       ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -112,10 +146,26 @@
         2,
         3,
         3,
+        3,
+        3,
         2,
         3,
         3,
         2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
         3,
         3,
         3,
@@ -124,6 +174,9 @@
         3,
         2
       ],
+      "images": 29,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -138,6 +191,9 @@
         2,
         2
       ],
+      "images": 1,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -163,6 +219,9 @@
         2,
         2
       ],
+      "images": 1,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -188,6 +247,9 @@
         2,
         2
       ],
+      "images": 1,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -203,6 +265,9 @@
         2,
         2
       ],
+      "images": 1,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -224,36 +289,22 @@
         2,
         2
       ],
-      "issues": []
-    },
-    {
-      "path": "/khach-san/huyenhomestay",
-      "status": 200,
-      "title": "Huyenhomestay tại TP.HCM | Huyen's Hotels & Stays",
-      "description": "Huyenhomestay tại 18A/43 Nguyễn Thị Minh Khai, Sài Gòn, TP. Hồ Chí Minh. Xem loại phòng, tiện nghi, giá thuê và gửi yêu cầu đặt phòng trực tiếp với Huyen's.",
-      "canonical": "https://huyenhotels.com/khach-san/huyenhomestay",
-      "h1": 1,
-      "headings": [
-        1,
-        2,
-        3,
-        3,
-        3,
-        2,
-        2
-      ],
+      "images": 1,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
       "path": "/khach-san/anh-kim-hotel",
       "status": 200,
-      "title": "Khách sạn Anh Kim tại TP.HCM | Huyen's Hotels & Stays",
-      "description": "Khách sạn Anh Kim tại 310 Cô Bắc, Cầu Ông Lãnh, TP. Hồ Chí Minh. Xem loại phòng, tiện nghi, giá thuê và gửi yêu cầu đặt phòng trực tiếp với Huyen's.",
+      "title": "Anh Kim Hotel – Khách sạn Cô Bắc, gần Bùi Viện | Huyen's",
+      "description": "Anh Kim Hotel tại khu vực Cô Bắc, thuận tiện khám phá Bùi Viện và Bến Thành. Xem loại phòng, tiện nghi, giá lưu trú và gửi yêu cầu đặt phòng.",
       "canonical": "https://huyenhotels.com/khach-san/anh-kim-hotel",
       "h1": 1,
       "headings": [
         1,
         2,
+        2,
         3,
         3,
         3,
@@ -266,18 +317,22 @@
         2,
         2
       ],
+      "images": 5,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
       "path": "/khach-san/huyen-house",
       "status": 200,
-      "title": "Huyen House tại TP.HCM | Huyen's Hotels & Stays",
-      "description": "Huyen House tại 18A/139 Nguyễn Thị Minh Khai, Sài Gòn, Hồ Chí Minh. Xem loại phòng, tiện nghi, giá thuê và gửi yêu cầu đặt phòng trực tiếp với Huyen's.",
+      "title": "Huyen House – Lưu trú gần Tổng Lãnh sự quán Mỹ | Huyen's",
+      "description": "Huyen House tại khu vực Nguyễn Thị Minh Khai, thuận tiện đến Tổng Lãnh sự quán Mỹ tại TP.HCM. Xem phòng, địa chỉ và gửi yêu cầu đặt phòng.",
       "canonical": "https://huyenhotels.com/khach-san/huyen-house",
       "h1": 1,
       "headings": [
         1,
         2,
+        2,
         3,
         3,
         2,
@@ -287,18 +342,44 @@
         2,
         2
       ],
+      "images": 3,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/khach-san/huyenhomestay",
+      "status": 200,
+      "title": "Huyen Homestay – Lưu trú dài ngày tại TP.HCM | Huyen's",
+      "description": "Tìm phòng thuê tháng tại Huyen Homestay, khu vực Nguyễn Thị Minh Khai, TP.HCM. Xem loại phòng, giá tháng và hỏi điều kiện cọc, điện nước trước khi đặt.",
+      "canonical": "https://huyenhotels.com/khach-san/huyenhomestay",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        3,
+        3,
+        3,
+        2,
+        2
+      ],
+      "images": 4,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
       "path": "/khach-san/ae-guesthouse",
       "status": 200,
-      "title": "A&E Guesthouse tại TP.HCM | Huyen's Hotels & Stays",
-      "description": "A&E Guesthouse tại 26/3 Đỗ Quang Đẩu, Bến Thành, TP. Hồ Chí Minh. Xem loại phòng, tiện nghi, giá thuê và gửi yêu cầu đặt phòng trực tiếp với Huyen's.",
+      "title": "A&E Guesthouse – Gần Bùi Viện và Phạm Ngũ Lão | Huyen's",
+      "description": "A&E Guesthouse cho hành trình khám phá khu Bùi Viện, Phạm Ngũ Lão tại Sài Gòn. Xem các loại phòng thực tế, tiện nghi và liên hệ đặt phòng trực tiếp.",
       "canonical": "https://huyenhotels.com/khach-san/ae-guesthouse",
       "h1": 1,
       "headings": [
         1,
         2,
+        2,
         3,
         3,
         3,
@@ -308,28 +389,16 @@
         2,
         2
       ],
-      "issues": []
-    },
-    {
-      "path": "/khach-san/ae-guesthouse/phong/family-room",
-      "status": 200,
-      "title": "Phòng Family cho 3 người – A&E Guesthouse | Huyen's",
-      "description": "Phòng Family cho 3 người tại A&E Guesthouse. 25m², 3 khách. Giá từ 750.000 VND/đêm. Địa chỉ: 26/3 Đỗ Quang Đẩu, Bến Thành, TP. Hồ Chí Minh. Không gian rộng…",
-      "canonical": "https://huyenhotels.com/khach-san/ae-guesthouse/phong/family-room",
-      "h1": 1,
-      "headings": [
-        1,
-        2,
-        2,
-        2
-      ],
+      "images": 6,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
       "path": "/khach-san/ae-guesthouse/phong/standard-room",
       "status": 200,
       "title": "Phòng Studio without Window – A&E Guesthouse | Huyen's",
-      "description": "Phòng Studio without Window tại A&E Guesthouse. 12m², 2 khách. Giá từ 380.000 VND/đêm. Địa chỉ: 26/3 Đỗ Quang Đẩu, Bến Thành, TP. Hồ Chí Minh. Phòng nghỉ…",
+      "description": "Phòng Studio without Window tại A&E Guesthouse. 12m², 2 khách. Giá từ 380.000 VND/đêm. Địa chỉ: 26/3 Đỗ Quang Đẩu, Bến Thành, TP. Hồ Chí Minh. Phòng Studio…",
       "canonical": "https://huyenhotels.com/khach-san/ae-guesthouse/phong/standard-room",
       "h1": 1,
       "headings": [
@@ -338,13 +407,34 @@
         2,
         2
       ],
+      "images": 9,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/khach-san/ae-guesthouse/phong/family-room",
+      "status": 200,
+      "title": "Phòng Family cho 3 người – A&E Guesthouse | Huyen's",
+      "description": "Phòng Family cho 3 người tại A&E Guesthouse. 25m², 3 khách. Giá từ 750.000 VND/đêm. Địa chỉ: 26/3 Đỗ Quang Đẩu, Bến Thành, TP. Hồ Chí Minh. Phòng Family cho…",
+      "canonical": "https://huyenhotels.com/khach-san/ae-guesthouse/phong/family-room",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "images": 10,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
       "path": "/khach-san/huyen-house/phong/cozy-room",
       "status": 200,
       "title": "Phòng Cozy cho 1 người – Huyen House | Huyen's",
-      "description": "Phòng Cozy cho 1 người tại Huyen House. 10m², 1 khách. Giá từ 450.000 VND/đêm. Địa chỉ: 18A/139 Nguyễn Thị Minh Khai, Sài Gòn, Hồ Chí Minh. Không gian ấm…",
+      "description": "Phòng Cozy cho 1 người tại Huyen House. 10m², 1 khách. Giá từ 450.000 VND/đêm. Địa chỉ: 18A/139 Nguyễn Thị Minh Khai, Sài Gòn, Hồ Chí Minh. Phòng Cozy tại…",
       "canonical": "https://huyenhotels.com/khach-san/huyen-house/phong/cozy-room",
       "h1": 1,
       "headings": [
@@ -353,125 +443,16 @@
         2,
         2
       ],
-      "issues": []
-    },
-    {
-      "path": "/khach-san/huyenhomestay/phong/huyen-double",
-      "status": 200,
-      "title": "Phòng Double có sân – Huyenhomestay | Huyen's",
-      "description": "Phòng Double có sân tại Huyenhomestay. 25m², 2 khách. Giá từ 8.000.000 VND/tháng. Địa chỉ: 18A/43 Nguyễn Thị Minh Khai, Sài Gòn, TP. Hồ Chí Minh. Xem tiện…",
-      "canonical": "https://huyenhotels.com/khach-san/huyenhomestay/phong/huyen-double",
-      "h1": 1,
-      "headings": [
-        1,
-        2,
-        2
-      ],
-      "issues": []
-    },
-    {
-      "path": "/khach-san/ae-guesthouse/phong/eco-double",
-      "status": 200,
-      "title": "Phòng đôi hạng tiết kiệm – A&E Guesthouse | Huyen's",
-      "description": "Phòng đôi hạng tiết kiệm tại A&E Guesthouse. 18m², 2 khách. Giá từ 400.000 VND/đêm. Địa chỉ: 26/3 Đỗ Quang Đẩu, Bến Thành, TP. Hồ Chí Minh. Xem tiện nghi và…",
-      "canonical": "https://huyenhotels.com/khach-san/ae-guesthouse/phong/eco-double",
-      "h1": 1,
-      "headings": [
-        1,
-        2,
-        2
-      ],
-      "issues": []
-    },
-    {
-      "path": "/khach-san/anh-kim-hotel/phong/deluxe-double",
-      "status": 200,
-      "title": "Phòng Double có cửa sổ – Khách sạn Anh Kim | Huyen's",
-      "description": "Phòng Double có cửa sổ tại Khách sạn Anh Kim. 18m², 2 khách. Giá từ 550.000 VND/đêm. Địa chỉ: 310 Cô Bắc, Cầu Ông Lãnh, TP. Hồ Chí Minh. Không gian rộng rãi…",
-      "canonical": "https://huyenhotels.com/khach-san/anh-kim-hotel/phong/deluxe-double",
-      "h1": 1,
-      "headings": [
-        1,
-        2,
-        2,
-        2
-      ],
-      "issues": []
-    },
-    {
-      "path": "/khach-san/anh-kim-hotel/phong/standard-double",
-      "status": 200,
-      "title": "Phòng Standard Double – Khách sạn Anh Kim | Huyen's",
-      "description": "Phòng Standard Double tại Khách sạn Anh Kim. 12m², 2 khách. Giá từ 400.000 VND/đêm. Địa chỉ: 310 Cô Bắc, Cầu Ông Lãnh, TP. Hồ Chí Minh. Phòng nghỉ tiện nghi…",
-      "canonical": "https://huyenhotels.com/khach-san/anh-kim-hotel/phong/standard-double",
-      "h1": 1,
-      "headings": [
-        1,
-        2,
-        2,
-        2
-      ],
-      "issues": []
-    },
-    {
-      "path": "/khach-san/anh-kim-hotel/phong/deluxe%20double",
-      "status": 200,
-      "title": "Phòng Deluxe Double có ban công – Khách sạn Anh Kim | Huyen's",
-      "description": "Phòng Deluxe Double có ban công tại Khách sạn Anh Kim. 25m², 2 khách. Giá từ 700.000 VND/đêm. Địa chỉ: 310 Cô Bắc, Cầu Ông Lãnh, TP. Hồ Chí Minh. Xem tiện…",
-      "canonical": "https://huyenhotels.com/khach-san/anh-kim-hotel/phong/deluxe%20double",
-      "h1": 1,
-      "headings": [
-        1
-      ],
-      "issues": []
-    },
-    {
-      "path": "/khach-san/anh-kim-hotel/phong/family-room",
-      "status": 200,
-      "title": "Phòng Family with City View – Khách sạn Anh Kim | Huyen's",
-      "description": "Phòng Family with City View tại Khách sạn Anh Kim. 25m², 4 khách. Giá từ 800.000 VND/đêm. Địa chỉ: 310 Cô Bắc, Cầu Ông Lãnh, TP. Hồ Chí Minh. Xem tiện nghi…",
-      "canonical": "https://huyenhotels.com/khach-san/anh-kim-hotel/phong/family-room",
-      "h1": 1,
-      "headings": [
-        1,
-        2,
-        2
-      ],
-      "issues": []
-    },
-    {
-      "path": "/khach-san/ae-guesthouse/phong/double-balcony",
-      "status": 200,
-      "title": "Phòng đôi có ban công rộng – A&E Guesthouse | Huyen's",
-      "description": "Phòng đôi có ban công rộng tại A&E Guesthouse. 20m², 2 khách. Giá từ 500.000 VND/đêm. Địa chỉ: 26/3 Đỗ Quang Đẩu, Bến Thành, TP. Hồ Chí Minh. Xem tiện nghi…",
-      "canonical": "https://huyenhotels.com/khach-san/ae-guesthouse/phong/double-balcony",
-      "h1": 1,
-      "headings": [
-        1,
-        2,
-        2
-      ],
-      "issues": []
-    },
-    {
-      "path": "/khach-san/ae-guesthouse/phong/deluxe-windown",
-      "status": 200,
-      "title": "Phòng giường đôi có cửa sổ – A&E Guesthouse | Huyen's",
-      "description": "Phòng giường đôi có cửa sổ tại A&E Guesthouse. 18m², 2 khách. Giá từ 500.000 VND/đêm. Địa chỉ: 26/3 Đỗ Quang Đẩu, Bến Thành, TP. Hồ Chí Minh. Xem tiện nghi…",
-      "canonical": "https://huyenhotels.com/khach-san/ae-guesthouse/phong/deluxe-windown",
-      "h1": 1,
-      "headings": [
-        1,
-        2,
-        2
-      ],
+      "images": 6,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
       "path": "/khach-san/huyen-house/phong/family-house",
       "status": 200,
       "title": "Phòng Deluxe Double – Huyen House | Huyen's",
-      "description": "Phòng Deluxe Double tại Huyen House. 25m², 2 khách. Giá từ 650.000 VND/đêm. Địa chỉ: 18A/139 Nguyễn Thị Minh Khai, Sài Gòn, Hồ Chí Minh. Phòng rộng rãi dành…",
+      "description": "Phòng Deluxe Double tại Huyen House. 25m², 2 khách. Giá từ 650.000 VND/đêm. Địa chỉ: 18A/139 Nguyễn Thị Minh Khai, Sài Gòn, Hồ Chí Minh. Phòng Deluxe Double…",
       "canonical": "https://huyenhotels.com/khach-san/huyen-house/phong/family-house",
       "h1": 1,
       "headings": [
@@ -480,13 +461,16 @@
         2,
         2
       ],
+      "images": 9,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
       "path": "/khach-san/huyenhomestay/phong/family-homestay",
       "status": 200,
       "title": "Phòng Family có ban công – Huyenhomestay | Huyen's",
-      "description": "Phòng Family có ban công tại Huyenhomestay. 25m², 4 khách. Giá từ 12.500.000 VND/tháng. Địa chỉ: 18A/43 Nguyễn Thị Minh Khai, Sài Gòn, TP. Hồ Chí Minh.…",
+      "description": "Phòng Family có ban công tại Huyenhomestay. 25m², 4 khách. Giá từ 750.000 VND/đêm. Địa chỉ: 18A/43 Nguyễn Thị Minh Khai, Sài Gòn, TP. Hồ Chí Minh. Phòng…",
       "canonical": "https://huyenhotels.com/khach-san/huyenhomestay/phong/family-homestay",
       "h1": 1,
       "headings": [
@@ -495,13 +479,70 @@
         2,
         2
       ],
+      "images": 7,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/khach-san/anh-kim-hotel/phong/family-room",
+      "status": 200,
+      "title": "Phòng Family with City View – Khách sạn Anh Kim | Huyen's",
+      "description": "Phòng Family with City View tại Khách sạn Anh Kim. 25m², 4 khách. Giá từ 800.000 VND/đêm. Địa chỉ: 310 Cô Bắc, Cầu Ông Lãnh, TP. Hồ Chí Minh. Phòng Family…",
+      "canonical": "https://huyenhotels.com/khach-san/anh-kim-hotel/phong/family-room",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "images": 13,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/khach-san/anh-kim-hotel/phong/standard-double",
+      "status": 200,
+      "title": "Phòng Standard Double – Khách sạn Anh Kim | Huyen's",
+      "description": "Phòng Standard Double tại Khách sạn Anh Kim. 12m², 2 khách. Giá từ 400.000 VND/đêm. Địa chỉ: 310 Cô Bắc, Cầu Ông Lãnh, TP. Hồ Chí Minh. Phòng Standard…",
+      "canonical": "https://huyenhotels.com/khach-san/anh-kim-hotel/phong/standard-double",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "images": 10,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/khach-san/anh-kim-hotel/phong/deluxe-double",
+      "status": 200,
+      "title": "Phòng Double có cửa sổ – Khách sạn Anh Kim | Huyen's",
+      "description": "Phòng Double có cửa sổ tại Khách sạn Anh Kim. 18m², 2 khách. Giá từ 550.000 VND/đêm. Địa chỉ: 310 Cô Bắc, Cầu Ông Lãnh, TP. Hồ Chí Minh. Phòng Double có cửa…",
+      "canonical": "https://huyenhotels.com/khach-san/anh-kim-hotel/phong/deluxe-double",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "images": 12,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
       "path": "/khach-san/huyenhomestay/phong/private-room",
       "status": 200,
       "title": "Phòng Double có cửa sổ – Huyenhomestay | Huyen's",
-      "description": "Phòng Double có cửa sổ tại Huyenhomestay. 18m², 2 khách. Giá từ 8.250.000 VND/tháng. Địa chỉ: 18A/43 Nguyễn Thị Minh Khai, Sài Gòn, TP. Hồ Chí Minh. Không…",
+      "description": "Phòng Double có cửa sổ tại Huyenhomestay. 18m², 2 khách. Giá từ 550.000 VND/đêm. Địa chỉ: 18A/43 Nguyễn Thị Minh Khai, Sài Gòn, TP. Hồ Chí Minh. Phòng…",
       "canonical": "https://huyenhotels.com/khach-san/huyenhomestay/phong/private-room",
       "h1": 1,
       "headings": [
@@ -510,6 +551,275 @@
         2,
         2
       ],
+      "images": 8,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/khach-san/anh-kim-hotel/phong/deluxe%20double",
+      "status": 200,
+      "title": "Phòng Deluxe Double có ban công – Khách sạn Anh Kim | Huyen's",
+      "description": "Phòng Deluxe Double có ban công tại Khách sạn Anh Kim. 25m², 2 khách. Giá từ 700.000 VND/đêm. Địa chỉ: 310 Cô Bắc, Cầu Ông Lãnh, TP. Hồ Chí Minh. Phòng…",
+      "canonical": "https://huyenhotels.com/khach-san/anh-kim-hotel/phong/deluxe%20double",
+      "h1": 1,
+      "headings": [
+        1
+      ],
+      "images": 1,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/khach-san/ae-guesthouse/phong/double-balcony",
+      "status": 200,
+      "title": "Phòng đôi có ban công rộng – A&E Guesthouse | Huyen's",
+      "description": "Phòng đôi có ban công rộng tại A&E Guesthouse. 20m², 2 khách. Giá từ 500.000 VND/đêm. Địa chỉ: 26/3 Đỗ Quang Đẩu, Bến Thành, TP. Hồ Chí Minh. Phòng đôi có…",
+      "canonical": "https://huyenhotels.com/khach-san/ae-guesthouse/phong/double-balcony",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "images": 10,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/khach-san/ae-guesthouse/phong/deluxe-windown",
+      "status": 200,
+      "title": "Phòng giường đôi có cửa sổ – A&E Guesthouse | Huyen's",
+      "description": "Phòng giường đôi có cửa sổ tại A&E Guesthouse. 18m², 2 khách. Giá từ 500.000 VND/đêm. Địa chỉ: 26/3 Đỗ Quang Đẩu, Bến Thành, TP. Hồ Chí Minh. Phòng giường…",
+      "canonical": "https://huyenhotels.com/khach-san/ae-guesthouse/phong/deluxe-windown",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "images": 11,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/khach-san/ae-guesthouse/phong/eco-double",
+      "status": 200,
+      "title": "Phòng đôi hạng tiết kiệm – A&E Guesthouse | Huyen's",
+      "description": "Phòng đôi hạng tiết kiệm tại A&E Guesthouse. 18m², 2 khách. Giá từ 400.000 VND/đêm. Địa chỉ: 26/3 Đỗ Quang Đẩu, Bến Thành, TP. Hồ Chí Minh. Phòng đôi hạng…",
+      "canonical": "https://huyenhotels.com/khach-san/ae-guesthouse/phong/eco-double",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "images": 12,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/khach-san/huyenhomestay/phong/huyen-double",
+      "status": 200,
+      "title": "Phòng Double có sân – Huyenhomestay | Huyen's",
+      "description": "Phòng Double có sân tại Huyenhomestay. 25m², 2 khách. Giá từ 500.000 VND/đêm. Địa chỉ: 18A/43 Nguyễn Thị Minh Khai, Sài Gòn, TP. Hồ Chí Minh. Phòng Double…",
+      "canonical": "https://huyenhotels.com/khach-san/huyenhomestay/phong/huyen-double",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "images": 9,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/blog/ae-guesthouse-do-quang-dau-huong-dan-chon-phong",
+      "status": 200,
+      "title": "A&E Guesthouse Đỗ Quang Đẩu: Hướng dẫn chọn phòng | Huyen's",
+      "description": "A&E Guesthouse Đỗ Quang Đẩu: Hướng dẫn chọn phòng. Chọn phòng tại A&E Guesthouse khu Bùi Viện: Studio không cửa sổ, phòng đôi có cửa sổ hoặc ban công và…",
+      "canonical": "https://huyenhotels.com/blog/ae-guesthouse-do-quang-dau-huong-dan-chon-phong",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/blog/huyen-house-nguyen-thi-minh-khai-phong-mot-hai-nguoi",
+      "status": 200,
+      "title": "Huyen House Nguyễn Thị Minh Khai: Phòng cho 1–2 người | Huyen's",
+      "description": "Huyen House Nguyễn Thị Minh Khai: Phòng cho 1–2 người. Tìm hiểu Huyen House tại 18A/139 Nguyễn Thị Minh Khai: phòng Cozy một người và Deluxe Double hai…",
+      "canonical": "https://huyenhotels.com/blog/huyen-house-nguyen-thi-minh-khai-phong-mot-hai-nguoi",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/blog/anh-kim-hotel-co-bac-chon-phong-cap-doi-gia-dinh",
+      "status": 200,
+      "title": "Anh Kim Hotel Cô Bắc: Chọn phòng đôi hay phòng gia đình? | Huyen's",
+      "description": "Anh Kim Hotel Cô Bắc: Chọn phòng đôi hay phòng gia đình?. Khám phá phòng tại Anh Kim Hotel, 310 Cô Bắc: Standard Double, phòng có cửa sổ, ban công và…",
+      "canonical": "https://huyenhotels.com/blog/anh-kim-hotel-co-bac-chon-phong-cap-doi-gia-dinh",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/blog/huyen-homestay-luu-tru-dai-ngay-nguyen-thi-minh-khai",
+      "status": 200,
+      "title": "Huyen Homestay: Chọn phòng ở dài ngày tại Sài Gòn | Huyen's",
+      "description": "Huyen Homestay: Chọn phòng ở dài ngày tại Sài Gòn. Tìm phòng ở dài ngày tại Huyen Homestay, Nguyễn Thị Minh Khai. So sánh phòng có sân, cửa sổ và Family có…",
+      "canonical": "https://huyenhotels.com/blog/huyen-homestay-luu-tru-dai-ngay-nguyen-thi-minh-khai",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/blog/an-gi-gan-bui-vien-lich-trinh-am-thuc-buoi-toi",
+      "status": 200,
+      "title": "Ăn gì gần Bùi Viện? Gợi ý một buổi tối ở Sài Gòn | Huyen's",
+      "description": "Ăn gì gần Bùi Viện? Gợi ý một buổi tối ở Sài Gòn. Ăn gì gần Bùi Viện khi lưu trú tại Đỗ Quang Đẩu hoặc Cô Bắc? Gợi ý lên lịch ăn tối, thử món Việt và khám…",
+      "canonical": "https://huyenhotels.com/blog/an-gi-gan-bui-vien-lich-trinh-am-thuc-buoi-toi",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/blog/khach-san-cong-tac-tap-huan-mb-di-hoc-kham-rang-anh-kim",
+      "status": 200,
+      "title": "Chọn khách sạn đi công tác, học tại trung tâm Sài Gòn | Huyen's",
+      "description": "Chọn khách sạn đi công tác, học tại trung tâm Sài Gòn. Đi tập huấn MB, học ngắn hạn hay khám răng hàm mặt tại TP.HCM? Kinh nghiệm chọn khách sạn, kiểm tra…",
+      "canonical": "https://huyenhotels.com/blog/khach-san-cong-tac-tap-huan-mb-di-hoc-kham-rang-anh-kim",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/blog/huyen-house-di-hoc-hen-lanh-su-nguyen-thi-minh-khai",
+      "status": 200,
+      "title": "Huyen House: Lưu trú khi đi học và hẹn lãnh sự | Huyen's",
+      "description": "Huyen House: Lưu trú khi đi học và hẹn lãnh sự. Chọn nơi ở tại Nguyễn Thị Minh Khai khi đi học, trao đổi quốc tế hoặc hẹn Tổng Lãnh sự quán Mỹ. Tham khảo…",
+      "canonical": "https://huyenhotels.com/blog/huyen-house-di-hoc-hen-lanh-su-nguyen-thi-minh-khai",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
+      "issues": []
+    },
+    {
+      "path": "/blog/huyen-homestay-sinh-vien-quoc-te-su-kien-chay-bo",
+      "status": 200,
+      "title": "Huyen Homestay: Chỗ ở đi học và dự giải chạy Sài Gòn | Huyen's",
+      "description": "Huyen Homestay: Chỗ ở đi học và dự giải chạy Sài Gòn. Tìm chỗ ở cho sinh viên quốc tế hoặc dự giải chạy khu Lê Duẩn? Kinh nghiệm chọn phòng, chuẩn bị lịch…",
+      "canonical": "https://huyenhotels.com/blog/huyen-homestay-sinh-vien-quoc-te-su-kien-chay-bo",
+      "h1": 1,
+      "headings": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -521,8 +831,41 @@
       "h1": 1,
       "headings": [
         1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
         2
       ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -534,8 +877,43 @@
       "h1": 1,
       "headings": [
         1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
         2
       ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -547,8 +925,18 @@
       "h1": 1,
       "headings": [
         1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
         2
       ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -562,6 +950,9 @@
         1,
         2
       ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -575,6 +966,9 @@
         1,
         2
       ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -588,6 +982,9 @@
         1,
         2
       ],
+      "images": 2,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -600,6 +997,9 @@
       "headings": [
         1
       ],
+      "images": 1,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     },
     {
@@ -612,6 +1012,9 @@
       "headings": [
         1
       ],
+      "images": 1,
+      "missingAlt": 0,
+      "emptyContentAlt": 0,
       "issues": []
     }
   ]

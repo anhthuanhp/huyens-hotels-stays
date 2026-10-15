@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState  } from "react";
 import { supabase } from "../../../lib/supabase";
 
 type Hotel = {
@@ -68,26 +68,8 @@ const emptyForm: RoomForm = {
   status: "active",
 };
 
-export default function AdminRoomsPage() {
-  const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
-
-  const [selectedHotel, setSelectedHotel] = useState("all");
-  const [search, setSearch] = useState("");
-
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState<number | null>(null);
-
-  const [showForm, setShowForm] = useState(false);
-  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
-
-  const [form, setForm] = useState<RoomForm>(emptyForm);
-
-  const loadData = async () => {
-    setLoading(true);
-
-    const [hotelsResult, roomsResult] = await Promise.all([
+async function fetchData() {
+  return await Promise.all([
       supabase
         .from("hotels")
         .select("id, slug, name_vi, name_en")
@@ -105,6 +87,27 @@ export default function AdminRoomsPage() {
           ascending: true,
         }),
     ]);
+}
+
+export default function AdminRoomsPage() {
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+
+  const [selectedHotel, setSelectedHotel] = useState("all");
+  const [search, setSearch] = useState("");
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<number | null>(null);
+
+  const [showForm, setShowForm] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+
+  const [form, setForm] = useState<RoomForm>(emptyForm);
+
+  const applyData = useCallback((result: Awaited<ReturnType<typeof fetchData>>) => {
+
+    const [hotelsResult, roomsResult] = result;
 
     if (hotelsResult.error) {
       console.error("Lỗi tải khách sạn:", hotelsResult.error);
@@ -119,11 +122,33 @@ export default function AdminRoomsPage() {
     }
 
     setLoading(false);
-  };
+  }, []);
+
+  const failData = useCallback((error: unknown) => {
+    console.error(error);
+
+    setLoading(false);
+
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      applyData(await fetchData());
+    } catch (error) {
+      failData(error);
+    }
+  }, [applyData, failData]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    let active = true;
+    void fetchData().then(
+      result => { if (active) applyData(result); },
+      error => { if (active) failData(error); },
+    );
+    return () => { active = false; };
+  }, [applyData, failData]);
 
   const filteredRooms = useMemo(() => {
     const keyword = search.trim().toLowerCase();

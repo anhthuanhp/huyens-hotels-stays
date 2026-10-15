@@ -1,3 +1,4 @@
+import { districtOnePlace } from "../../lib/local-schema";
 import { cleanSeoText, hotelSeo } from "../../lib/seo";
 
 import type { Metadata } from "next";
@@ -471,6 +472,7 @@ function createHotelStructuredData(
     "@id":
       `${hotelUrl}#hotel`,
     name: hotelName,
+    containedInPlace: districtOnePlace,
     description:
       hotelDescription,
     url: hotelUrl,

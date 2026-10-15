@@ -1,8 +1,9 @@
 "use client";
 
+import { compressImageForUpload } from "../../../lib/compress-image";
 import { buildSeoImageName } from "../../../lib/image-seo";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState  } from "react";
 import { supabase } from "../../../lib/supabase";
 
 type BlogPost = {
@@ -196,6 +197,34 @@ function normalizeCategory(
   return categories[0];
 }
 
+async function fetchPosts() {
+  return await supabase
+      .from("blog_posts")
+      .select(
+        `
+        id,
+        slug,
+        title_vi,
+        title_en,
+        excerpt_vi,
+        excerpt_en,
+        content_vi,
+        content_en,
+        category_vi,
+        category_en,
+        image,
+        date,
+        read_time,
+        featured,
+        status,
+        created_at,
+        updated_at
+      `
+      )
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false });
+}
+
 export default function VietBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -226,9 +255,45 @@ export default function VietBlogPage() {
     return posts.find((post) => post.id === editingId) ?? null;
   }, [editingId, posts]);
 
-  useEffect(() => {
-    void loadPosts();
+  const applyPosts = useCallback((result: Awaited<ReturnType<typeof fetchPosts>>) => {
+
+    const { data, error } = result;
+
+    if (error) {
+      setErrorMessage(`Không tải được danh sách bài viết: ${error.message}`);
+      setPosts([]);
+    } else {
+      setPosts((data ?? []) as BlogPost[]);
+    }
+
+    setLoading(false);
   }, []);
+
+  const failPosts = useCallback((error: unknown) => {
+    console.error(error);
+    setErrorMessage(error instanceof Error ? error.message : "Không thể tải dữ liệu.");
+    setLoading(false);
+
+  }, []);
+
+  const loadPosts = useCallback(async () => {
+    setLoading(true);
+    setErrorMessage("");
+    try {
+      applyPosts(await fetchPosts());
+    } catch (error) {
+      failPosts(error);
+    }
+  }, [applyPosts, failPosts]);
+
+  useEffect(() => {
+    let active = true;
+    void fetchPosts().then(
+      result => { if (active) applyPosts(result); },
+      error => { if (active) failPosts(error); },
+    );
+    return () => { active = false; };
+  }, [applyPosts, failPosts]);
 
   useEffect(() => {
     return () => {
@@ -248,45 +313,6 @@ export default function VietBlogPage() {
       });
     }
   }, [modalOpen, errorMessage]);
-
-  async function loadPosts() {
-    setLoading(true);
-
-    const { data, error } = await supabase
-      .from("blog_posts")
-      .select(
-        `
-        id,
-        slug,
-        title_vi,
-        title_en,
-        excerpt_vi,
-        excerpt_en,
-        content_vi,
-        content_en,
-        category_vi,
-        category_en,
-        image,
-        date,
-        read_time,
-        featured,
-        status,
-        created_at,
-        updated_at
-      `
-      )
-      .order("date", { ascending: false })
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      setErrorMessage(`Không tải được danh sách bài viết: ${error.message}`);
-      setPosts([]);
-    } else {
-      setPosts((data ?? []) as BlogPost[]);
-    }
-
-    setLoading(false);
-  }
 
   function clearSelectedFile() {
     if (selectedFilePreview) {
@@ -432,6 +458,7 @@ export default function VietBlogPage() {
     setUploadingImage(true);
 
     try {
+      file = await compressImageForUpload(file);
       const extension = getFileExtension(file);
       const safeSlug = slugify(slug) || "blog";
       const uniqueName = buildSeoImageName([safeSlug, "anh-bai-viet"], `image.${extension}`, crypto.randomUUID().slice(0, 8));

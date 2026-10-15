@@ -1,5 +1,7 @@
 "use client";
 
+import { useLanguage } from "@/app/lib/use-language";
+
 import Link from "next/link";
 import EmailLink from "./components/EmailLink";
 import Image from "next/image";
@@ -76,7 +78,6 @@ declare global {
   }
 }
 
-const LANGUAGE_KEY = "huyen-language";
 const SLIDE_DURATION = 20;
 
 const amenities = [
@@ -201,7 +202,7 @@ export default function HomeClient({
    * Luôn render "vi" ở lần render đầu tiên để server và client
    * có cùng HTML, tránh hydration mismatch.
    */
-  const [language, setLanguage] = useState<Language>("vi");
+  const language = useLanguage();
 
   const [pickedHotelId, setPickedHotelId] =
     useState<number | null>(null);
@@ -214,41 +215,6 @@ export default function HomeClient({
   useEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(LANGUAGE_KEY);
-
-      if (saved === "vi" || saved === "en") {
-        setLanguage(saved);
-      }
-    } catch {
-      // Giữ mặc định "vi" nếu localStorage không khả dụng.
-    }
-
-    const handleLanguageChange = (
-      event: CustomEvent<Language>
-    ) => {
-      if (
-        event.detail === "vi" ||
-        event.detail === "en"
-      ) {
-        setLanguage(event.detail);
-      }
-    };
-
-    window.addEventListener(
-      "language-change",
-      handleLanguageChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        "language-change",
-        handleLanguageChange
-      );
-    };
-  }, []);
 
   const t = useCallback(
     <T,>(
@@ -710,7 +676,7 @@ export default function HomeClient({
                             {image ? (
                               <Image
                                 src={image}
-                                alt={name}
+                                alt={`${name} – khách sạn và lưu trú tại Sài Gòn`}
                                 width={800}
                                 height={600}
                                 loading="lazy"

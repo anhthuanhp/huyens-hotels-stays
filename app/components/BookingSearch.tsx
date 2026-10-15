@@ -1,10 +1,11 @@
 "use client";
 
+import { useLanguage } from "@/app/lib/use-language";
+
 import {
   useRef,
   useState,
   useCallback,
-  useEffect,
 } from "react";
 import { useRouter } from "next/navigation";
 
@@ -35,22 +36,14 @@ export default function BookingSearch({
 }: BookingSearchProps) {
   const router = useRouter();
 
-  const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window === "undefined") {
-      return "vi";
-    }
+  const language = useLanguage();
 
-    const saved =
-      window.localStorage.getItem("language") ||
-      window.localStorage.getItem("huyen-language");
-
-    return saved === "vi" || saved === "en"
-      ? saved
-      : "vi";
-  });
-
-  const [hotel, setHotel] =
-    useState(initialHotelSlug);
+  const [hotelSelection, setHotelSelection] = useState({ source: initialHotelSlug, value: initialHotelSlug });
+  if (hotelSelection.source !== initialHotelSlug) {
+    setHotelSelection({ source: initialHotelSlug, value: initialHotelSlug });
+  }
+  const hotel = hotelSelection.source === initialHotelSlug ? hotelSelection.value : initialHotelSlug;
+  const setHotel = (value: string) => setHotelSelection({ source: initialHotelSlug, value });
 
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
@@ -66,35 +59,6 @@ export default function BookingSearch({
   const today = new Date()
     .toISOString()
     .split("T")[0];
-
-  useEffect(() => {
-    if (initialHotelSlug) {
-      setHotel(initialHotelSlug);
-    }
-  }, [initialHotelSlug]);
-
-  useEffect(() => {
-    const handler = (e: CustomEvent<Language>) => {
-      if (
-        e.detail === "vi" ||
-        e.detail === "en"
-      ) {
-        setLanguage(e.detail);
-      }
-    };
-
-    window.addEventListener(
-      "language-change",
-      handler
-    );
-
-    return () => {
-      window.removeEventListener(
-        "language-change",
-        handler
-      );
-    };
-  }, []);
 
   const isVi = language === "vi";
 
@@ -226,7 +190,7 @@ export default function BookingSearch({
           </div>
 
           {/* NGÀY NHẬN */}
-          <div className="min-w-0 lg:col-span-1">
+          <div className="col-span-2 min-w-0 min-[400px]:col-span-1">
             <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
               {isVi
                 ? "Ngày nhận"
@@ -274,7 +238,7 @@ export default function BookingSearch({
           </div>
 
           {/* NGÀY TRẢ */}
-          <div className="min-w-0 lg:col-span-1">
+          <div className="col-span-2 min-w-0 min-[400px]:col-span-1">
             <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
               {isVi
                 ? "Ngày trả"
@@ -322,14 +286,14 @@ export default function BookingSearch({
           </div>
 
           {/* NGƯỜI LỚN */}
-          <div className="min-w-0 lg:col-span-1">
+          <div className="col-span-2 min-w-0 min-[400px]:col-span-1">
             <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
               {isVi
                 ? "Người lớn"
                 : "Adults"}
             </label>
 
-            <div className="flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
+            <div className="flex min-h-12 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
               <button
                 type="button"
                 onClick={decreaseAdults}
@@ -364,14 +328,14 @@ export default function BookingSearch({
           </div>
 
           {/* TRẺ EM */}
-          <div className="min-w-0 lg:col-span-1">
+          <div className="col-span-2 min-w-0 min-[400px]:col-span-1">
             <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
               {isVi
                 ? "Trẻ em"
                 : "Children"}
             </label>
 
-            <div className="flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
+            <div className="flex min-h-12 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
               <button
                 type="button"
                 onClick={decreaseChildren}

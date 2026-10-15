@@ -1,9 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   compress: true,
   poweredByHeader: false,
   images: {
+    loader: "custom",
+    loaderFile: "./app/lib/image-loader.ts",
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     formats: ["image/avif", "image/webp"],
     qualities: [60, 75],
     minimumCacheTTL: 86400,

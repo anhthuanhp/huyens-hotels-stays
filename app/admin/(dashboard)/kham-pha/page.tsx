@@ -1,5 +1,7 @@
 "use client";
 
+import { useLanguage } from "@/app/lib/use-language";
+
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/app/lib/supabase";
 
@@ -109,8 +111,7 @@ function getInitialForm(
 }
 
 export default function AdminNearbyPage() {
-  const [language, setLanguage] =
-    useState<"vi" | "en">("vi");
+  const language = useLanguage();
 
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [categories, setCategories] = useState<
@@ -140,8 +141,8 @@ export default function AdminNearbyPage() {
   const [loadingCategories, setLoadingCategories] =
     useState(true);
 
-  const [loadingPlaces, setLoadingPlaces] =
-    useState(false);
+  const [loadedPlacesHotelId, setLoadedPlacesHotelId] = useState<number | null>(null);
+  const loadingPlaces = selectedHotelId !== null && loadedPlacesHotelId !== selectedHotelId;
 
   const [saving, setSaving] = useState(false);
 
@@ -152,49 +153,8 @@ export default function AdminNearbyPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const savedLanguage =
-      window.localStorage.getItem("huyen-language");
-
-    if (
-      savedLanguage === "vi" ||
-      savedLanguage === "en"
-    ) {
-      setLanguage(savedLanguage);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadHotels();
-    loadCategories();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedHotelId) {
-      setPlaces([]);
-      return;
-    }
-
-    loadPlaces(selectedHotelId);
-  }, [selectedHotelId]);
-
-  useEffect(() => {
-    if (
-      selectedCategoryId !== null &&
-      categories.some(
-        (category) =>
-          category.id === selectedCategoryId
-      )
-    ) {
-      setForm((current) => ({
-        ...current,
-        category_id: String(selectedCategoryId),
-      }));
-    }
-  }, [selectedCategoryId, categories]);
-
-  async function loadHotels() {
-    setLoadingHotels(true);
-    setError("");
+    let cancelled = false;
+    async function loadHotels() {
 
     const { data, error: queryError } =
       await supabase
@@ -205,6 +165,8 @@ export default function AdminNearbyPage() {
         .order("id", {
           ascending: true,
         });
+
+    if (cancelled) return;
 
     if (queryError) {
       console.error(
@@ -223,7 +185,6 @@ export default function AdminNearbyPage() {
       setHotels(rows);
 
       if (
-        selectedHotelId === null &&
         rows.length > 0
       ) {
         const activeHotel =
@@ -233,14 +194,13 @@ export default function AdminNearbyPage() {
           ) || rows[0];
 
         setSelectedHotelId(activeHotel.id);
+        setForm(current => ({ ...current, hotel_id: String(activeHotel.id) }));
       }
     }
 
     setLoadingHotels(false);
   }
-
-  async function loadCategories() {
-    setLoadingCategories(true);
+    async function loadCategories() {
 
     const { data, error: queryError } =
       await supabase
@@ -251,6 +211,8 @@ export default function AdminNearbyPage() {
         .order("sort_order", {
           ascending: true,
         });
+
+    if (cancelled) return;
 
     if (queryError) {
       console.error(
@@ -270,7 +232,6 @@ export default function AdminNearbyPage() {
       setCategories(rows);
 
       if (
-        selectedCategoryId === null &&
         rows.length > 0
       ) {
         const activeCategory =
@@ -283,21 +244,21 @@ export default function AdminNearbyPage() {
           activeCategory.id
         );
 
-        setForm(
-          getInitialForm(
-            selectedHotelId,
-            activeCategory.id
-          )
-        );
+        setForm(current => ({ ...current, category_id: String(activeCategory.id) }));
       }
     }
 
     setLoadingCategories(false);
   }
+    void loadHotels();
+    void loadCategories();
+    return () => { cancelled = true; };
+  }, []);
 
-  async function loadPlaces(hotelId: number) {
-    setLoadingPlaces(true);
-    setError("");
+  useEffect(() => {
+    if (selectedHotelId === null) return;
+    let cancelled = false;
+    async function loadPlaces(hotelId: number) {
 
     const { data, error: queryError } =
       await supabase
@@ -316,6 +277,8 @@ export default function AdminNearbyPage() {
           ascending: true,
         });
 
+    if (cancelled) return;
+
     if (queryError) {
       console.error(
         "Load nearby places error:",
@@ -333,8 +296,11 @@ export default function AdminNearbyPage() {
       );
     }
 
-    setLoadingPlaces(false);
+    setLoadedPlacesHotelId(hotelId);
   }
+    void loadPlaces(selectedHotelId);
+    return () => { cancelled = true; };
+  }, [selectedHotelId]);
 
   const activeCategories = useMemo(() => {
     return categories.filter(
@@ -343,6 +309,7 @@ export default function AdminNearbyPage() {
   }, [categories]);
 
   const filteredPlaces = useMemo(() => {
+    if (selectedHotelId === null || loadedPlacesHotelId !== selectedHotelId) return [];
     if (selectedCategoryId === null) {
       return places;
     }
@@ -352,7 +319,7 @@ export default function AdminNearbyPage() {
         place.category_id ===
         selectedCategoryId
     );
-  }, [places, selectedCategoryId]);
+  }, [places, selectedCategoryId, selectedHotelId, loadedPlacesHotelId]);
 
   const selectedHotel = useMemo(() => {
     return hotels.find(

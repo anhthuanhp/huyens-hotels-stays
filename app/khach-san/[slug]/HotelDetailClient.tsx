@@ -1,9 +1,11 @@
 
 "use client";
 
+import { useLanguage } from "@/app/lib/use-language";
+
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   BedDouble,
   Check,
@@ -341,50 +343,13 @@ export default function HotelDetailClient({
   initialFaqs,
   initialNearby,
 }: Props) {
-  const [language, setLanguage] =
-    useState<Language>("vi");
+  const language = useLanguage();
 
   const [activeNearbyCategory, setActiveNearbyCategory] =
     useState<number | null>(null);
 
   const [showAllNearby, setShowAllNearby] =
     useState(false);
-
-  useEffect(() => {
-    const savedLanguage =
-      window.localStorage.getItem("language");
-
-    if (
-      savedLanguage === "vi" ||
-      savedLanguage === "en"
-    ) {
-      setLanguage(savedLanguage);
-    }
-
-    const handleLanguageChange = () => {
-      const currentLanguage =
-        window.localStorage.getItem("language");
-
-      if (
-        currentLanguage === "vi" ||
-        currentLanguage === "en"
-      ) {
-        setLanguage(currentLanguage);
-      }
-    };
-
-    window.addEventListener(
-      "language-change",
-      handleLanguageChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        "language-change",
-        handleLanguageChange
-      );
-    };
-  }, []);
 
   const roomCovers = useMemo(() => {
     const result: Record<number, string> = {};
@@ -444,21 +409,6 @@ export default function HotelDetailClient({
   }, [initialNearby]);
 
   const hasNearby = nearbyGroups.length > 0;
-
-  useEffect(() => {
-    if (
-      activeNearbyCategory === null &&
-      nearbyGroups.length > 0
-    ) {
-      setActiveNearbyCategory(
-        nearbyGroups[0].category.id
-      );
-    }
-  }, [activeNearbyCategory, nearbyGroups]);
-
-  useEffect(() => {
-    setShowAllNearby(false);
-  }, [activeNearbyCategory]);
 
   const activeNearbyGroup = useMemo(() => {
     if (!nearbyGroups.length) {
@@ -866,6 +816,7 @@ export default function HotelDetailClient({
                               setActiveNearbyCategory(
                                 category.id
                               );
+                              setShowAllNearby(false);
                             }}
                             className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
                               isActive

@@ -2057,6 +2057,9 @@ function TimPhongContent() {
               availableRooms.length >
                 0 && (
                 <div className="space-y-6">
+                  <h2 className="text-xl font-bold text-slate-900">
+                    {language === "vi" ? "Các phòng phù hợp" : "Available rooms"}
+                  </h2>
                   {availableRooms.map(
                     (room) => {
                       const quantity =
@@ -2112,7 +2115,7 @@ function TimPhongContent() {
                                   room.image
                                 }
                                 alt={
-                                  room.imageAlt
+                                  room.imageAlt?.trim() || [roomName, hotelName].filter(Boolean).join(" – ")
                                 }
                                 fill
                                 sizes="(max-width: 1024px) 100vw, 360px"
@@ -2133,11 +2136,11 @@ function TimPhongContent() {
                             <div className="flex flex-col p-5 sm:p-7">
                               <div className="flex flex-col gap-5 sm:flex-row sm:justify-between">
                                 <div>
-                                  <h2 className="text-2xl font-bold text-slate-900">
+                                  <h3 className="text-2xl font-bold text-slate-900">
                                     {
                                       roomName
                                     }
-                                  </h2>
+                                  </h3>
 
                                   {description && (
                                     <p className="mt-3 text-sm text-neutral-600">
@@ -2202,12 +2205,12 @@ function TimPhongContent() {
                               {amenities.length >
                                 0 && (
                                 <div className="mt-6">
-                                  <h3 className="text-sm font-semibold text-slate-900">
+                                  <h4 className="text-sm font-semibold text-slate-900">
                                     {language ===
                                     "vi"
                                       ? "Tiện nghi"
                                       : "Amenities"}
-                                  </h3>
+                                  </h4>
 
                                   <div className="mt-3 flex flex-wrap gap-2">
                                     {amenities.map(

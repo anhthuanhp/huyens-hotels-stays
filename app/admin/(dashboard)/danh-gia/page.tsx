@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState  } from "react";
 import { supabase } from "../../../lib/supabase";
 
 type Hotel = {
@@ -49,6 +49,24 @@ const emptyForm: ReviewForm = {
   sort_order: "0",
 };
 
+async function fetchData() {
+  return await Promise.all([
+      supabase
+        .from("hotels")
+        .select("id, name_vi, name_en")
+        .eq("status", "active")
+        .order("id", { ascending: true }),
+
+      supabase
+        .from("customer_reviews")
+        .select(
+          "id, hotel_id, guest_name, rating, review_vi, review_en, guest_country, source, is_published, sort_order, created_at, updated_at"
+        )
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false }),
+    ]);
+}
+
 export default function DanhGiaPage() {
   const [reviews, setReviews] = useState<CustomerReview[]>([]);
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -84,28 +102,12 @@ export default function DanhGiaPage() {
     );
   }, [reviews, hotelFilter]);
 
-  const loadData = async () => {
-    setLoading(true);
-    setError("");
+  const applyData = useCallback((result: Awaited<ReturnType<typeof fetchData>>) => {
 
     const [
       { data: hotelData, error: hotelError },
       { data: reviewData, error: reviewError },
-    ] = await Promise.all([
-      supabase
-        .from("hotels")
-        .select("id, name_vi, name_en")
-        .eq("status", "active")
-        .order("id", { ascending: true }),
-
-      supabase
-        .from("customer_reviews")
-        .select(
-          "id, hotel_id, guest_name, rating, review_vi, review_en, guest_country, source, is_published, sort_order, created_at, updated_at"
-        )
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false }),
-    ]);
+    ] = result;
 
     if (hotelError) {
       setError(`Không tải được danh sách khách sạn: ${hotelError.message}`);
@@ -124,11 +126,33 @@ export default function DanhGiaPage() {
     }
 
     setLoading(false);
-  };
+  }, []);
+
+  const failData = useCallback((error: unknown) => {
+    console.error(error);
+    setError(error instanceof Error ? error.message : "Không thể tải dữ liệu.");
+    setLoading(false);
+
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      applyData(await fetchData());
+    } catch (error) {
+      failData(error);
+    }
+  }, [applyData, failData]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    let active = true;
+    void fetchData().then(
+      result => { if (active) applyData(result); },
+      error => { if (active) failData(error); },
+    );
+    return () => { active = false; };
+  }, [applyData, failData]);
 
   const resetForm = () => {
     setForm(emptyForm);

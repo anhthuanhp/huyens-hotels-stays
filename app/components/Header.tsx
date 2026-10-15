@@ -113,7 +113,7 @@ export default function Header() {
           >
             <Image
               src="/images/huyens-hotels-stays-logo.webp"
-              alt="Huyen's Hotels & Stays"
+              alt="Logo Huyen's Hotels & Stays"
               width={180}
               height={60}
               priority

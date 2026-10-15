@@ -222,7 +222,7 @@ export default function KhachSanPage() {
         throw loadError;
       }
 
-      const normalized: Hotel[] = (data || []).map((item: any) => ({
+      const normalized: Hotel[] = (data || []).map((item: Hotel) => ({
         ...item,
         status: item.status === "inactive" ? "inactive" : "active",
         business_model:
@@ -535,14 +535,14 @@ export default function KhachSanPage() {
       window.setTimeout(function () {
         closeModal();
       }, 500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save hotel error:", err);
 
-      if (err && err.code === "23505") {
+      if (typeof err === "object" && err !== null && "code" in err && err.code === "23505") {
         setError("Slug khách sạn đã tồn tại. Vui lòng chọn slug khác.");
       } else {
         setError(
-          err && err.message
+          typeof err === "object" && err !== null && "message" in err && typeof err.message === "string"
             ? err.message
             : "Không thể lưu thông tin khách sạn."
         );
@@ -690,17 +690,17 @@ export default function KhachSanPage() {
       }
 
       resetOtaForm();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save hotel OTA error:", err);
 
-      if (err && err.code === "23505") {
+      if (typeof err === "object" && err !== null && "code" in err && err.code === "23505") {
         setError(
           getOtaName(otaId) +
             " đã được thêm vào khách sạn này."
         );
       } else {
         setError(
-          err && err.message
+          typeof err === "object" && err !== null && "message" in err && typeof err.message === "string"
             ? err.message
             : "Không thể lưu OTA cho khách sạn."
         );
@@ -745,11 +745,11 @@ export default function KhachSanPage() {
       }
 
       setMessage("Đã xóa " + getOtaName(ota.ota_id) + ".");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Delete hotel OTA error:", err);
 
       setError(
-        err && err.message
+        typeof err === "object" && err !== null && "message" in err && typeof err.message === "string"
           ? err.message
           : "Không thể xóa OTA."
       );
@@ -787,11 +787,11 @@ export default function KhachSanPage() {
       });
 
       setMessage("Đã xóa khách sạn " + hotel.name_vi + ".");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Delete hotel error:", err);
 
       setError(
-        err && err.message
+        typeof err === "object" && err !== null && "message" in err && typeof err.message === "string"
           ? err.message
           : "Không thể xóa khách sạn."
       );
@@ -1127,14 +1127,14 @@ export default function KhachSanPage() {
       });
 
       closeOtaPlatformModal();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save OTA platform error:", err);
 
-      if (err && err.code === "23505") {
+      if (typeof err === "object" && err !== null && "code" in err && err.code === "23505") {
         setError("Tên hoặc slug OTA đã tồn tại.");
       } else {
         setError(
-          err && err.message
+          typeof err === "object" && err !== null && "message" in err && typeof err.message === "string"
             ? err.message
             : "Không thể lưu nền tảng OTA."
         );
@@ -1202,11 +1202,11 @@ export default function KhachSanPage() {
       });
 
       setMessage("Đã xóa nền tảng " + ota.name + ".");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Delete OTA platform error:", err);
 
       setError(
-        err && err.message
+        typeof err === "object" && err !== null && "message" in err && typeof err.message === "string"
           ? err.message
           : "Không thể xóa nền tảng OTA."
       );

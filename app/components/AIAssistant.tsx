@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import Image from "next/image";
 import { createPortal } from "react-dom";
 import {
   Bot,
@@ -767,9 +768,11 @@ export default function AIAssistant({
                     className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
                   >
                     {room.image && (
-                      <img
+                      <Image
                         src={room.image}
-                        alt={roomName}
+                        width={480}
+                        height={320}
+                        alt={[roomName, hotelName].filter(Boolean).join(" – ")}
                         loading="lazy"
                         className="h-32 w-full object-cover"
                       />

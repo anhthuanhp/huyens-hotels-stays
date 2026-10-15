@@ -1,15 +1,16 @@
 "use client";
 
+import { compressImageForUpload } from "../../../lib/compress-image";
 import { buildSeoImageName } from "../../../lib/image-seo";
 
-import {
+import { useCallback,
   ChangeEvent,
   FormEvent,
   useEffect,
   useMemo,
   useRef,
   useState,
-} from "react";
+ } from "react";
 
 import { supabase } from "../../../lib/supabase";
 
@@ -105,6 +106,40 @@ function formatDate(value: string | null) {
   }
 }
 
+async function fetchData() {
+  return await Promise.all([
+        supabase
+          .from("hotels")
+          .select("id, slug, name_vi, name_en")
+          .order("name_vi"),
+
+        supabase
+          .from("activities")
+          .select("*")
+          .order("sort_order", {
+            ascending: true,
+          })
+          .order("activity_date", {
+            ascending: false,
+            nullsFirst: false,
+          })
+          .order("created_at", {
+            ascending: false,
+          }),
+
+        supabase
+          .from("media")
+          .select("*")
+          .eq("entity_type", MEDIA_ENTITY_TYPE)
+          .order("sort_order", {
+            ascending: true,
+          })
+          .order("created_at", {
+            ascending: true,
+          }),
+      ]);
+}
+
 export default function TraiNghiemAdminPage() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -163,46 +198,14 @@ export default function TraiNghiemAdminPage() {
       .sort((a, b) => a.sort_order - b.sort_order);
   }, [media, selectedActivityId]);
 
-  async function loadData() {
-    setLoading(true);
-    setError("");
+  const applyData = useCallback((result: Awaited<ReturnType<typeof fetchData>>) => {
 
     try {
       const [
         { data: hotelData, error: hotelError },
         { data: activityData, error: activityError },
         { data: mediaData, error: mediaError },
-      ] = await Promise.all([
-        supabase
-          .from("hotels")
-          .select("id, slug, name_vi, name_en")
-          .order("name_vi"),
-
-        supabase
-          .from("activities")
-          .select("*")
-          .order("sort_order", {
-            ascending: true,
-          })
-          .order("activity_date", {
-            ascending: false,
-            nullsFirst: false,
-          })
-          .order("created_at", {
-            ascending: false,
-          }),
-
-        supabase
-          .from("media")
-          .select("*")
-          .eq("entity_type", MEDIA_ENTITY_TYPE)
-          .order("sort_order", {
-            ascending: true,
-          })
-          .order("created_at", {
-            ascending: true,
-          }),
-      ]);
+      ] = result;
 
       if (hotelError) {
         throw new Error(
@@ -250,11 +253,33 @@ export default function TraiNghiemAdminPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  const failData = useCallback((error: unknown) => {
+    console.error(error);
+    setError(error instanceof Error ? error.message : "Không thể tải dữ liệu.");
+    setLoading(false);
+
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      applyData(await fetchData());
+    } catch (error) {
+      failData(error);
+    }
+  }, [applyData, failData]);
 
   useEffect(() => {
-    void loadData();
-  }, []);
+    let active = true;
+    void fetchData().then(
+      result => { if (active) applyData(result); },
+      error => { if (active) failData(error); },
+    );
+    return () => { active = false; };
+  }, [applyData, failData]);
 
   function resetForm() {
     setEditingId(null);
@@ -609,7 +634,7 @@ export default function TraiNghiemAdminPage() {
           error: undefined,
         });
 
-        const uniqueName = buildSeoImageName(["huyens-hotels-stays", activity.title_vi || activity.title_en || "trai-nghiem", "anh", String(startingOrder + index + 1)], item.file.name, crypto.randomUUID().slice(0, 8));
+        const uniqueName = buildSeoImageName(["huyens-hotels-stays", activity.title_vi || activity.title_en || "trai-nghiem", "anh", String(startingOrder + index + 1)], "image.webp", crypto.randomUUID().slice(0, 8));
 
         const path = `${folder}/${uniqueName}`;
 
@@ -618,12 +643,11 @@ export default function TraiNghiemAdminPage() {
             error: storageError,
           } = await supabase.storage
             .from(BUCKET)
-            .upload(path, item.file, {
+            .upload(path, await compressImageForUpload(item.file), {
               cacheControl: "3600",
               upsert: false,
               contentType:
-                item.file.type ||
-                "application/octet-stream",
+                "image/webp",
             });
 
           if (storageError) {

@@ -1,8 +1,11 @@
 "use client";
 
+import { useLanguage } from "@/app/lib/use-language";
+
 import Link from "next/link";
 import {
   Suspense,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -187,8 +190,7 @@ function BookingPageContent() {
   const roomsParam = searchParams.get("rooms");
   const oldRoomParam = searchParams.get("room");
 
-  const [language, setLanguage] =
-    useState<Language>("vi");
+  const language = useLanguage();
 
   const [hotel, setHotel] =
     useState<Hotel | null>(null);
@@ -230,63 +232,6 @@ function BookingPageContent() {
     useState<BookingApiResponse["booking"]>(
       undefined,
     );
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const storedLanguage =
-      window.localStorage.getItem(
-        "huyen-language",
-      );
-
-    if (
-      storedLanguage === "en" ||
-      storedLanguage === "vi"
-    ) {
-      setLanguage(storedLanguage);
-    }
-
-    const handleLanguageChange = (
-      event: Event,
-    ) => {
-      const customEvent =
-        event as CustomEvent<Language>;
-
-      if (
-        customEvent.detail === "vi" ||
-        customEvent.detail === "en"
-      ) {
-        setLanguage(customEvent.detail);
-        return;
-      }
-
-      const nextLanguage =
-        window.localStorage.getItem(
-          "huyen-language",
-        );
-
-      if (
-        nextLanguage === "en" ||
-        nextLanguage === "vi"
-      ) {
-        setLanguage(nextLanguage);
-      }
-    };
-
-    window.addEventListener(
-      "language-change",
-      handleLanguageChange,
-    );
-
-    return () => {
-      window.removeEventListener(
-        "language-change",
-        handleLanguageChange,
-      );
-    };
-  }, []);
 
   const selectedRooms =
     useMemo<BookingRoom[]>(() => {
@@ -583,7 +528,7 @@ function BookingPageContent() {
     checkOut,
   ]);
 
-  const getRoomUnitPrice = (
+  const getRoomUnitPrice = useCallback((
     room: Room,
   ) => {
     if (stayType === "month") {
@@ -595,7 +540,7 @@ function BookingPageContent() {
     return Number(
       room.base_price_daily || 0,
     );
-  };
+  }, [stayType]);
 
   const priceUnitLabel =
     stayType === "month"
@@ -654,6 +599,7 @@ function BookingPageContent() {
     );
   }, [
     selectedRoomDetails,
+    getRoomUnitPrice,
     stayType,
     months,
     nights,

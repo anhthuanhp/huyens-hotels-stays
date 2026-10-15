@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState  } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
@@ -430,34 +430,8 @@ function RichTextEditor({
   );
 }
 
-export default function AdminChinhSachPage() {
-  const [activeTab, setActiveTab] =
-    useState<PolicyType>("booking");
-
-  const [policies, setPolicies] = useState<
-    Record<PolicyType, Policy | null>
-  >({
-    booking: null,
-    cancellation: null,
-    privacy: null,
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  const [message, setMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    loadPolicies();
-  }, []);
-
-  const loadPolicies = async () => {
-    setLoading(true);
-    setErrorMessage("");
-
-    try {
-      const results = await Promise.all(
+async function fetchPolicies() {
+  return await Promise.all(
         (
           Object.entries(policyConfig) as [
             PolicyType,
@@ -480,6 +454,30 @@ export default function AdminChinhSachPage() {
           return [type, data as Policy | null] as const;
         })
       );
+}
+
+export default function AdminChinhSachPage() {
+  const [activeTab, setActiveTab] =
+    useState<PolicyType>("booking");
+
+  const [policies, setPolicies] = useState<
+    Record<PolicyType, Policy | null>
+  >({
+    booking: null,
+    cancellation: null,
+    privacy: null,
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const applyPolicies = useCallback((result: Awaited<ReturnType<typeof fetchPolicies>>) => {
+
+    try {
+      const results = result;
 
       const loadedPolicies = {
         booking: null,
@@ -503,7 +501,33 @@ export default function AdminChinhSachPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const failPolicies = useCallback((error: unknown) => {
+    console.error(error);
+    setErrorMessage(error instanceof Error ? error.message : "Không thể tải dữ liệu.");
+    setLoading(false);
+
+  }, []);
+
+  const loadPolicies = useCallback(async () => {
+    setLoading(true);
+    setErrorMessage("");
+    try {
+      applyPolicies(await fetchPolicies());
+    } catch (error) {
+      failPolicies(error);
+    }
+  }, [applyPolicies, failPolicies]);
+
+  useEffect(() => {
+    let active = true;
+    void fetchPolicies().then(
+      result => { if (active) applyPolicies(result); },
+      error => { if (active) failPolicies(error); },
+    );
+    return () => { active = false; };
+  }, [applyPolicies, failPolicies]);
 
   const currentPolicy = policies[activeTab];
 

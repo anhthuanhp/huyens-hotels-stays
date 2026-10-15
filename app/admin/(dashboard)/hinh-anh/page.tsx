@@ -1,6 +1,7 @@
 
 "use client";
 
+import { compressImageForUpload } from "../../../lib/compress-image";
 import { buildSeoImageName, slugifyImageName } from "../../../lib/image-seo";
 
 import {
@@ -456,7 +457,7 @@ export default function HinhAnhPage() {
       const { error: uploadError } =
         await supabase.storage
           .from(HERO_BUCKET)
-          .upload(filePath, heroFile, {
+          .upload(filePath, await compressImageForUpload(heroFile), {
             cacheControl: "31536000",
             contentType: "image/webp",
             upsert: false,
@@ -539,7 +540,7 @@ export default function HinhAnhPage() {
       const { error: uploadError } =
         await supabase.storage
           .from(HERO_BUCKET)
-          .upload(newPath, file, {
+          .upload(newPath, await compressImageForUpload(file), {
             cacheControl: "31536000",
             contentType: "image/webp",
             upsert: false,
@@ -1035,6 +1036,7 @@ export default function HinhAnhPage() {
   ): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
+        file = await compressImageForUpload(file);
         const validationError = await validateWebpFile(file, IMAGE_MAX_SIZE);
         if (validationError) throw new Error(validationError);
         const {

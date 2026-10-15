@@ -1,10 +1,9 @@
 "use client";
 
+import { useLanguage } from "@/app/lib/use-language";
+
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-
-type Language = "vi" | "en";
 
 type Hotel = {
   id: number;
@@ -44,53 +43,7 @@ type RoomsClientProps = {
 };
 
 export default function RoomsClient({ rooms, roomCovers }: RoomsClientProps) {
-  const [language, setLanguage] = useState<Language>("vi");
-
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("huyen-language");
-    if (savedLanguage === "vi" || savedLanguage === "en") {
-      setLanguage(savedLanguage);
-    }
-
-    const handleLanguageChange = (
-      event: Event,
-    ) => {
-      const customEvent =
-        event as CustomEvent<Language>;
-
-      if (
-        customEvent.detail === "vi" ||
-        customEvent.detail === "en"
-      ) {
-        setLanguage(customEvent.detail);
-        return;
-      }
-
-      const savedLanguage =
-        localStorage.getItem(
-          "huyen-language",
-        );
-
-      if (
-        savedLanguage === "vi" ||
-        savedLanguage === "en"
-      ) {
-        setLanguage(savedLanguage);
-      }
-    };
-
-    window.addEventListener(
-      "language-change",
-      handleLanguageChange,
-    );
-
-    return () => {
-      window.removeEventListener(
-        "language-change",
-        handleLanguageChange,
-      );
-    };
-  }, []);
+  const language = useLanguage();
 
   const getAmenities = (
     amenities: unknown,
@@ -263,7 +216,7 @@ export default function RoomsClient({ rooms, roomCovers }: RoomsClientProps) {
                         <div className="relative h-[280px] overflow-hidden bg-slate-200">
                           <Image
                             src={roomImage}
-                            alt={roomName}
+                            alt={[roomName, hotelName].filter(Boolean).join(" – ")}
                             fill
                             sizes="(max-width: 768px) 100vw, 50vw"
                             className="object-cover transition duration-500 group-hover:scale-105"

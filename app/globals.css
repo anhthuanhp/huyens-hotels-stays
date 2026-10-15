@@ -65,3 +65,11 @@ body {
     margin-block-end: 8px;
   }
 }
+
+@media (max-width: 767px) {
+  body:has(header[data-public-site]) main { min-width: 0; overflow-wrap: anywhere; }
+  body:has(header[data-public-site]) :is(input, select, textarea) { max-width: 100%; }
+  body:has(header[data-public-site]) :is(button, a, input, select, textarea):focus-visible {
+    outline: 3px solid #0f766e; outline-offset: 3px;
+  }
+}

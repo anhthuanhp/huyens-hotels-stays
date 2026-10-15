@@ -1,10 +1,10 @@
 
 "use client";
 
+import { useLanguage } from "@/app/lib/use-language";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-type Language = "vi" | "en";
 
 type Hotel = {
   id: number;
@@ -24,11 +24,14 @@ export default function HotelBookingSidebar({
 }: HotelBookingSidebarProps) {
   const router = useRouter();
 
-  const [language, setLanguage] =
-    useState<Language>("vi");
+  const language = useLanguage();
 
-  const [selectedHotel, setSelectedHotel] =
-    useState(hotel.slug);
+  const [hotelSelection, setHotelSelection] = useState({ source: hotel.slug, value: hotel.slug });
+  if (hotelSelection.source !== hotel.slug) {
+    setHotelSelection({ source: hotel.slug, value: hotel.slug });
+  }
+  const selectedHotel = hotelSelection.source === hotel.slug ? hotelSelection.value : hotel.slug;
+  const setSelectedHotel = (value: string) => setHotelSelection({ source: hotel.slug, value });
 
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
@@ -37,42 +40,6 @@ export default function HotelBookingSidebar({
   const [children, setChildren] = useState("0");
 
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const savedLanguage =
-      window.localStorage.getItem("language");
-
-    setLanguage(
-      savedLanguage === "en" ? "en" : "vi"
-    );
-
-    const handleLanguageChange = () => {
-      const currentLanguage =
-        window.localStorage.getItem("language");
-
-      setLanguage(
-        currentLanguage === "en"
-          ? "en"
-          : "vi"
-      );
-    };
-
-    window.addEventListener(
-      "language-change",
-      handleLanguageChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        "language-change",
-        handleLanguageChange
-      );
-    };
-  }, []);
-
-  useEffect(() => {
-    setSelectedHotel(hotel.slug);
-  }, [hotel.slug]);
 
   useEffect(() => {
     router.prefetch("/tim-phong");

@@ -998,7 +998,7 @@ export default function RoomDetailClient({
         {/* GALLERY */}
 
         <section className="overflow-hidden rounded-2xl bg-slate-100">
-          <div className="relative aspect-[16/6] w-full overflow-hidden">
+          <div className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/6]">
             {currentImage ? (
               <>
                 <Image
@@ -1007,10 +1007,8 @@ export default function RoomDetailClient({
                   }
                   alt={
                     language === "vi"
-                      ? currentImage.alt_vi ||
-                        room.name_vi
-                      : currentImage.alt_en ||
-                        room.name_en
+                      ? currentImage.alt_vi?.trim() || `${room.name_vi || room.name_en} tại ${hotel.name_vi || hotel.name_en} – ảnh ${selectedImage + 1}`
+                      : currentImage.alt_en?.trim() || `${room.name_en || room.name_vi} at ${hotel.name_en || hotel.name_vi} – photo ${selectedImage + 1}`
                   }
                   fill
                   priority
@@ -1090,10 +1088,8 @@ export default function RoomDetailClient({
                       alt={
                         language ===
                         "vi"
-                          ? image.alt_vi ||
-                            room.name_vi
-                          : image.alt_en ||
-                            room.name_en
+                          ? image.alt_vi?.trim() || `${room.name_vi || room.name_en} tại ${hotel.name_vi || hotel.name_en} – ảnh ${index + 1}`
+                      : image.alt_en?.trim() || `${room.name_en || room.name_vi} at ${hotel.name_en || hotel.name_vi} – photo ${index + 1}`
                       }
                       fill
                       sizes="80px"

@@ -1,10 +1,11 @@
 
 "use client";
 
+import { useLanguage, setLanguage } from "@/app/lib/use-language";
+
 import Image from "next/image";
 import Link from "next/link";
 import EmailLink from "../components/EmailLink";
-import { useEffect, useState } from "react";
 
 type Language = "vi" | "en";
 
@@ -24,14 +25,13 @@ type HeroSlide = {
   title_en: string | null;
 };
 
-
 type ExploreClientProps = {
   hotels: Hotel[];
   heroSlides: HeroSlide[];
 };
 
 export default function ExploreClient({ hotels, heroSlides }: ExploreClientProps) {
-  const [language, setLanguage] = useState<Language>("vi");
+  const language = useLanguage();
 
   const isVi = language === "vi";
 
@@ -39,51 +39,13 @@ export default function ExploreClient({ hotels, heroSlides }: ExploreClientProps
   // ĐỒNG BỘ NGÔN NGỮ
   // =========================================================
 
-  useEffect(() => {
-    try {
-      const savedLanguage = localStorage.getItem("huyen-language");
-      if (savedLanguage === "vi" || savedLanguage === "en") setLanguage(savedLanguage);
-    } catch {
-      // Keep Vietnamese as the default language.
-    }
-
-    const handleLanguageChange = (event: Event) => {
-      const customEvent = event as CustomEvent<Language>;
-
-      if (
-        customEvent.detail === "vi" ||
-        customEvent.detail === "en"
-      ) {
-        setLanguage(customEvent.detail);
-      }
-    };
-
-    window.addEventListener(
-      "language-change",
-      handleLanguageChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        "language-change",
-        handleLanguageChange
-      );
-    };
-  }, []);
-
   // =========================================================
   // THAY ĐỔI NGÔN NGỮ
   // =========================================================
 
   const handleSetLanguage = (newLang: Language) => {
     setLanguage(newLang);
-    localStorage.setItem("huyen-language", newLang);
 
-    window.dispatchEvent(
-      new CustomEvent("language-change", {
-        detail: newLang,
-      })
-    );
   };
 
   // =========================================================

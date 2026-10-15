@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { useLanguage } from "@/app/lib/use-language";
+
 import Image from "next/image";
-import { useEffect, useState } from "react";
 import Footer from "../components/Footer";
 
 type Language = "vi" | "en";
@@ -53,7 +53,7 @@ type ExperienceClientProps = {
 };
 
 export default function ExperienceClient({ activities, hotels, media, hasError }: ExperienceClientProps) {
-  const [language, setLanguage] = useState<Language>("vi");
+  const language = useLanguage();
 
   const isVi = language === "vi";
 
@@ -76,27 +76,6 @@ export default function ExperienceClient({ activities, hotels, media, hasError }
       year: "numeric",
     });
   };
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("huyen-language");
-      if (saved === "vi" || saved === "en") setLanguage(saved);
-    } catch {
-      // Keep Vietnamese as the default language.
-    }
-
-    const handleChange = (e: CustomEvent<Language>) => {
-      if (e.detail === "vi" || e.detail === "en") {
-        setLanguage(e.detail);
-      }
-    };
-
-    window.addEventListener("language-change", handleChange);
-
-    return () => {
-      window.removeEventListener("language-change", handleChange);
-    };
-  }, []);
 
   const error = hasError;
 

@@ -18,6 +18,7 @@ export default function robots(): MetadataRoute.Robots {
           "/admin/",
           "/api/",
           "/test-route",
+          "/.git/", "/.env", "/tmp/", "/temp/", "/debug/", "/preview/",
         ],
       },
     ],

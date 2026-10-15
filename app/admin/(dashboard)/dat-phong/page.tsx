@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState  } from "react";
 import { supabase } from "../../../lib/supabase";
 
 type BookingStatus = "pending" | "confirmed" | "cancelled";
@@ -68,35 +68,8 @@ const statusOptions = [
 { value: "cancelled", label: "Đã hủy" },
 ];
 
-export default function AdminBookingsPage() {
-const [bookings, setBookings] = useState<Booking[]>([]);
-const [hotels, setHotels] = useState<HotelOption[]>([]);
-const [bookingRooms, setBookingRooms] = useState<BookingRoomMap>({});
-
-const [loading, setLoading] = useState(true);
-const [refreshing, setRefreshing] = useState(false);
-
-const [search, setSearch] = useState("");
-const [statusFilter, setStatusFilter] = useState("all");
-const [hotelFilter, setHotelFilter] = useState("all");
-const [checkInFilter, setCheckInFilter] = useState("");
-
-const [selectedBooking, setSelectedBooking] =
-useState<BookingDetail | null>(null);
-
-const [detailLoading, setDetailLoading] = useState(false);
-const [updatingStatus, setUpdatingStatus] = useState(false);
-const [deletingBooking, setDeletingBooking] = useState(false);
-
-const loadData = async (showRefresh = false) => {
-if (showRefresh) {
-setRefreshing(true);
-} else {
-setLoading(true);
-}
-
-const [bookingsResult, hotelsResult, bookingRoomsResult] =
-  await Promise.all([
+async function fetchData() {
+  return await Promise.all([
     supabase
       .from("bookings")
       .select(
@@ -152,6 +125,32 @@ const [bookingsResult, hotelsResult, bookingRoomsResult] =
       )
       .order("id", { ascending: true }),
   ]);
+}
+
+export default function AdminBookingsPage() {
+const [bookings, setBookings] = useState<Booking[]>([]);
+const [hotels, setHotels] = useState<HotelOption[]>([]);
+const [bookingRooms, setBookingRooms] = useState<BookingRoomMap>({});
+
+const [loading, setLoading] = useState(true);
+const [refreshing, setRefreshing] = useState(false);
+
+const [search, setSearch] = useState("");
+const [statusFilter, setStatusFilter] = useState("all");
+const [hotelFilter, setHotelFilter] = useState("all");
+const [checkInFilter, setCheckInFilter] = useState("");
+
+const [selectedBooking, setSelectedBooking] =
+useState<BookingDetail | null>(null);
+
+const [detailLoading, setDetailLoading] = useState(false);
+const [updatingStatus, setUpdatingStatus] = useState(false);
+const [deletingBooking, setDeletingBooking] = useState(false);
+
+const applyData = useCallback((result: Awaited<ReturnType<typeof fetchData>>) => {
+
+const [bookingsResult, hotelsResult, bookingRoomsResult] =
+  result;
 
 if (bookingsResult.error) {
   console.error("Lỗi tải booking:", bookingsResult.error);
@@ -195,11 +194,34 @@ if (bookingRoomsResult.error) {
 setLoading(false);
 setRefreshing(false);
 
-};
-
-useEffect(() => {
-loadData();
 }, []);
+
+  const failData = useCallback((error: unknown) => {
+    console.error(error);
+
+    setLoading(false);
+    setRefreshing(false);
+  }, []);
+
+  const loadData = useCallback(async (showRefresh = false) => {
+    if (showRefresh) setRefreshing(true);
+    else setLoading(true);
+
+    try {
+      applyData(await fetchData());
+    } catch (error) {
+      failData(error);
+    }
+  }, [applyData, failData]);
+
+  useEffect(() => {
+    let active = true;
+    void fetchData().then(
+      result => { if (active) applyData(result); },
+      error => { if (active) failData(error); },
+    );
+    return () => { active = false; };
+  }, [applyData, failData]);
 
 const filteredBookings = useMemo(() => {
 const keyword = search.trim().toLowerCase();
@@ -593,7 +615,7 @@ return (
 
     <button
       type="button"
-      onClick={() => loadData(true)}
+      onClick={() => { void loadData(true); }}
       disabled={refreshing}
       className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
     >

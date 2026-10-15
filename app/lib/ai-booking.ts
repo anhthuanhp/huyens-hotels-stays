@@ -1528,27 +1528,6 @@ function summaryAnswer(
 }
 
 /* =========================================================
-   ESTIMATE
-========================================================= */
-
-function calculateAiEstimatedTotal(
-  draft: AiBookingDraft,
-  room: AiRoomOption,
-  quantity: number
-): number | null {
-  if (room.pricePerUnit === null) return null;
-
-  const units =
-    draft.stayType === "month"
-      ? Math.max(1, draft.months)
-      : Math.max(1, draft.nights || 0);
-
-  if (!units) return null;
-
-  return room.pricePerUnit * units * quantity;
-}
-
-/* =========================================================
    BOOKING REQUEST
 ========================================================= */
 

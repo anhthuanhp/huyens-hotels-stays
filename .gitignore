@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 pass_data.txt
+/.next-seo-*/
+
+/.seo-publish/
