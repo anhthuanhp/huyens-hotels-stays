@@ -30,6 +30,7 @@ type BlogPostRow = {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticUrls: MetadataRoute.Sitemap = [
+    { url: `${siteUrl}/khach-san-quan-1-cu`, changeFrequency: "monthly", priority: 0.8 },
     {
       url: siteUrl,
       changeFrequency: "daily",

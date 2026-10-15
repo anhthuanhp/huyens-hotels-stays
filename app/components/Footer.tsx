@@ -109,6 +109,9 @@ export default function Footer() {
 
           {/* CHÍNH SÁCH */}
           <div>
+<Link href="/khach-san-quan-1-cu" className="mb-4 block py-3 text-sm text-white underline">
+  {isVi ? "Chọn khách sạn Quận 1 cũ Sài Gòn" : "Choosing a stay in central Saigon"}
+</Link>
             <p className="text-sm font-semibold text-white">
               {isVi ? "Chính sách" : "Policies"}
             </p>

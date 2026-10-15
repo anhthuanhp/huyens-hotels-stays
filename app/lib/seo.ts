@@ -17,6 +17,7 @@ export function seoDescription(value: string, limit = 158): string {
 }
 
 export const STATIC_SEO: Record<string, { title: string; description: string }> = {
+  "/khach-san-quan-1-cu": { title: "Khách sạn Quận 1 cũ Sài Gòn", description: "Tìm hiểu cách chọn khách sạn Quận 1 cũ, trung tâm Sài Gòn cùng Huyen's. So sánh vị trí, loại phòng và chính sách trước khi gửi yêu cầu đặt phòng." },
   "/": { title: "Khách sạn và homestay TP.HCM", description: "Tìm khách sạn, guesthouse và homestay tại TP.HCM cùng Huyen's Hotels & Stays. Xem vị trí, loại phòng, giá ngày hoặc tháng và gửi yêu cầu đặt phòng." },
   "/phong": { title: "Phòng và giá lưu trú tại TP.HCM", description: "So sánh các loại phòng tại Huyen's Hotels & Stays ở TP.HCM. Xem giá thuê ngày, giá tháng, diện tích, sức chứa và tiện nghi để chọn phòng phù hợp." },
   "/kham-pha-huyens": { title: "Về Huyen's Hotels & Stays", description: "Tìm hiểu Huyen's Hotels & Stays và các cơ sở lưu trú tại TP.HCM. Khám phá phong cách từng khách sạn, guesthouse, homestay và cách liên hệ đặt phòng." },
@@ -47,10 +48,18 @@ export function staticMetadata(path: string): Metadata {
   };
 }
 
-type HotelSeoData = { name_vi: string | null; name_en: string | null; address_vi: string | null; address_en: string | null };
+type HotelSeoData = { slug?: string; name_vi: string | null; name_en: string | null; address_vi: string | null; address_en: string | null };
 export function hotelSeo(hotel: HotelSeoData) {
   const name = cleanSeoText(hotel.name_vi || hotel.name_en) || "Cơ sở lưu trú";
   const address = cleanSeoText(hotel.address_vi || hotel.address_en);
+  const positioning: Record<string, { title: string; description: string }> = {
+    "anh-kim-hotel": { title: "Anh Kim Hotel – Khách sạn Cô Bắc, gần Bùi Viện", description: "Anh Kim Hotel tại khu vực Cô Bắc, thuận tiện khám phá Bùi Viện và Bến Thành. Xem loại phòng, tiện nghi, giá lưu trú và gửi yêu cầu đặt phòng." },
+    "ae-guesthouse": { title: "A&E Guesthouse – Gần Bùi Viện và Phạm Ngũ Lão", description: "A&E Guesthouse cho hành trình khám phá khu Bùi Viện, Phạm Ngũ Lão tại Sài Gòn. Xem các loại phòng thực tế, tiện nghi và liên hệ đặt phòng trực tiếp." },
+    "huyen-house": { title: "Huyen House – Lưu trú gần Tổng Lãnh sự quán Mỹ", description: "Huyen House tại khu vực Nguyễn Thị Minh Khai, thuận tiện đến Tổng Lãnh sự quán Mỹ tại TP.HCM. Xem phòng, địa chỉ và gửi yêu cầu đặt phòng." },
+    "huyenhomestay": { title: "Huyen Homestay – Thuê phòng tháng tại TP.HCM", description: "Tìm phòng thuê tháng tại Huyen Homestay, khu vực Nguyễn Thị Minh Khai, TP.HCM. Xem loại phòng, giá tháng và hỏi điều kiện cọc, điện nước trước khi đặt." },
+  };
+  const copy = hotel.slug ? positioning[hotel.slug] : undefined;
+  if (copy) return { title: copy.title + " | Huyen's", description: seoDescription(copy.description) };
   return { title: `${name} tại TP.HCM | Huyen's Hotels & Stays`, description: seoDescription(`${name}${address ? " tại " + address : ""}. Xem loại phòng, tiện nghi, giá thuê và gửi yêu cầu đặt phòng trực tiếp với Huyen's.`) };
 }
 

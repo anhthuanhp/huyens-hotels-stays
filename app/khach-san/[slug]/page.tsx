@@ -1,4 +1,4 @@
-import { hotelSeo } from "../../lib/seo";
+import { cleanSeoText, hotelSeo } from "../../lib/seo";
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -789,9 +789,9 @@ export default async function HotelDetailPage({
           room.hotel_id,
         slug: room.slug,
         name_vi:
-          room.name_vi,
+          cleanSeoText(room.name_vi),
         name_en:
-          room.name_en,
+          cleanSeoText(room.name_en),
         description_vi:
           room.description_vi,
         description_en:
@@ -823,6 +823,15 @@ export default async function HotelDetailPage({
       })
     );
 
+  // Keep the room-type FAQ and JSON-LD tied to the same active inventory.
+  const roomTypeQuestion = /loại phòng|hạng phòng|kiểu phòng|room types|types of rooms|room categories/i;
+  const roomTypeFaqs = hotelFaqs.filter(faq => roomTypeQuestion.test(faq.question_vi + " " + (faq.question_en || "")));
+  const roomNamesVi = clientRooms.map(room => room.name_vi || room.name_en).filter(Boolean).join(", ");
+  const roomNamesEn = clientRooms.map(room => room.name_en || room.name_vi).filter(Boolean).join(", ");
+  const syncedFaqs = hotelFaqs.map(faq => roomTypeFaqs.includes(faq)
+    ? { ...faq, answer_vi: roomNamesVi ? "Các loại phòng hiện có: " + roomNamesVi + ". Xem thông tin từng phòng và chọn ngày để xác nhận giá, tình trạng phòng." : "Vui lòng liên hệ cơ sở để xác nhận loại phòng hiện có.",
+        answer_en: roomNamesEn ? "Current room types: " + roomNamesEn + ". View each room and select your dates to confirm rates and availability." : "Please contact the property to confirm current room types." }
+    : faq);
   const roomIds =
     activeRooms
       .map(
@@ -845,7 +854,7 @@ export default async function HotelDetailPage({
     createHotelStructuredData(
       hotel,
       clientRooms,
-      hotelFaqs
+      syncedFaqs
     );
 
   return (
@@ -877,7 +886,7 @@ export default async function HotelDetailPage({
           initialHotels
         }
         initialFaqs={
-          hotelFaqs
+          syncedFaqs
         }
         initialNearby={
           nearby

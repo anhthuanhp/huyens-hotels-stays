@@ -143,8 +143,8 @@ const HOTEL_LOCAL_SEO: Record<
   },
 
   huyenhomestay: {
-    vi: "Homestay tại khu vực Nguyễn Thị Minh Khai, thuận tiện di chuyển đến Bến Thành, Tổng Lãnh sự quán Mỹ và trung tâm TP.HCM.",
-    en: "A homestay in the Nguyen Thi Minh Khai area, conveniently located near Ben Thanh, the US Consulate and central Ho Chi Minh City.",
+    vi: "Thuê phòng theo tháng tại khu vực Nguyễn Thị Minh Khai, TP.HCM. Xem giá tháng từng loại phòng và liên hệ xác nhận thời hạn thuê, tiền cọc, điện nước cùng dịch vụ đi kèm.",
+    en: "Monthly room rental in the Nguyen Thi Minh Khai area of Ho Chi Minh City. Compare room types and monthly rates, then confirm the rental period, deposit, utilities and included services.",
   },
 };
 
@@ -156,8 +156,8 @@ const HOTEL_H1_SEO: Record<
   }
 > = {
   "anh-kim-hotel": {
-    vi: "Anh Kim Hotel – Gần Bùi Viện và Bến Thành",
-    en: "Anh Kim Hotel – Near Bui Vien and Ben Thanh",
+    vi: "Anh Kim Hotel – Khách sạn Cô Bắc, gần Bùi Viện",
+    en: "Anh Kim Hotel – Co Bac hotel near Bui Vien",
   },
 
   "ae-guesthouse": {
@@ -166,13 +166,13 @@ const HOTEL_H1_SEO: Record<
   },
 
   "huyen-house": {
-    vi: "Huyen House – Gần Nguyễn Thị Minh Khai, Bến Thành và Tổng Lãnh sự quán Mỹ",
-    en: "Huyen House – Near Nguyen Thi Minh Khai, Ben Thanh and the US Consulate",
+    vi: "Huyen House – Lưu trú gần Tổng Lãnh sự quán Mỹ",
+    en: "Huyen House – Accommodation near the US Consulate",
   },
 
   huyenhomestay: {
-    vi: "Huyen Homestay – Gần Nguyễn Thị Minh Khai, Bến Thành và Tổng Lãnh sự quán Mỹ",
-    en: "Huyen Homestay – Near Nguyen Thi Minh Khai, Ben Thanh and the US Consulate",
+    vi: "Huyen Homestay – Thuê phòng theo tháng tại TP.HCM",
+    en: "Huyen Homestay – Monthly room rental in Ho Chi Minh City",
   },
 };
 
@@ -673,7 +673,7 @@ export default function HotelDetailClient({
                           {roomImage ? (
                             <Image
                               src={roomImage}
-                              alt={roomName}
+                              alt={[roomName, hotelName].filter(Boolean).join(" – ")}
                               fill
                               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 45vw"
                               className="object-cover transition duration-300 hover:scale-[1.02]"

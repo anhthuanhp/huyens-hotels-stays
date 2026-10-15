@@ -47,9 +47,7 @@ function normalizeImageUrl(
 function cleanText(
   value: string | null | undefined
 ): string {
-  return (value || "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return cleanSeoText(value);
 }
 
 /* =========================================================
@@ -849,7 +847,7 @@ export default async function RoomDetailPage({
       <RoomDetailClient
         slug={slug}
         hotel={hotel}
-        room={room}
+        room={room ? { ...room, name_vi: cleanSeoText(room.name_vi), name_en: cleanSeoText(room.name_en) } : room}
         media={media}
         roomAmenities={
           roomAmenities
