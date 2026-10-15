@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import EmailLink from "./EmailLink";
 import { useEffect, useState } from "react";
 import {
   Phone,
@@ -212,7 +213,7 @@ export default function Footer() {
                   <span className="font-medium">
                     Email:
                   </span>{" "}
-                  contact@huyenhotels.com; reception@huyenhotels.com
+                  <EmailLink address="contact@huyenhotels.com" />; <EmailLink address="reception@huyenhotels.com" />
                 </span>
               </div>
             </div>

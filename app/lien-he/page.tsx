@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import EmailLink from "../components/EmailLink";
 
 type Language = "vi" | "en";
 
@@ -110,7 +111,7 @@ return (
       <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
-            Huyen's Hotels & Stays
+            Huyen&apos;s Hotels &amp; Stays
           </p>
 
           <h1 className="text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
@@ -207,15 +208,7 @@ return (
             </div>
           </a>
 
-          <a
-            href="mailto:buihongnhung83@gmail.com"
-            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
-          >
-            <div className="text-sm text-neutral-500">Email</div>
-            <div className="mt-1 break-all text-lg font-semibold text-neutral-900">
-              buihongnhung83@gmail.com
-            </div>
-          </a>
+          <EmailLink address="buihongnhung83@gmail.com" className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md" label="Email" />
         </div>
 
         <div className="mt-8">

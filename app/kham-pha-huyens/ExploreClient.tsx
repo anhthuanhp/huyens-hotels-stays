@@ -3,6 +3,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import EmailLink from "../components/EmailLink";
 import { useEffect, useState } from "react";
 
 type Language = "vi" | "en";
@@ -775,12 +776,7 @@ export default function ExploreClient({ hotels, heroSlides }: ExploreClientProps
 
                 <p>
                   Email:{" "}
-                  <a
-                    href="mailto:buihongnhung83@gmail.com"
-                    className="transition hover:text-blue-900"
-                  >
-                    buihongnhung83@gmail.com
-                  </a>
+                  <EmailLink address="buihongnhung83@gmail.com" className="transition hover:text-blue-900" />
                 </p>
               </div>
             </div>

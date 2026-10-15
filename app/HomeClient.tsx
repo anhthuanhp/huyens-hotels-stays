@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import EmailLink from "./components/EmailLink";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -1279,12 +1280,7 @@ export default function HomeClient({
                   +84 902 095 669
                 </a>
                 {isVi ? " hoặc " : " or "}
-                <a
-                  className="font-semibold text-sky-800 hover:underline"
-                  href="mailto:buihongnhung83@gmail.com"
-                >
-                  buihongnhung83@gmail.com
-                </a>.
+                <EmailLink address="buihongnhung83@gmail.com" className="font-semibold text-sky-800 hover:underline" />.
               </p>
               <p className="mt-2">
                 <Link
