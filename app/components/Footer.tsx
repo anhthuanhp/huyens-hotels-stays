@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { FACEBOOK_PAGE_URL } from "../lib/social";
+import SocialLinks from "./SocialLinks";
 import EmailLink from "./EmailLink";
 import { useEffect, useState } from "react";
 import {
@@ -213,10 +213,7 @@ export default function Footer() {
                   </div>
                 </div>
               </div>
-            <a href={FACEBOOK_PAGE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 text-sm text-white/90 hover:text-white hover:underline">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-sm font-bold" aria-hidden="true">f</span>
-              {isVi ? "Facebook Huyen’s Hotels & Stays" : "Follow Huyen’s Hotels & Stays on Facebook"}
-            </a>
+              <SocialLinks label={isVi ? "Mạng xã hội" : "Social media"} />
 
             </div>
           </div>
