@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useLanguage } from "../lib/use-language";
 import { useState } from "react";
 import {
   Bot,
@@ -9,6 +10,7 @@ import {
 } from "lucide-react";
 
 export default function ContactFloat() {
+  const language = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
   function openAI() {
@@ -100,8 +102,8 @@ export default function ContactFloat() {
         }
         aria-label={
           isOpen
-            ? "Đóng trợ giúp"
-            : "Mở trợ giúp"
+            ? language === "vi" ? "Đóng trợ giúp" : "Close help"
+            : language === "vi" ? "Mở trợ giúp" : "Open help"
         }
         aria-expanded={isOpen}
         className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-white shadow-xl ring-1 ring-black/10 transition-all duration-200 hover:scale-105 hover:bg-slate-700 active:scale-95"

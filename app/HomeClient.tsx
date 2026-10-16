@@ -2,7 +2,7 @@
 
 import { useLanguage } from "@/app/lib/use-language";
 
-import Link from "next/link";
+import Link from "@/app/components/LocalizedLink";
 import EmailLink from "./components/EmailLink";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -459,7 +459,7 @@ export default function HomeClient({
                                 id="hero-heading"
                                 className="text-xl font-bold leading-tight drop-shadow-md sm:text-3xl lg:text-4xl"
                               >
-                                {isVi ? "Khách sạn & homestay Quận 1 cũ, Sài Gòn" : "Hotels & homestays in central Saigon"}
+                                {isVi ? "Khách sạn, Homestay tại trung tâm TP.HCM – Huyen’s Hotels & Stays" : "Hotels & homestays in central Saigon"}
                               </h1>
                             ) : (
                               <p className="text-xl font-bold leading-tight drop-shadow-md sm:text-3xl lg:text-4xl">
@@ -488,7 +488,7 @@ export default function HomeClient({
                       className="text-xl font-bold leading-tight sm:text-3xl lg:text-4xl"
                     >
                       {isVi
-                        ? "Khách sạn & homestay Quận 1 cũ, Sài Gòn" : "Hotels & homestays in central Saigon"}
+                        ? "Khách sạn, Homestay tại trung tâm TP.HCM – Huyen's Hotels & Stays" : "Hotels & homestays in central Saigon"}
                     </h1>
 
                     <p className="mt-2 text-sm sm:text-lg">

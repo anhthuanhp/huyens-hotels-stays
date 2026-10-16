@@ -1,3 +1,4 @@
+import { languageAlternates } from "@/app/lib/localized-path";
 import { BLOG_SEO, seoDescription } from "../../lib/seo";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -313,10 +314,7 @@ export async function generateMetadata({
 
     keywords,
 
-    alternates: {
-      canonical:
-        canonicalUrl,
-    },
+    alternates: post.title_en?.trim() && post.content_en?.trim() ? languageAlternates(new URL(canonicalUrl).pathname, siteUrl) : { canonical: canonicalUrl },
 
     robots: {
       index: true,

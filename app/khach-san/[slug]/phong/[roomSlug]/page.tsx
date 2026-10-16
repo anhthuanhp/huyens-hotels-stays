@@ -1,3 +1,4 @@
+import { languageAlternates } from "@/app/lib/localized-path";
 import { districtOnePlace } from "../../../../lib/local-schema";
 import { cleanSeoText, seoDescription } from "../../../../lib/seo";
 import RoomDetailClient from "./RoomDetailClient";
@@ -69,7 +70,7 @@ export async function generateMetadata({
   const { data: hotel } = await supabase
     .from("hotels")
     .select(
-      "id, name_vi, name_en, address_vi, address_en, business_model"
+      "id, name_vi, name_en, description_en, address_vi, address_en, business_model"
     )
     .eq("slug", slug)
     .eq("status", "active")
@@ -243,9 +244,7 @@ export async function generateMetadata({
     description,
     keywords,
 
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    alternates: hotel.name_en?.trim() && hotel.description_en?.trim() && room.name_en?.trim() && room.description_en?.trim() ? languageAlternates(new URL(canonicalUrl).pathname, siteUrl) : { canonical: canonicalUrl },
 
     robots: {
       index: true,

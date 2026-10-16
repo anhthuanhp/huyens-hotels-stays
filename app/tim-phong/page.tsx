@@ -1,7 +1,10 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
+import { localizedHref } from "@/app/lib/localized-path";
 
-import Link from "next/link";
+import { useLanguage } from "@/app/lib/use-language";
+
+import Link from "@/app/components/LocalizedLink";
 import Image from "next/image";
 import {
   Suspense,
@@ -15,7 +18,8 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
-type Language = "vi" | "en";
+const EMPTY_SEARCH_PARAMS = new URLSearchParams();
+
 type StayType = "day" | "month";
 
 type SelectedRoom = {
@@ -127,7 +131,7 @@ const calculateNights = (
 
 function TimPhongContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams() ?? EMPTY_SEARCH_PARAMS;
 
   const hotelSlug =
     searchParams.get("hotel") || "";
@@ -172,8 +176,7 @@ function TimPhongContent() {
   const totalGuests =
     adults + children;
 
-  const [language, setLanguage] =
-    useState<Language>("vi");
+  const language = useLanguage();
 
   const [hotels, setHotels] =
     useState<Hotel[]>([]);
@@ -314,29 +317,6 @@ function TimPhongContent() {
   /*
     Đồng bộ ngôn ngữ.
   */
-  useEffect(() => {
-    const readSavedLanguage = () => {
-      try {
-        const saved = window.localStorage.getItem("huyen-language");
-        if (saved === "vi" || saved === "en") setLanguage(saved);
-      } catch {
-        // Keep Vietnamese when browser storage is unavailable.
-      }
-    };
-
-    const handleLanguageChange = (event: Event) => {
-      const customEvent = event as CustomEvent<Language>;
-      if (customEvent.detail === "vi" || customEvent.detail === "en") {
-        setLanguage(customEvent.detail);
-      } else {
-        readSavedLanguage();
-      }
-    };
-
-    readSavedLanguage();
-    window.addEventListener("language-change", handleLanguageChange);
-    return () => window.removeEventListener("language-change", handleLanguageChange);
-  }, []);
 
   /*
     Đồng bộ khách sạn hiện tại.
@@ -1031,10 +1011,11 @@ function TimPhongContent() {
         }
 
         router.replace(
-          `/tim-phong?${params.toString()}`
+          localizedHref(`/tim-phong?${params.toString()}`, language)
         );
       },
       [
+    language,
         searchParams,
         router,
         editCheckIn,
@@ -1193,7 +1174,7 @@ function TimPhongContent() {
       );
 
       router.replace(
-        `/tim-phong?${params.toString()}`
+        localizedHref(`/tim-phong?${params.toString()}`, language)
       );
     }, [
       editHotel,
@@ -1237,11 +1218,12 @@ function TimPhongContent() {
 
         router.replace(
           params.toString()
-            ? `/tim-phong?${params.toString()}`
+            ? localizedHref(`/tim-phong?${params.toString()}`, language)
             : "/tim-phong"
         );
       },
       [
+    language,
         searchParams,
         router,
       ]
@@ -1379,9 +1361,10 @@ function TimPhongContent() {
       );
 
       router.push(
-        `/dat-phong?${params.toString()}`
+        localizedHref(`/dat-phong?${params.toString()}`, language)
       );
     }, [
+    language,
       selectedRoomCount,
       selectedRooms,
       hotel,
@@ -2375,10 +2358,11 @@ function TimPhongContent() {
 }
 
 function TimPhongLoading() {
+  const language = useLanguage();
   return (
     <main className="min-h-screen bg-neutral-50">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-slate-900">Tìm phòng theo đêm hoặc tháng</h1>
+        <h1 className="text-3xl font-bold text-slate-900">{language === "vi" ? "Tìm phòng theo đêm hoặc tháng" : "Find a room for nightly or monthly stays"}</h1>
 
         <div className="mt-6 h-48 animate-pulse rounded-2xl bg-neutral-200" />
 

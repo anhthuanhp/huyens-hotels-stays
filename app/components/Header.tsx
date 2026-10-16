@@ -1,53 +1,19 @@
 "use client";
+import { useLanguage, changeSiteLanguage } from "../lib/use-language";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/LocalizedLink";
 import { useEffect, useRef, useState } from "react";
 
 type Language = "vi" | "en";
 
 export default function Header() {
-  const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window === "undefined") {
-      return "vi";
-    }
-
-    const savedLanguage = localStorage.getItem("huyen-language");
-
-    return savedLanguage === "vi" || savedLanguage === "en"
-      ? savedLanguage
-      : "vi";
-  });
+  const language = useLanguage();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const handleLanguageChange = (event: Event) => {
-      const customEvent = event as CustomEvent<Language>;
-
-      if (
-        customEvent.detail === "vi" ||
-        customEvent.detail === "en"
-      ) {
-        setLanguage(customEvent.detail);
-      }
-    };
-
-    window.addEventListener(
-      "language-change",
-      handleLanguageChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        "language-change",
-        handleLanguageChange
-      );
-    };
-  }, []);
 
   useEffect(() => {
     if (!mobileMenuOpen) {
@@ -80,17 +46,7 @@ export default function Header() {
     };
   }, [mobileMenuOpen]);
 
-  const changeLanguage = (lang: Language) => {
-    setLanguage(lang);
-
-    localStorage.setItem("huyen-language", lang);
-
-    window.dispatchEvent(
-      new CustomEvent<Language>("language-change", {
-        detail: lang,
-      })
-    );
-  };
+  const changeLanguage = (lang: Language) => { changeSiteLanguage(lang); };
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);

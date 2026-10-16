@@ -1,3 +1,5 @@
+import { englishInventory, englishPaths } from "./lib/english-data";
+import { languageAlternates, localizedHref } from "./lib/localized-path";
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 
@@ -227,10 +229,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       }));
 
-  return [
-    ...staticUrls,
-    ...hotelUrls,
-    ...roomUrls,
-    ...blogUrls,
-  ];
+  const english = englishPaths(await englishInventory()).map(parts => parts.length ? "/" + parts.map(encodeURIComponent).join("/") : "/");
+  const paired = new Set(english);
+  const vietnamese = [...staticUrls, ...hotelUrls, ...roomUrls, ...blogUrls].map(entry => {
+    const path = new URL(entry.url).pathname;
+    return paired.has(path) ? { ...entry, alternates: { languages: languageAlternates(path, siteUrl).languages } } : entry;
+  });
+  return [...vietnamese, ...english.map(path => ({ url: siteUrl + localizedHref(path, "en"), changeFrequency: "weekly" as const, priority: 0.7, alternates: { languages: languageAlternates(path, siteUrl).languages } }))];
 }

@@ -107,10 +107,7 @@ export const metadata: Metadata = {
     "Huyen's Hotels & Stays",
   ],
 
-  alternates: {
-    canonical:
-      blogUrl,
-  },
+  alternates: blogMetadata.alternates,
 
   robots: {
     index: true,

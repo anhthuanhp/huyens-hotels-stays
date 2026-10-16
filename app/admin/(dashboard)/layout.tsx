@@ -30,7 +30,7 @@ export default function AdminDashboardLayout({
   children,
 }: AdminDashboardLayoutProps) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [email, setEmail] = useState<string | null>(null);

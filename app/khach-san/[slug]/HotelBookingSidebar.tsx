@@ -1,5 +1,6 @@
 
 "use client";
+import { localizedHref } from "@/app/lib/localized-path";
 
 import { useLanguage } from "@/app/lib/use-language";
 
@@ -122,7 +123,7 @@ export default function HotelBookingSidebar({
     );
 
     router.push(
-      `/tim-phong?${params.toString()}`
+      localizedHref(`/tim-phong?${params.toString()}`, language)
     );
   };
 

@@ -1,10 +1,11 @@
 
 "use client";
+import { useLanguage } from "../lib/use-language";
 
-import Link from "next/link";
+import Link from "@/app/components/LocalizedLink";
 import SocialLinks from "./SocialLinks";
 import EmailLink from "./EmailLink";
-import { useEffect, useState } from "react";
+
 import {
   Phone,
   MessageCircle,
@@ -21,42 +22,7 @@ declare global {
 }
 
 export default function Footer() {
-  const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window === "undefined") {
-      return "vi";
-    }
-
-    const savedLanguage = localStorage.getItem("huyen-language");
-
-    return savedLanguage === "vi" || savedLanguage === "en"
-      ? savedLanguage
-      : "vi";
-  });
-
-  useEffect(() => {
-    const handleLanguageChange = (
-      event: CustomEvent<Language>
-    ) => {
-      if (
-        event.detail === "vi" ||
-        event.detail === "en"
-      ) {
-        setLanguage(event.detail);
-      }
-    };
-
-    window.addEventListener(
-      "language-change",
-      handleLanguageChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        "language-change",
-        handleLanguageChange
-      );
-    };
-  }, []);
+  const language = useLanguage();
 
   const isVi = language === "vi";
 

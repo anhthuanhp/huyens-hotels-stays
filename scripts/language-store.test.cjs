@@ -19,6 +19,8 @@ function createStore(values = {}, blocked = false) {
       setItem: (key, value) => { if (blocked) throw new Error("Storage blocked"); storage.set(key, value); },
     },
     require: name => {
+      if (name === "./localized-path") return {};
+      if (name === "next/navigation") return { usePathname: () => "/" };
       assert.equal(name, "react");
       return { useSyncExternalStore: (subscribe, read, server) => ({ subscribe, read, server }) };
     },

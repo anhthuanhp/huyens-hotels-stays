@@ -525,9 +525,7 @@ export async function generateMetadata(): Promise<Metadata> {
      * Chỉ Home mới canonical về SITE_URL.
      * Các trang con tự khai báo canonical riêng.
      */
-    alternates: {
-      canonical: SITE_URL,
-    },
+    alternates: homeMetadata.alternates,
 
     robots: {
       index: true,

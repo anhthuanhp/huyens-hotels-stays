@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useLanguage } from "../lib/use-language";
 
 export default function BackToTopButton() {
-  const pathname = usePathname();
+  const language = useLanguage();
+  const pathname = usePathname() ?? "";
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -23,8 +25,8 @@ export default function BackToTopButton() {
   return (
     <button
       type="button"
-      aria-label="Lên đầu trang"
-      title="Lên đầu trang"
+      aria-label={language === "vi" ? "Lên đầu trang" : "Back to top"}
+      title={language === "vi" ? "Lên đầu trang" : "Back to top"}
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       className="fixed bottom-5 left-5 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
     >

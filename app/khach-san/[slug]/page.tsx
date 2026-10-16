@@ -1,3 +1,4 @@
+import { languageAlternates } from "@/app/lib/localized-path";
 import { districtOnePlace } from "../../lib/local-schema";
 import { cleanSeoText, hotelSeo } from "../../lib/seo";
 
@@ -680,9 +681,7 @@ export async function generateMetadata({
     description,
     keywords,
 
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    alternates: hotel.name_en?.trim() && hotel.description_en?.trim() ? languageAlternates(new URL(canonicalUrl).pathname, siteUrl) : { canonical: canonicalUrl },
 
     robots: {
       index: true,

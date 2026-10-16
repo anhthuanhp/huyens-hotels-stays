@@ -2,7 +2,7 @@
 
 import { useLanguage } from "@/app/lib/use-language";
 
-import Link from "next/link";
+import Link from "@/app/components/LocalizedLink";
 import {
   Suspense,
   useCallback,
@@ -13,6 +13,8 @@ import {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
+
+const EMPTY_SEARCH_PARAMS = new URLSearchParams();
 
 type Language = "vi" | "en";
 type StayType = "day" | "month";
@@ -148,7 +150,7 @@ function normalizeRoomData(roomData: unknown): Room[] {
 }
 
 function BookingPageContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams() ?? EMPTY_SEARCH_PARAMS;
 
   const hotelSlug = searchParams.get("hotel") || "";
 
@@ -1183,7 +1185,7 @@ function BookingPageContent() {
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="mx-auto max-w-6xl px-4 py-16 text-center sm:px-6 lg:px-8">
-          <h1 className="mb-6 text-2xl font-bold">Xác nhận yêu cầu đặt phòng</h1>
+          <h1 className="mb-6 text-2xl font-bold">{language === "vi" ? "Xác nhận yêu cầu đặt phòng" : "Complete your booking request"}</h1>
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" />
 
           <p className="mt-5 text-sm text-slate-500">
@@ -1765,6 +1767,7 @@ function BookingPageContent() {
 }
 
 export default function BookingPage() {
+  const language = useLanguage();
   return (
     <Suspense
       fallback={
@@ -1774,7 +1777,7 @@ export default function BookingPage() {
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" />
 
             <p className="mt-5 text-sm text-slate-500">
-              Đang tải...
+              {language === "vi" ? "Đang tải..." : "Loading..."}
             </p>
           </div>
         </main>

@@ -1,7 +1,12 @@
 "use client";
+import RoomChoiceGuide from "@/app/components/RoomChoiceGuide";
+import HotelAreaAdvice from "@/app/components/HotelAreaAdvice";
+import { localizedHref } from "@/app/lib/localized-path";
+
+import { useLanguage } from "@/app/lib/use-language";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/LocalizedLink";
 import {
   useCallback,
   useEffect,
@@ -397,25 +402,7 @@ export default function RoomDetailClient({
 }: Props) {
   const router = useRouter();
 
-  const [language, setLanguage] =
-    useState<Language>(() => {
-      if (
-        typeof window ===
-        "undefined"
-      ) {
-        return "vi";
-      }
-
-      const saved =
-        window.localStorage.getItem(
-          "huyen-language"
-        );
-
-      return saved === "en" ||
-        saved === "vi"
-        ? saved
-        : "vi";
-    });
+  const language = useLanguage();
 
   const languageRef =
     useRef<Language>(language);
@@ -463,33 +450,6 @@ export default function RoomDetailClient({
   useEffect(() => {
     languageRef.current = language;
   }, [language]);
-
-  useEffect(() => {
-    const handler = () => {
-      const saved =
-        window.localStorage.getItem(
-          "huyen-language"
-        );
-
-      if (
-        saved === "en" ||
-        saved === "vi"
-      ) {
-        setLanguage(saved);
-      }
-    };
-
-    window.addEventListener(
-      "language-change",
-      handler
-    );
-
-    return () =>
-      window.removeEventListener(
-        "language-change",
-        handler
-      );
-  }, []);
 
   // --- Derived Data ---
 
@@ -893,7 +853,7 @@ export default function RoomDetailClient({
       );
 
       router.push(
-        `/dat-phong?${params.toString()}`
+        localizedHref(`/dat-phong?${params.toString()}`, language)
       );
     }, [
       room,
@@ -1248,6 +1208,8 @@ export default function RoomDetailClient({
               </section>
             )}
 
+            <RoomChoiceGuide hotelSlug={slug} roomSlug={room.slug} language={language} />
+
             {/* AROUND AREA */}
 
             <section className="mt-12">
@@ -1259,18 +1221,7 @@ export default function RoomDetailClient({
               </h2>
 
               <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-[15px] leading-7 text-slate-600">
-                  {language ===
-                  "vi"
-                    ? `Khách sạn nằm tại ${
-                        hotel.address_vi ||
-                        "khu vực trung tâm"
-                      }. Bạn có thể dễ dàng tiếp cận các điểm tham quan, khu mua sắm, nhà hàng và các tiện ích xung quanh.`
-                    : `The hotel is located at ${
-                        hotel.address_en ||
-                        "a central area"
-                      }. Guests can easily access nearby attractions, shopping areas, restaurants and local amenities.`}
-                </p>
+                <HotelAreaAdvice slug={slug} language={language} />
               </div>
             </section>
 

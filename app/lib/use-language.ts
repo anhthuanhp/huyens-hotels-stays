@@ -1,6 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
+import { isLocalizedPath, localizedHref } from "./localized-path";
 
 export type Language = "vi" | "en";
 let currentLanguage: Language | undefined;
@@ -56,5 +58,16 @@ export function setLanguage(language: Language) {
 const serverLanguage = (): Language => "vi";
 
 export function useLanguage() {
-  return useSyncExternalStore(subscribe, readLanguage, serverLanguage);
+  const pathname = usePathname();
+  const saved = useSyncExternalStore(subscribe, readLanguage, serverLanguage);
+  return /^\/en(?:\/|$)/.test(pathname || "") ? "en" : saved;
+}
+
+export function changeSiteLanguage(language: Language) {
+  setLanguage(language);
+  const current = window.location.pathname;
+  const base = current.replace(/^\/en(?=\/|$)/, "") || "/";
+  if (!isLocalizedPath(base)) return;
+  const target = language === "en" ? localizedHref(base, "en") : base;
+  if (target !== current) window.location.assign(target + window.location.search + window.location.hash);
 }

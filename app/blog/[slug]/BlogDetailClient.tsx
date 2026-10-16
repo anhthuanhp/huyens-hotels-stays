@@ -1,12 +1,13 @@
 
 "use client";
 
-import Image from "next/image";
-import { parseBlogContent, splitBlogLinks } from "../../lib/blog-content";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useLanguage } from "@/app/lib/use-language";
 
-type Language = "vi" | "en";
+import Image from "next/image";
+import CityTravelGuide from "../../components/CityTravelGuide";
+import { CITY_GUIDE_SLUG } from "../../data/city-guide";
+import { parseBlogContent, splitBlogLinks } from "../../lib/blog-content";
+import Link from "@/app/components/LocalizedLink";
 
 type BlogPost = {
   id: number;
@@ -34,43 +35,7 @@ type Props = {
 export default function BlogDetailClient({
   post,
 }: Props) {
-  const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window === "undefined") {
-      return "vi";
-    }
-
-    const saved = localStorage.getItem("huyen-language");
-
-    return saved === "vi" || saved === "en"
-      ? saved
-      : "vi";
-  });
-
-  useEffect(() => {
-    const handleLanguageChange = (event: Event) => {
-      const customEvent =
-        event as CustomEvent<Language>;
-
-      if (
-        customEvent.detail === "vi" ||
-        customEvent.detail === "en"
-      ) {
-        setLanguage(customEvent.detail);
-      }
-    };
-
-    window.addEventListener(
-      "language-change",
-      handleLanguageChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        "language-change",
-        handleLanguageChange
-      );
-    };
-  }, []);
+  const language = useLanguage();
 
   const isVi = language === "vi";
 
@@ -178,6 +143,8 @@ export default function BlogDetailClient({
             </p>
           )}
         </div>
+
+        {post.slug === CITY_GUIDE_SLUG && <CityTravelGuide language={language} />}
 
         {/* BACK TO BLOG */}
         <div className="mt-14 border-t border-slate-200 pt-8">

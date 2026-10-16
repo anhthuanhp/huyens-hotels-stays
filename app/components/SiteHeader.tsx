@@ -1,9 +1,9 @@
 "use client";
+import { useLanguage, changeSiteLanguage } from "../lib/use-language";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/LocalizedLink";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 
 type Language = "vi" | "en";
 type BackLink = { href: string; label: string };
@@ -87,27 +87,7 @@ function UKFlag() {
 
 export default function SiteHeader() {
   const pathname = usePathname() ?? "/";
-  const [language, setLanguage] = useState<Language>("vi");
-
-  useEffect(() => {
-    const syncLanguage = (event?: Event) => {
-      const detail = (event as CustomEvent<Language> | undefined)?.detail;
-      const stored = window.localStorage.getItem("huyen-language");
-      const next = detail === "vi" || detail === "en" ? detail : stored;
-
-      if (next === "vi" || next === "en") {
-        setLanguage(next);
-      }
-    };
-
-    syncLanguage();
-
-    window.addEventListener("language-change", syncLanguage);
-
-    return () => {
-      window.removeEventListener("language-change", syncLanguage);
-    };
-  }, []);
+  const language = useLanguage();
 
   if (
     pathname === "/" ||
@@ -117,15 +97,9 @@ export default function SiteHeader() {
     return null;
   }
 
-  function changeLanguage(nextLanguage: Language) {
-    setLanguage(nextLanguage);
-    window.localStorage.setItem("huyen-language", nextLanguage);
-    window.dispatchEvent(
-      new CustomEvent("language-change", { detail: nextLanguage }),
-    );
-  }
+  function changeLanguage(nextLanguage: Language) { changeSiteLanguage(nextLanguage); }
 
-  const back = getBackLink(pathname, language);
+  const back = getBackLink(pathname.replace(/^\/en(?=\/|$)/, "") || "/", language);
 
   return (
     <header data-public-site className="relative z-40 border-b border-slate-200 bg-white">
