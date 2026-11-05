@@ -229,7 +229,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       }));
 
-  const english = englishPaths(await englishInventory()).map(parts => parts.length ? "/" + parts.map(encodeURIComponent).join("/") : "/");
+  const english = englishPaths(await englishInventory())
+    .map(parts => parts.length ? "/" + parts.map(encodeURIComponent).join("/") : "/")
+    // Trang chủ /en đã bị loại bỏ (redirect vĩnh viễn về "/"),
+    // không liệt kê vào sitemap nữa.
+    .filter(path => path !== "/");
   const paired = new Set(english);
   const vietnamese = [...staticUrls, ...hotelUrls, ...roomUrls, ...blogUrls].map(entry => {
     const path = new URL(entry.url).pathname;

@@ -8,5 +8,12 @@ export function localizedHref(href: string, language: "vi" | "en") {
 }
 export function languageAlternates(path: string, origin = "https://huyenhotels.com") {
   const vi = origin.replace(/\/$/, "") + (path === "/" ? "" : path);
+  /*
+   * Trang /en (bản tiếng Anh của trang chủ) đã bị loại bỏ và redirect
+   * vĩnh viễn về "/", nên trang chủ không khai báo hreflang "en"
+   * trỏ tới URL đã xóa. Các trang con còn song ngữ (…/phong, …/blog,
+   * …/khach-san/…) vẫn khai báo hreflang bình thường.
+   */
+  if (path === "/" || !isLocalizedPath(path)) return { canonical: vi, languages: { "vi-VN": vi, "x-default": vi } };
   return { canonical: vi, languages: { "vi-VN": vi, en: origin.replace(/\/$/, "") + localizedHref(path, "en"), "x-default": vi } };
 }

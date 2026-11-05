@@ -27,6 +27,18 @@ const nextConfig: NextConfig = {
         destination: "https://huyenhotels.com/:path*",
         permanent: true,
       },
+      /*
+       * Trang chủ tiếng Anh riêng /en đã bị loại bỏ (chuyển sang đổi
+       * ngôn ngữ bằng state trên cùng một trang). Redirect vĩnh viễn
+       * chỉ áp dụng cho URL /en chính xác — khách vào từ bookmark hoặc
+       * Google sẽ về trang chủ. Các route /en/phong, /en/blog, …
+       * (trang tiếng Anh chi tiết) được giữ nguyên, chưa chuyển đổi.
+       */
+      {
+        source: "/en",
+        destination: "/",
+        permanent: true,
+      },
     ];
   },
   async headers() {
