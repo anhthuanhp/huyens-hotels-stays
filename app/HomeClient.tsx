@@ -10,6 +10,7 @@ import {
   ArrowUpDown,
   BrushCleaning,
   ChevronRight,
+  MapPin,
   ShowerHead,
   Snowflake,
   Tv,
@@ -764,63 +765,111 @@ export default function HomeClient({
                 </p>
               </div>
 
-              <div
-                className="mt-8 flex gap-2 overflow-x-auto pb-2"
-                role="tablist"
-                aria-label={
-                  isVi
-                    ? "Chọn nơi lưu trú"
-                    : "Choose a stay"
-                }
-              >
-                {hotels.map(
-                  (hotel) => {
-                    const isSelected =
-                      hotel.id ===
-                      selectedHotelId;
-
-                    const otaCount =
-                      otaByHotel[
-                        hotel.id
-                      ]?.length ?? 0;
-
-                    return (
-                      <button
-                        key={hotel.id}
-                        type="button"
-                        role="tab"
-                        id={`ota-tab-${hotel.id}`}
-                        aria-selected={
-                          isSelected
-                        }
-                        aria-controls="ota-panel"
-                        disabled={
-                          otaCount === 0
-                        }
-                        onClick={() =>
-                          setPickedHotelId(
-                            hotel.id
-                          )
-                        }
-                        className={[
-                          "shrink-0 rounded-full border px-5 py-2.5 text-sm font-medium transition",
-                          isSelected
-                            ? "border-sky-600 bg-sky-600 text-white"
-                            : otaCount === 0
-                              ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
-                              : "border-neutral-200 bg-white text-neutral-700 hover:border-sky-300 hover:text-sky-700",
-                        ].join(" ")}
-                      >
-                        {t(
-                          hotel.name_vi,
-                          hotel.name_en
-                        ) as string}
-                      </button>
-                    );
+              {/*
+                Hàng trên: chọn nơi lưu trú (2/3) + địa chỉ (1/3).
+                Trên desktop: grid 2fr/1fr; trên mobile: xếp chồng 1 cột
+                (nút chọn phía trên, địa chỉ phía dưới).
+              */}
+              <div className="mt-8 grid gap-3 md:grid-cols-3 md:items-stretch md:gap-6">
+                <div
+                  className="md:col-span-2"
+                  role="tablist"
+                  aria-label={
+                    isVi
+                      ? "Chọn nơi lưu trú"
+                      : "Choose a stay"
                   }
-                )}
+                >
+                  <div className="flex flex-wrap gap-2">
+                    {hotels.map(
+                      (hotel) => {
+                        const isSelected =
+                          hotel.id ===
+                          selectedHotelId;
+
+                        const otaCount =
+                          otaByHotel[
+                            hotel.id
+                          ]?.length ?? 0;
+
+                        return (
+                          <button
+                            key={hotel.id}
+                            type="button"
+                            role="tab"
+                            id={`ota-tab-${hotel.id}`}
+                            aria-selected={
+                              isSelected
+                            }
+                            aria-controls="ota-panel"
+                            disabled={
+                              otaCount === 0
+                            }
+                            onClick={() =>
+                              setPickedHotelId(
+                                hotel.id
+                              )
+                            }
+                            className={[
+                              "rounded-full border px-5 py-2.5 text-sm font-medium transition",
+                              isSelected
+                                ? "border-sky-600 bg-sky-600 text-white"
+                                : otaCount === 0
+                                  ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
+                                  : "border-neutral-200 bg-white text-neutral-700 hover:border-sky-300 hover:text-sky-700",
+                            ].join(" ")}
+                          >
+                            {t(
+                              hotel.name_vi,
+                              hotel.name_en
+                            ) as string}
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center rounded-2xl border border-neutral-200 bg-white p-4 md:col-span-1 md:px-5">
+                  {selectedHotel && (
+                    <>
+                      <div className="min-w-0">
+                        <h3 className="text-lg font-semibold text-neutral-900">
+                          {t(
+                            selectedHotel.name_vi,
+                            selectedHotel.name_en
+                          ) as string}
+                        </h3>
+
+                        <div className="mt-1.5 flex items-start gap-2 text-sm text-neutral-600">
+                          <MapPin
+                            className="mt-0.5 h-4 w-4 shrink-0 text-sky-600"
+                            aria-hidden="true"
+                          />
+
+                          {t(
+                            selectedHotel.address_vi,
+                            selectedHotel.address_en
+                          ) ? (
+                            <span>{t(
+                              selectedHotel.address_vi,
+                              selectedHotel.address_en
+                            )}</span>
+                          ) : (
+                            <span className="inline-block">
+                              {isVi
+                                ? "Đang cập nhật địa chỉ"
+                                : "Address coming soon"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
+              {/* Hàng dưới: danh sách OTA — chiếm toàn bộ chiều rộng section */}
               <div
                 id="ota-panel"
                 className="mt-6"
