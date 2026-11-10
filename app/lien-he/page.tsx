@@ -1,11 +1,12 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useLanguage } from "../lib/use-language";
 import Link from "next/link";
 import { FACEBOOK_PAGE_URL } from "../lib/social";
 import EmailLink from "../components/EmailLink";
 
-type Language = "vi" | "en";
+
 
 type FormData = {
 name: string;
@@ -22,7 +23,7 @@ message: "",
 };
 
 export default function LienHePage() {
-const [language, setLanguage] = useState<Language>("vi");
+const language = useLanguage();
 const [form, setForm] = useState<FormData>(initialForm);
 const [sending, setSending] = useState(false);
 const [success, setSuccess] = useState("");
@@ -126,31 +127,7 @@ return (
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 p-1">
-          <button
-            type="button"
-            onClick={() => setLanguage("vi")}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              language === "vi"
-                ? "bg-sky-500 text-white"
-                : "text-neutral-600 hover:bg-white"
-            }`}
-          >
-            VI
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setLanguage("en")}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              language === "en"
-                ? "bg-sky-500 text-white"
-                : "text-neutral-600 hover:bg-white"
-            }`}
-          >
-            EN
-          </button>
-        </div>
+        
       </div>
     </div>
   </section>

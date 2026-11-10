@@ -1,16 +1,19 @@
+
 "use client";
-import { localizedHref } from "@/app/lib/localized-path";
 
-import { useLanguage } from "@/app/lib/use-language";
-
-import {
-  useRef,
-  useState,
-  useCallback,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-
-type Language = "vi" | "en";
+import {
+  Building2,
+  CalendarDays,
+  ChevronDown,
+  Search,
+  UserRound,
+  Minus,
+  Plus,
+} from "lucide-react";
+import { localizedHref } from "@/app/lib/localized-path";
+import { useLanguage } from "@/app/lib/use-language";
 
 export type HotelOption = {
   id: number;
@@ -23,97 +26,150 @@ export type HotelOption = {
 type BookingSearchProps = {
   hotels: HotelOption[];
   initialHotelSlug?: string;
+  stayMode?: "short" | "long";
+  floating?: boolean;
 };
 
-declare global {
-  interface WindowEventMap {
-    "language-change": CustomEvent<Language>;
-  }
+function localToday() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export default function BookingSearch({
   hotels,
   initialHotelSlug = "",
+  stayMode = "short",
+  floating = false,
 }: BookingSearchProps) {
   const router = useRouter();
-
   const language = useLanguage();
+  const isVi = language === "vi";
 
-  const [hotelSelection, setHotelSelection] = useState({ source: initialHotelSlug, value: initialHotelSlug });
-  if (hotelSelection.source !== initialHotelSlug) {
-    setHotelSelection({ source: initialHotelSlug, value: initialHotelSlug });
+  const [selection, setSelection] = useState({
+    source: initialHotelSlug,
+    value: initialHotelSlug,
+  });
+
+  if (selection.source !== initialHotelSlug) {
+    setSelection({
+      source: initialHotelSlug,
+      value: initialHotelSlug,
+    });
   }
-  const hotel = hotelSelection.source === initialHotelSlug ? hotelSelection.value : initialHotelSlug;
-  const setHotel = (value: string) => setHotelSelection({ source: initialHotelSlug, value });
+
+  const hotel =
+    selection.source === initialHotelSlug
+      ? selection.value
+      : initialHotelSlug;
+
+  const setHotel = (value: string) =>
+    setSelection({ source: initialHotelSlug, value });
 
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
+  const [guestsOpen, setGuestsOpen] = useState(false);
+  const guestsRef = useRef<HTMLDivElement>(null);
+  const checkInRef = useRef<HTMLInputElement>(null);
+  const checkOutRef = useRef<HTMLInputElement>(null);
 
-  const checkInRef =
-    useRef<HTMLInputElement>(null);
+  const openDatePicker = (
+    inputRef: React.RefObject<HTMLInputElement | null>
+  ) => {
+    const input = inputRef.current;
+    if (!input) return;
 
-  const checkOutRef =
-    useRef<HTMLInputElement>(null);
-
-  const today = new Date()
-    .toISOString()
-    .split("T")[0];
-
-  const isVi = language === "vi";
-
-  const openDatePicker = useCallback(
-    (
-      inputRef: React.RefObject<
-        HTMLInputElement | null
-      >
-    ) => {
-      const input = inputRef.current;
-
-      if (!input) return;
-
-      input.focus();
-
-      if ("showPicker" in input) {
-        try {
-          input.showPicker();
-        } catch {}
+    try {
+      if (typeof input.showPicker === "function") {
+        input.showPicker();
+      } else {
+        input.focus();
+        input.click();
       }
-    },
-    []
-  );
+    } catch {
+      input.focus();
+    }
+  };
 
-  const handleSearch = useCallback(() => {
-    if (!hotel) {
-      alert(
+  const today = localToday();
+
+  useEffect(() => {
+    if (!guestsOpen) return;
+
+    const closeOutside = (event: MouseEvent) => {
+      if (
+        !guestsRef.current?.contains(event.target as Node)
+      ) {
+        setGuestsOpen(false);
+      }
+    };
+
+    const closeEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setGuestsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", closeOutside);
+    document.addEventListener("keydown", closeEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", closeOutside);
+      document.removeEventListener("keydown", closeEscape);
+    };
+  }, [guestsOpen]);
+
+  const handleSearch = () => {
+    if (stayMode === "long") {
+      window.alert(
         isVi
-          ? "Vui lòng chọn khách sạn"
-          : "Please select a hotel"
+          ? "Chức năng tìm thuê dài hạn đang được hoàn thiện."
+          : "Long-stay search is coming soon."
+      );
+      return;
+    }
+
+    if (!hotel) {
+      window.alert(
+        isVi
+          ? "Vui lòng chọn cơ sở lưu trú."
+          : "Please select a property."
       );
       return;
     }
 
     if (!checkIn || !checkOut) {
-      alert(
+      window.alert(
         isVi
-          ? "Vui lòng chọn ngày nhận và trả phòng"
-          : "Please select check-in and check-out dates"
+          ? "Vui lòng chọn ngày nhận và trả phòng."
+          : "Please select check-in and check-out dates."
+      );
+      return;
+    }
+
+    if (checkIn < localToday()) {
+      window.alert(
+        isVi
+          ? "Ngày nhận phòng không được ở trong quá khứ."
+          : "Check-in cannot be in the past."
       );
       return;
     }
 
     if (checkOut <= checkIn) {
-      alert(
+      window.alert(
         isVi
-          ? "Ngày trả phòng phải sau ngày nhận phòng"
-          : "Check-out must be after check-in date"
+          ? "Ngày trả phòng phải sau ngày nhận phòng."
+          : "Check-out must be after check-in."
       );
       return;
     }
 
     const params = new URLSearchParams();
-
     params.set("hotel", hotel);
     params.set("checkIn", checkIn);
     params.set("checkOut", checkOut);
@@ -121,270 +177,289 @@ export default function BookingSearch({
     params.set("children", String(children));
 
     router.push(
-      localizedHref(`/tim-phong?${params.toString()}`, language)
+      localizedHref(
+        `/tim-phong?${params.toString()}`,
+        language
+      )
     );
-  }, [
-    language,
-    hotel,
-    checkIn,
-    checkOut,
-    adults,
-    children,
-    router,
-    isVi,
-  ]);
+  };
 
-  const increaseAdults = () =>
-    setAdults((value) => value + 1);
+  const guestText = isVi
+    ? `${adults + children} khách`
+    : `${adults + children} guests`;
 
-  const decreaseAdults = () =>
-    setAdults((value) =>
-      Math.max(1, value - 1)
-    );
+  const fieldBase =
+    "flex min-h-[48px] min-w-0 items-center gap-[10px] rounded-lg border border-[#e2e5e2] px-3 lg:rounded-none lg:border-0 lg:border-r lg:border-[#e0e4e1] lg:px-0 lg:pr-3";
 
-  const increaseChildren = () =>
-    setChildren((value) => value + 1);
+  const smallLabel =
+    "block text-[10px] font-medium leading-4 text-[#777]";
 
-  const decreaseChildren = () =>
-    setChildren((value) =>
-      Math.max(0, value - 1)
-    );
+  const inputBase =
+    "block w-full min-w-0 border-0 bg-transparent p-0 text-[12px] font-bold text-[#151b18] outline-none";
 
   return (
-    <div className="w-full min-w-0">
-      <div className="rounded-2xl border border-neutral-300 bg-white/70 p-3 shadow-lg backdrop-blur-md">
-        <div className="grid min-w-0 grid-cols-2 gap-2.5 lg:grid-cols-7">
-          {/* KHÁCH SẠN */}
-          <div className="col-span-2 min-w-0 lg:col-span-2">
-            <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
-              {isVi ? "Khách sạn" : "Hotel"}
-            </label>
+    <div
+      className={`relative z-40 mx-auto w-[calc(100%-24px)] max-w-[972px] ${
+        floating ? "-mt-[35px]" : "mt-4"
+      }`}
+    >
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          handleSearch();
+        }}
+        aria-label={
+          isVi ? "Tìm phòng" : "Room search"
+        }
+        className="grid grid-cols-2 items-center gap-2 rounded-[18px] bg-white p-[10px] text-[#151b18] shadow-[0_5px_18px_rgba(0,0,0,.18)] lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto] lg:gap-0 lg:px-5"
+      >
+        {/* Cơ sở lưu trú */}
+        <label
+          className={`${fieldBase} col-span-2 lg:col-span-1`}
+        >
+          <Building2
+            size={20}
+            className="shrink-0 text-[#151b18]"
+            aria-hidden="true"
+          />
 
+          <span className="min-w-0 flex-1">
+            <span className={smallLabel}>
+              {isVi
+                ? "Chọn cơ sở lưu trú"
+                : "Choose a property"}
+            </span>
             <select
               value={hotel}
-              onChange={(e) =>
-                setHotel(e.target.value)
+              onChange={(event) => setHotel(event.target.value)}
+              className={`${inputBase} appearance-none cursor-pointer`}
+              aria-label={
+                isVi
+                  ? "Cơ sở lưu trú"
+                  : "Property"
               }
-              className="h-10 w-full min-w-0 rounded-xl border border-neutral-400 bg-white px-3 text-sm text-neutral-900 shadow-sm outline-none transition hover:border-neutral-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 sm:px-4"
             >
               <option value="">
                 {isVi
-                  ? "Chọn khách sạn"
-                  : "Select hotel"}
+                  ? "Chọn cơ sở"
+                  : "Select property"}
               </option>
 
-              {hotels.map((item) => {
-                const displayName =
-                  language === "vi"
-                    ? item.name_vi || item.name
-                    : item.name_en || item.name;
-
-                return (
-                  <option
-                    key={item.id}
-                    value={item.slug}
-                  >
-                    {displayName}
-                  </option>
-                );
-              })}
+              {hotels.map((item) => (
+                <option key={item.id} value={item.slug}>
+                  {(isVi
+                    ? item.name_vi
+                    : item.name_en) || item.name}
+                </option>
+              ))}
             </select>
-          </div>
+          </span>
+          <ChevronDown
+            size={16}
+            className="pointer-events-none shrink-0"
+            aria-hidden="true"
+          />
+        </label>
 
-          {/* NGÀY NHẬN */}
-          <div className="col-span-2 min-w-0 min-[400px]:col-span-1">
-            <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
-              {isVi
-                ? "Ngày nhận"
-                : "Check-in"}
-            </label>
+        {/* Ngày nhận phòng */}
+        <div className={`${fieldBase} relative cursor-pointer`}>
+          <CalendarDays
+            size={20}
+            className="shrink-0"
+            aria-hidden="true"
+          />
 
-            <div
-              onClick={() =>
-                openDatePicker(checkInRef)
+          <span className="min-w-0 flex-1">
+            <span className={smallLabel}>
+              {isVi ? "Ngày nhận phòng" : "Check-in"}
+            </span>
+
+            <span className="block text-[12px] font-bold text-[#151b18]">
+              {checkIn
+                ? checkIn.split("-").reverse().join("/")
+                : "dd/mm/yyyy"}
+            </span>
+          </span>
+
+          <input
+            ref={checkInRef}
+            type="date"
+            min={today}
+            value={checkIn}
+            onClick={() => openDatePicker(checkInRef)}
+            onChange={(event) => {
+              const next = event.target.value;
+              setCheckIn(next);
+
+              if (checkOut && checkOut <= next) {
+                setCheckOut("");
               }
-              className="relative flex h-10 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-2.5 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-3"
-            >
-              <input
-                ref={checkInRef}
-                type="date"
-                min={today}
-                value={checkIn}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  setCheckIn(value);
-
-                  if (
-                    checkOut &&
-                    value >= checkOut
-                  ) {
-                    setCheckOut("");
-                  }
-                }}
-                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-              />
-
-              {checkIn ? (
-                <span className="relative z-0 block w-full truncate whitespace-nowrap text-xs text-neutral-900 sm:text-sm">
-                  {checkIn}
-                </span>
-              ) : (
-                <span className="relative z-0 block w-full truncate whitespace-nowrap text-xs text-neutral-400 sm:text-sm">
-                  {isVi
-                    ? "Chọn ngày"
-                    : "Select date"}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* NGÀY TRẢ */}
-          <div className="col-span-2 min-w-0 min-[400px]:col-span-1">
-            <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
-              {isVi
-                ? "Ngày trả"
-                : "Check-out"}
-            </label>
-
-            <div
-              onClick={() =>
-                openDatePicker(checkOutRef)
-              }
-              className="relative flex h-10 w-full min-w-0 cursor-pointer items-center overflow-hidden rounded-xl border border-neutral-400 bg-white px-2.5 shadow-sm transition hover:border-neutral-500 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:px-3"
-            >
-              <input
-                ref={checkOutRef}
-                type="date"
-                min={checkIn || today}
-                value={checkOut}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  if (
-                    checkIn &&
-                    value <= checkIn
-                  ) {
-                    setCheckOut("");
-                  } else {
-                    setCheckOut(value);
-                  }
-                }}
-                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-              />
-
-              {checkOut ? (
-                <span className="relative z-0 block w-full truncate whitespace-nowrap text-xs text-neutral-900 sm:text-sm">
-                  {checkOut}
-                </span>
-              ) : (
-                <span className="relative z-0 block w-full truncate whitespace-nowrap text-xs text-neutral-400 sm:text-sm">
-                  {isVi
-                    ? "Chọn ngày"
-                    : "Select date"}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* NGƯỜI LỚN */}
-          <div className="col-span-2 min-w-0 min-[400px]:col-span-1">
-            <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
-              {isVi
-                ? "Người lớn"
-                : "Adults"}
-            </label>
-
-            <div className="flex min-h-12 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
-              <button
-                type="button"
-                onClick={decreaseAdults}
-                disabled={adults <= 1}
-                aria-label={
-                  isVi
-                    ? "Giảm số người lớn"
-                    : "Decrease adults"
-                }
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                −
-              </button>
-
-              <span className="min-w-[24px] text-center text-sm font-medium text-neutral-900">
-                {adults}
-              </span>
-
-              <button
-                type="button"
-                onClick={increaseAdults}
-                aria-label={
-                  isVi
-                    ? "Tăng số người lớn"
-                    : "Increase adults"
-                }
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          {/* TRẺ EM */}
-          <div className="col-span-2 min-w-0 min-[400px]:col-span-1">
-            <label className="mb-1 block text-xs font-medium text-neutral-900 sm:text-sm">
-              {isVi
-                ? "Trẻ em"
-                : "Children"}
-            </label>
-
-            <div className="flex min-h-12 w-full min-w-0 items-center justify-between rounded-xl border border-neutral-400 bg-white px-1 shadow-sm transition hover:border-neutral-500 sm:px-2">
-              <button
-                type="button"
-                onClick={decreaseChildren}
-                disabled={children <= 0}
-                aria-label={
-                  isVi
-                    ? "Giảm số trẻ em"
-                    : "Decrease children"
-                }
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                −
-              </button>
-
-              <span className="min-w-[24px] text-center text-sm font-medium text-neutral-900">
-                {children}
-              </span>
-
-              <button
-                type="button"
-                onClick={increaseChildren}
-                aria-label={
-                  isVi
-                    ? "Tăng số trẻ em"
-                    : "Increase children"
-                }
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg font-medium text-neutral-900 transition hover:bg-neutral-100"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          {/* TÌM PHÒNG */}
-          <div className="col-span-2 flex items-end lg:col-span-1">
-            <button
-              type="button"
-              onClick={handleSearch}
-              className="h-10 w-full rounded-xl bg-sky-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.99]"
-            >
-              {isVi
-                ? "Tìm phòng"
-                : "Search Rooms"}
-            </button>
-          </div>
+            }}
+            aria-label={isVi ? "Ngày nhận phòng" : "Check-in"}
+            className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
+          />
         </div>
-      </div>
+{/* Ngày trả phòng */}
+        <div className={`${fieldBase} relative cursor-pointer`}>
+          <CalendarDays
+            size={20}
+            className="shrink-0"
+            aria-hidden="true"
+          />
+
+          <span className="min-w-0 flex-1">
+            <span className={smallLabel}>
+              {isVi ? "Ngày trả phòng" : "Check-out"}
+            </span>
+
+            <span className="block text-[12px] font-bold text-[#151b18]">
+              {checkOut
+                ? checkOut.split("-").reverse().join("/")
+                : "dd/mm/yyyy"}
+            </span>
+          </span>
+
+          <input
+            ref={checkOutRef}
+            type="date"
+            min={checkIn || today}
+            value={checkOut}
+            onClick={() => openDatePicker(checkOutRef)}
+            onChange={(event) => {
+              const next = event.target.value;
+
+              if (checkIn && next <= checkIn) {
+                setCheckOut("");
+              } else {
+                setCheckOut(next);
+              }
+            }}
+            aria-label={isVi ? "Ngày trả phòng" : "Check-out"}
+            className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
+          />
+        </div>
+{/* Số khách: người lớn và trẻ em */}
+        <div
+          ref={guestsRef}
+          className="relative min-w-0 lg:mr-3"
+        >
+          <button
+            type="button"
+            onClick={() => setGuestsOpen((open) => !open)}
+            aria-expanded={guestsOpen}
+            aria-controls="huyen-guest-picker"
+            className={`${fieldBase} w-full text-left`}
+          >
+            <UserRound
+              size={20}
+              className="shrink-0"
+              aria-hidden="true"
+            />
+            <span className="min-w-0 flex-1">
+              <span className={smallLabel}>
+                {isVi ? "Số khách" : "Guests"}
+              </span>
+              <span className="block truncate text-[12px] font-bold">
+                {guestText}
+              </span>
+            </span>
+            <ChevronDown
+              size={16}
+              className="shrink-0"
+              aria-hidden="true"
+            />
+          </button>
+
+          {guestsOpen && (
+            <div
+              id="huyen-guest-picker"
+              className="absolute right-0 top-[calc(100%+10px)] z-[60] w-[260px] max-w-[calc(100vw-32px)] rounded-xl border border-neutral-200 bg-white p-4 shadow-xl"
+            >
+              {[
+                {
+                  key: "adults",
+                  title: isVi ? "Người lớn" : "Adults",
+                  value: adults,
+                  min: 1,
+                  onChange: setAdults,
+                },
+                {
+                  key: "children",
+                  title: isVi ? "Trẻ em" : "Children",
+                  value: children,
+                  min: 0,
+                  onChange: setChildren,
+                },
+              ].map((item) => (
+                <div
+                  key={item.key}
+                  className="flex items-center justify-between gap-3 py-2"
+                >
+                  <span className="text-sm font-medium">
+                    {item.title}
+                  </span>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      disabled={item.value <= item.min}
+                      onClick={() =>
+                        item.onChange((value) =>
+                          Math.max(item.min, value - 1)
+                        )
+                      }
+                      aria-label={
+                        isVi
+                          ? `Giảm ${item.title}`
+                          : `Decrease ${item.title}`
+                      }
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-300 disabled:opacity-30"
+                    >
+                      <Minus size={15} />
+                    </button>
+
+                    <span className="w-5 text-center text-sm font-semibold">
+                      {item.value}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        item.onChange((value) => value + 1)
+                      }
+                      aria-label={
+                        isVi
+                          ? `Tăng ${item.title}`
+                          : `Increase ${item.title}`
+                      }
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-300"
+                    >
+                      <Plus size={15} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => setGuestsOpen(false)}
+                className="mt-3 w-full rounded-lg bg-[#0a6b36] px-3 py-2 text-sm font-semibold text-white"
+              >
+                {isVi ? "Xong" : "Done"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Tìm phòng */}
+        <button
+          type="submit"
+          className="col-span-2 flex min-h-[44px] items-center justify-center gap-2 rounded-[21px] bg-[#0a6b36] px-5 text-[12px] font-bold text-white transition-colors hover:bg-[#08562b] lg:col-span-1"
+        >
+          <Search size={18} aria-hidden="true" />
+          {isVi ? "Tìm phòng" : "Find a room"}
+        </button>
+      </form>
     </div>
   );
 }

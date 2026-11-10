@@ -129,8 +129,8 @@ function getSupabase(): SupabaseClient {
 
 async function getLatestPosts() {
   const { data, error } = await getSupabase().from("blog_posts")
-    .select("id, slug, title_vi, title_en, excerpt_vi, excerpt_en")
-    .eq("status", "active").order("date", { ascending: false }).order("id", { ascending: false }).limit(3);
+    .select("id, slug, title_vi, title_en, excerpt_vi, excerpt_en, image")
+    .eq("status", "active").order("date", { ascending: false }).order("id", { ascending: false });
   if (error) { console.error("Home blog:", error.message); return []; }
   return data || [];
 }

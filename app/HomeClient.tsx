@@ -7,14 +7,9 @@ import EmailLink from "./components/EmailLink";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ArrowUpDown,
-  BrushCleaning,
+  Building2,
   ChevronRight,
   MapPin,
-  ShowerHead,
-  Snowflake,
-  Tv,
-  Wifi,
 } from "lucide-react";
 import BookingSearch from "./components/BookingSearch";
 import Header from "./components/Header";
@@ -63,7 +58,15 @@ type CustomerReview = {
   guest_country: string | null;
 };
 
-type LatestPost = { id: number; slug: string; title_vi: string; title_en: string; excerpt_vi: string | null; excerpt_en: string | null };
+type LatestPost = {
+  id: number;
+  slug: string;
+  title_vi: string;
+  title_en: string;
+  excerpt_vi: string | null;
+  excerpt_en: string | null;
+  image: string | null;
+};
 type HomeClientProps = {
   latestPosts?: LatestPost[];
   heroSlides: HeroSlide[];
@@ -80,39 +83,6 @@ declare global {
 }
 
 const SLIDE_DURATION = 20;
-
-const amenities = [
-  {
-    titleVi: "Wi-Fi miễn phí",
-    titleEn: "Free Wi-Fi",
-    icon: Wifi,
-  },
-  {
-    titleVi: "Máy lạnh",
-    titleEn: "Air Conditioning",
-    icon: Snowflake,
-  },
-  {
-    titleVi: "TV",
-    titleEn: "TV",
-    icon: Tv,
-  },
-  {
-    titleVi: "Phòng tắm riêng",
-    titleEn: "Private Bathroom",
-    icon: ShowerHead,
-  },
-  {
-    titleVi: "Thang máy",
-    titleEn: "Elevator",
-    icon: ArrowUpDown,
-  },
-  {
-    titleVi: "Dọn phòng",
-    titleEn: "Housekeeping",
-    icon: BrushCleaning,
-  },
-] as const;
 
 const heroFallbackTexts = [
   {
@@ -204,9 +174,13 @@ export default function HomeClient({
    * có cùng HTML, tránh hydration mismatch.
    */
   const language = useLanguage();
-
+  const [galleryPage, setGalleryPage] = useState(0);
+  const [stayMode, setStayMode] = useState<"short" | "long">("short");
   const [pickedHotelId, setPickedHotelId] =
     useState<number | null>(null);
+
+  const [reviewIndex, setReviewIndex] = useState(0);
+  const [reviewExpanded, setReviewExpanded] = useState(false);
 
   const isVi = language === "vi";
 
@@ -337,6 +311,22 @@ export default function HomeClient({
     return "sm:grid-cols-1";
   }, [hotels.length]);
 
+  const galleryPosts = latestPosts.filter(
+    (post) => typeof post.image === "string" &&
+      post.image.trim().length > 0
+  );
+
+  const galleryPageCount = Math.ceil(galleryPosts.length / 4);
+
+  const currentGalleryPage =
+    galleryPageCount > 0
+      ? galleryPage % galleryPageCount
+      : 0;
+
+  const visibleGalleryPosts = galleryPosts.slice(
+    currentGalleryPage * 4,
+    currentGalleryPage * 4 + 4
+  );
   const slideCount = heroSlides.length;
 
   const perSlide =
@@ -352,962 +342,924 @@ export default function HomeClient({
   return (
     <>
       <div className="bg-white text-neutral-900">
-        {/* =====================================================
-            HERO
-        ====================================================== */}
+        {/* HERO - BOLT DESIGN */}
         <section
-          className="px-4 pt-4 sm:px-6 sm:pt-6"
+          className="relative"
           aria-labelledby="hero-heading"
         >
-          <div className="mx-auto max-w-7xl">
+          <div className="relative h-[455px] overflow-hidden bg-[#222611] text-white max-sm:h-[445px]">
+
+            {/* Slideshow Supabase */}
+            <div className="absolute inset-0">
+              {heroSlides.map((slide, index) => {
+                const isFirst = index === 0;
+                const fallback =
+                  heroFallbackTexts[
+                    index % heroFallbackTexts.length
+                  ];
+
+                const alt =
+                  (isVi ? slide.title_vi : slide.title_en)?.trim() ||
+                  (isVi ? fallback.titleVi : fallback.titleEn);
+
+                const animationDelay = isFirst
+                  ? "0s"
+                  : `${index * perSlide - SLIDE_DURATION}s`;
+
+                return (
+                  <div
+                    key={slide.id}
+                    data-first={isFirst ? "true" : "false"}
+                    aria-hidden="true"
+                    className="huyen-hero-slide absolute inset-0"
+                    style={
+                      slideCount > 1
+                        ? {
+                            opacity: isFirst ? 1 : 0,
+                            animation: `huyenHeroFade ${SLIDE_DURATION}s linear ${animationDelay} infinite`,
+                          }
+                        : { opacity: 1 }
+                    }
+                  >
+                    {slide.image_url && (
+                      <Image
+                        src={slide.image_url}
+                        alt={alt}
+                        fill
+                        preload={isFirst}
+                        loading={isFirst ? "eager" : "lazy"}
+                        quality={75}
+                        sizes="100vw"
+                        className="object-cover"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Gradient goc cua Bolt */}
             <div
-              className="relative z-30 h-[320px] rounded-2xl bg-neutral-900 sm:h-[360px] lg:h-[420px]"
-            >
-              <Header />
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-10"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(34,38,17,.78) 0%, rgba(34,38,17,.34) 42%, rgba(0,0,0,.05) 75%)",
+              }}
+            />
 
-              <div className="absolute inset-0 overflow-hidden rounded-2xl">
-              {heroSlides.length > 0 ? (
-                heroSlides.map(
-                  (slide, index) => {
-                    const fallback =
-                      heroFallbackTexts[
-                        index %
-                          heroFallbackTexts.length
-                      ];
+            <Header />
 
-                    const title = isVi
-                      ? slide.title_vi?.trim() ||
-                        fallback.titleVi
-                      : slide.title_en?.trim() ||
-                        fallback.titleEn;
+            {/* Noi dung ben trai theo Bolt */}
+            <div className="relative z-20 mx-auto w-[calc(100%-48px)] max-w-[1100px] pt-[115px] pb-[25px] text-white max-sm:w-[calc(100%-32px)] max-sm:pt-[150px]">
+              <div className="max-w-[560px]">
 
-                    const description =
-                      isVi
-                        ? slide.description_vi?.trim() ||
-                          fallback.descriptionVi
-                        : slide.description_en?.trim() ||
-                          fallback.descriptionEn;
+                <div className="grid h-[230px] w-full max-w-[560px] overflow-hidden">
+                  {heroSlides.length > 0 ? (
+                    heroSlides.map((slide, index) => {
+                      const fallback =
+                        heroFallbackTexts[
+                          index % heroFallbackTexts.length
+                        ];
 
-                    const isFirst =
-                      index === 0;
+                      const title = isVi
+                        ? slide.title_vi?.trim() || fallback.titleVi
+                        : slide.title_en?.trim() || fallback.titleEn;
 
-                    /*
-                     * Slide đầu chạy ngay.
-                     * Các slide sau dùng delay âm để animation
-                     * bắt đầu đúng vị trí ngay khi trang mở.
-                     */
-                    const animationDelay =
-                      isFirst
+                      const description = isVi
+                        ? slide.description_vi?.trim() || fallback.descriptionVi
+                        : slide.description_en?.trim() || fallback.descriptionEn;
+
+                      const isFirst = index === 0;
+
+                      const animationDelay = isFirst
                         ? "0s"
                         : `${index * perSlide - SLIDE_DURATION}s`;
 
-                    return (
-                      <div
-                        key={slide.id}
-                        data-first={
-                          isFirst
-                            ? "true"
-                            : "false"
-                        }
-                        aria-hidden={
-                          isFirst
-                            ? undefined
-                            : true
-                        }
-                        className="huyen-hero-slide absolute inset-0"
-                        style={
-                          slideCount > 1
-                            ? {
-                                opacity:
-                                  isFirst
-                                    ? 1
-                                    : 0,
-                                animation: `huyenHeroFade ${SLIDE_DURATION}s linear ${animationDelay} infinite`,
-                              }
-                            : {
-                                opacity: 1,
-                              }
-                        }
-                      >
-                        {slide.image_url && (
-                          <Image
-                            src={
-                              slide.image_url
-                            }
-                            alt={
-                              title ||
-                              "Huyen's Hotels & Stays"
-                            }
-                            fill
-                            preload={isFirst}
-                            loading={
-                              isFirst
-                                ? "eager"
-                                : "lazy"
-                            }
-                            quality={75}
-                            sizes="(max-width: 640px) 100vw, (max-width: 1280px) calc(100vw - 32px), 1280px"
-                            className="object-cover"
-                          />
-                        )}
-
-                        <div className="absolute inset-0 z-10 bg-black/25" />
-
-                        <div className="absolute inset-0 z-20 flex items-end px-4 pb-6 sm:px-8 sm:pb-8">
-                          <div className="max-w-2xl text-white">
-                            {isFirst ? (
-                              <h1
-                                id="hero-heading"
-                                className="text-xl font-bold leading-tight drop-shadow-md sm:text-3xl lg:text-4xl"
-                              >
-                                {isVi ? "Khách sạn, Homestay tại trung tâm TP.HCM – Huyen’s Hotels & Stays" : "Hotels & homestays in central Saigon"}
-                              </h1>
-                            ) : (
-                              <p className="text-xl font-bold leading-tight drop-shadow-md sm:text-3xl lg:text-4xl">
-                                {title}
-                              </p>
-                            )}
-
-                            {description && (
-                              <p className="mt-2 max-w-xl text-sm drop-shadow-sm sm:mt-3 sm:text-lg">
-                                {
-                                  description
+                      return (
+                        <div
+                          key={slide.id}
+                          data-first={isFirst ? "true" : "false"}
+                          aria-hidden={!isFirst}
+                          className="huyen-hero-slide col-start-1 row-start-1"
+                          style={
+                            slideCount > 1
+                              ? {
+                                  opacity: isFirst ? 1 : 0,
+                                  animation: `huyenHeroFade ${SLIDE_DURATION}s linear ${animationDelay} infinite`,
                                 }
-                              </p>
-                            )}
-                          </div>
+                              : { opacity: 1 }
+                          }
+                        >
+                          <p className="mb-[5px] text-[12px] font-bold tracking-[1.7px] text-[#e8eee0]">
+                            HUYEN&apos;S HOTELS &amp; STAYS
+                          </p>
+
+                          {isFirst ? (
+                            <h1
+                              id="hero-heading"
+                              className="mb-[14px] text-[clamp(34px,4.5vw,60px)] leading-[1.04] tracking-[-0.8px] text-white"
+                              style={{
+                                fontFamily: "'Playfair Display', Georgia, serif",
+                                fontWeight: 700,
+                              }}
+                            >
+                              {title}
+                            </h1>
+                          ) : (
+                            <p
+                              className="mb-[14px] text-[clamp(34px,4.5vw,60px)] leading-[1.04] tracking-[-0.8px] text-white"
+                              style={{
+                                fontFamily: "'Playfair Display', Georgia, serif",
+                                fontWeight: 700,
+                              }}
+                            >
+                              {title}
+                            </p>
+                          )}
+
+                          {description && (
+                            <p className="mb-[17px] whitespace-pre-line text-[14px] leading-[1.4] text-white">
+                              {description}
+                            </p>
+                          )}
                         </div>
-                      </div>
-                    );
-                  }
-                )
-              ) : (
-                <div className="absolute inset-0 flex items-end bg-neutral-800 px-4 pb-6 sm:px-8 sm:pb-8">
-                  <div className="max-w-2xl text-white">
-                    <h1
-                      id="hero-heading"
-                      className="text-xl font-bold leading-tight sm:text-3xl lg:text-4xl"
-                    >
-                      {isVi
-                        ? "Khách sạn, Homestay tại trung tâm TP.HCM – Huyen's Hotels & Stays" : "Hotels & homestays in central Saigon"}
-                    </h1>
+                      );
+                    })
+                  ) : (
+                    <div className="col-start-1 row-start-1">
+                      <p className="mb-[5px] text-[12px] font-bold tracking-[1.7px] text-[#e8eee0]">
+                        HUYEN&apos;S HOTELS &amp; STAYS
+                      </p>
 
-                    <p className="mt-2 text-sm sm:text-lg">
-                      {isVi
-                        ? "Thoải mái theo cách của bạn."
-                        : "Comfortable, your way."}
-                    </p>
-                  </div>
+                      <h1
+                        id="hero-heading"
+                        className="mb-[14px] text-[clamp(34px,4.5vw,60px)] leading-[1.04] text-white"
+                        style={{
+                          fontFamily: "'Playfair Display', Georgia, serif",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {isVi
+                          ? "Lưu trú theo cách của bạn"
+                          : "Stay your own way"}
+                      </h1>
+                    </div>
+                  )}
                 </div>
-              )}
 
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStayMode("short")}
+                    aria-pressed={stayMode === "short"}
+                    className={`inline-flex items-center gap-[7px] rounded-[28px] border border-white px-[17px] py-2 text-sm font-semibold text-white transition-colors ${
+                      stayMode === "short"
+                        ? "bg-[#0b6c38]"
+                        : "bg-[rgba(16,31,22,.3)] hover:bg-[#0b6c38]"
+                    }`}
+                  >
+                    <Building2 size={16} aria-hidden="true" />
+                    {isVi ? "Lưu trú ngắn hạn" : "Short stay"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStayMode("long")}
+                    aria-pressed={stayMode === "long"}
+                    className={`inline-flex items-center gap-[7px] rounded-[28px] border border-white px-[17px] py-2 text-sm font-semibold text-white transition-colors ${
+                      stayMode === "long"
+                        ? "bg-[#0b6c38]"
+                        : "bg-[rgba(16,31,22,.3)] hover:bg-[#0b6c38]"
+                    }`}
+                  >
+                    <Building2 size={16} aria-hidden="true" />
+                    {isVi ? "Thuê dài hạn" : "Long stay"}
+                  </button>
+                </div>
               </div>
-
-              {heroCss && (
-                <style
-                  dangerouslySetInnerHTML={{
-                    __html: heroCss,
-                  }}
-                />
-              )}
             </div>
 
-            <div className="mt-4 w-full">
-              <BookingSearch
-                hotels={bookingHotels}
+            {heroCss && (
+              <style
+                dangerouslySetInnerHTML={{
+                  __html: heroCss,
+                }}
               />
-            </div>
+            )}
           </div>
-        </section>
 
+          {/* Thanh tim phong noi tren mep Hero */}
+          <BookingSearch
+            hotels={bookingHotels}
+            stayMode={stayMode}
+            floating
+          />
+        </section>
         {/* =====================================================
-            GIỚI THIỆU
+            GIOI THIEU - BOLT DESIGN
         ====================================================== */}
         <section
-          className="px-4 py-12 sm:px-6"
+          className="bg-white px-4 pb-0 pt-[52px] sm:px-6 max-sm:pt-8"
           aria-labelledby="about-heading"
         >
-          <div className="mx-auto max-w-5xl">
-            <div className="grid gap-8 md:grid-cols-[3fr_7fr]">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-widest text-sky-600">
-                  Huyen&apos;s Hotels &amp;
-                  Stays
+          <div className="mx-auto max-w-[1100px]">
+            <div className="grid items-center gap-5 lg:grid-cols-[25fr_30fr_45fr] lg:gap-0">
+
+              {/* Cot 1 - tieu de */}
+              <div className="lg:pr-5">
+                <p className="mb-[5px] text-[12px] font-bold tracking-[1.7px] text-[#0959dc]">
+                  HUYEN&apos;S HOTELS &amp; STAYS
                 </p>
 
                 <h2
                   id="about-heading"
-                  className="mt-3 text-2xl font-medium text-sky-800 md:text-3xl"
+                  className="text-[25px] font-semibold leading-[1.08] text-[#0755cc] max-sm:text-[23px]"
                 >
-                  {isVi
-                    ? "Mỗi nơi ở, một trải nghiệm riêng"
-                    : "Every stay, a unique experience"}
-                </h2>
-              </div>
-
-              <div>
-                <p className="text-base leading-7 text-neutral-600">
                   {isVi ? (
                     <>
-                      Chúng tôi phát triển hệ
-                      thống khách sạn,
-                      homestay &amp; căn hộ
-                      dịch vụ tại TP.HCM.
-                      <br />
-                      Luôn mang đến không
-                      gian sạch sẽ, tiện nghi,
-                      riêng tư và thuận tiện
-                      cho mọi chuyến đi.
+                      <span className="block">Mỗi kỳ lưu trú,</span>
+                      <span className="block">một trải nghiệm riêng</span>
                     </>
                   ) : (
                     <>
-                      We specialize in
-                      operating hotels,
-                      homestays, and serviced
-                      apartments in Ho Chi Minh
-                      City.
-                      <br />
-                      We are committed to
-                      providing clean,
-                      comfortable, and private
-                      spaces that are
-                      convenient for every trip.
+                      <span className="block">Every stay,</span>
+                      <span className="block">a personal experience</span>
                     </>
                   )}
+                </h2>
+              </div>
+
+              {/* Cot 2 - noi dung */}
+              <div className="border-l border-[#bfc5c1] px-[38px] max-lg:px-5 max-sm:border-l-0 max-sm:border-t max-sm:px-0 max-sm:pt-4">
+                <p className="mb-3 text-[13px] leading-[1.55] text-[#111613]">
+                  {isVi
+                    ? "Chúng tôi chuyên vận hành khách sạn, căn hộ dịch vụ tại TP. Hồ Chí Minh. Cam kết mang đến không gian sạch sẽ, thoải mái, riêng tư và tiện lợi cho mọi chuyến đi."
+                    : "We operate hotels and serviced apartments in Ho Chi Minh City. Clean, comfortable, private and convenient spaces for every journey."}
                 </p>
 
                 <Link
                   href="/kham-pha-huyens"
-                  className="mt-6 flex w-full items-center justify-end font-semibold text-sky-700 hover:text-sky-900"
+                  className="flex items-center justify-end gap-2 text-[13px] font-bold text-[#075bd7] hover:underline"
                 >
-                  {isVi
-                    ? "Tìm hiểu thêm"
-                    : "Discover Huyen's"}
-
-                  <span
-                    className="ml-2"
-                    aria-hidden="true"
-                  >
-                    →
-                  </span>
+                  {isVi ? "Khám phá Huyen's" : "Discover Huyen's"}
+                  <span aria-hidden="true" className="text-lg">→</span>
                 </Link>
               </div>
+
+              {/* Cot 3 - collage 1 anh lon + 2 anh nho */}
+              <div className="grid h-[280px] min-h-0 grid-cols-[1.6fr_1fr] gap-[11px] pl-[14px] max-lg:h-[220px] max-sm:mt-2 max-sm:h-[180px] max-sm:pl-0">
+
+                <img
+                  src="https://images.pexels.com/photos/3771087/pexels-photo-3771087.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
+                  alt={isVi ? "Không gian lưu trú Huyen's" : "Huyen's stay experience"}
+                  loading="lazy"
+                  className="h-full min-h-0 w-full rounded-xl object-cover"
+                />
+
+                <div className="grid min-h-0 grid-rows-2 gap-[11px]">
+                  <img
+                    src="https://images.pexels.com/photos/40624417/pexels-photo-40624417.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
+                    alt={isVi ? "Không gian phòng nghỉ" : "Guest room"}
+                    loading="lazy"
+                    className="h-full min-h-0 w-full rounded-xl object-cover"
+                  />
+
+                  <img
+                    src="https://images.pexels.com/photos/5007253/pexels-photo-5007253.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
+                    alt={isVi ? "Trải nghiệm lưu trú" : "Stay experience"}
+                    loading="lazy"
+                    className="h-full min-h-0 w-full rounded-xl object-cover"
+                  />
+                </div>
+              </div>
+
             </div>
           </div>
         </section>
-
         {/* =====================================================
-            DANH SÁCH LƯU TRÚ
+            DANH SÁCH LƯU TRÚ - BOLT FEATURED CARDS
         ====================================================== */}
         <section
           id="hotels"
-          className="bg-neutral-50 px-4 py-16 sm:px-6"
+          className="bg-white px-4 pb-[22px] pt-[36px] sm:px-6"
           aria-labelledby="stays-heading"
         >
-          <div className="mx-auto max-w-7xl">
-            <div className="mb-8">
-              <p className="text-sm font-semibold uppercase tracking-widest text-sky-500">
-                {isVi
-                  ? "Lưu trú"
-                  : "Our Stays"}
-              </p>
+          <div className="mx-auto max-w-[1100px]">
 
-              <h2
-                id="stays-heading"
-                className="mt-2 text-2xl font-bold md:text-3xl"
-              >
-                {isVi
-                  ? "Các khách sạn, homestay & căn hộ dịch vụ tại TP.HCM"
-                  : "Hotels, Homestays & Serviced Apartments in Ho Chi Minh City"}
-              </h2>
-            </div>
-
-            {hotels.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
-                <p className="text-neutral-500">
-                  {isVi
-                    ? "Chưa có nơi lưu trú nào hoạt động."
-                    : "No active stays yet."}
-                </p>
-              </div>
-            ) : (
-              <div
-                className={`grid gap-6 ${hotelGridClass}`}
-              >
-                {hotels.map(
-                  (hotel) => {
-                    const image =
-                      hotelCovers[
-                        hotel.id
-                      ];
-
-                    const name = t(
-                      hotel.name_vi,
-                      hotel.name_en
-                    ) as string;
-
-                    const address = t(
-                      hotel.address_vi,
-                      hotel.address_en
-                    ) as string;
-
-                    const description =
-                      t(
-                        hotel.description_vi,
-                        hotel.description_en
-                      ) as string;
-
-                    const href = `/khach-san/${hotel.slug}`;
-
-                    return (
-                      <article
-                        key={hotel.id}
-                        className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow hover:shadow-lg"
-                      >
-                        <Link
-                          href={href}
-                          className="block"
-                          aria-label={
-                            isVi
-                              ? `Xem ${name}`
-                              : `View ${name}`
-                          }
-                        >
-                          <div className="aspect-[4/3] overflow-hidden bg-neutral-100">
-                            {image ? (
-                              <Image
-                                src={image}
-                                alt={`${name} – khách sạn và lưu trú tại Sài Gòn`}
-                                width={800}
-                                height={600}
-                                loading="lazy"
-                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              />
-                            ) : (
-                              <div className="flex h-full items-center justify-center text-sm text-neutral-400">
-                                {isVi
-                                  ? "Chưa có ảnh"
-                                  : "No image"}
-                              </div>
-                            )}
-                          </div>
-                        </Link>
-
-                        <div className="flex flex-1 flex-col p-5">
-                          {address && (
-                            <p className="text-xs uppercase text-neutral-400">
-                              {address}
-                            </p>
-                          )}
-
-                          <Link href={href}>
-                            <h3 className="mt-2 text-xl font-semibold transition-colors hover:text-sky-500">
-                              {name}
-                            </h3>
-                          </Link>
-
-                          {description && (
-                            <p className="mt-3 line-clamp-3 text-sm text-neutral-500">
-                              {description}
-                            </p>
-                          )}
-
-                          <Link
-                            href={href}
-                            className="mt-auto pt-4 text-sm font-semibold text-sky-600 hover:text-sky-800"
-                          >
-                            {isVi
-                              ? "Xem chi tiết & đặt phòng →"
-                              : "View & Book →"}
-                          </Link>
-                        </div>
-                      </article>
-                    );
-                  }
-                )}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* =====================================================
-            OTA BOOKING
-            GIỮ NGUYÊN OTA TRÊN TRANG HOME
-        ====================================================== */}
-        {hasAnyOTA && (
-          <section
-            id="ota-booking"
-            className="px-4 py-16 sm:px-6"
-            aria-labelledby="ota-heading"
-          >
-            <div className="mx-auto max-w-7xl">
-              <div className="max-w-3xl">
-                <p className="text-sm font-semibold tracking-widest text-sky-500">
-                  {isVi
-                    ? "KÊNH ONLINE - OTAs"
-                    : "On OTAs"}
+            {/* Heading theo Bolt */}
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="mb-[5px] text-[12px] font-bold uppercase tracking-[1.7px] text-[#155d2f]">
+                  {isVi ? "CƠ SỞ NỔI BẬT" : "FEATURED PROPERTIES"}
                 </p>
 
                 <h2
-                  id="ota-heading"
-                  className="mt-2 text-2xl font-bold md:text-3xl"
+                  id="stays-heading"
+                  className="text-[25px] font-bold leading-[1.08] text-[#111613] max-sm:text-[20px]"
                 >
                   {isVi
-                    ? "Đặt phòng online"
-                    : "Book through our platforms"}
+                    ? "Khám phá hệ thống Huyen's"
+                    : "Explore Huyen's collection"}
                 </h2>
-
-                <p className="mt-3 text-neutral-500">
-                  {isVi
-                    ? "Chọn nơi lưu trú và đặt phòng qua các kênh online tin cậy."
-                    : "Choose your stay and book through your preferred platform."}
-                </p>
               </div>
 
-              {/*
-                Hàng trên: chọn nơi lưu trú (2/3) + địa chỉ (1/3).
-                Trên desktop: grid 2fr/1fr; trên mobile: xếp chồng 1 cột
-                (nút chọn phía trên, địa chỉ phía dưới).
-              */}
-              <div className="mt-8 grid gap-3 md:grid-cols-3 md:items-stretch md:gap-6">
-                <div
-                  className="md:col-span-2"
-                  role="tablist"
-                  aria-label={
-                    isVi
-                      ? "Chọn nơi lưu trú"
-                      : "Choose a stay"
-                  }
-                >
-                  <div className="flex flex-wrap gap-2">
-                    {hotels.map(
-                      (hotel) => {
-                        const isSelected =
-                          hotel.id ===
-                          selectedHotelId;
-
-                        const otaCount =
-                          otaByHotel[
-                            hotel.id
-                          ]?.length ?? 0;
-
-                        return (
-                          <button
-                            key={hotel.id}
-                            type="button"
-                            role="tab"
-                            id={`ota-tab-${hotel.id}`}
-                            aria-selected={
-                              isSelected
-                            }
-                            aria-controls="ota-panel"
-                            disabled={
-                              otaCount === 0
-                            }
-                            onClick={() =>
-                              setPickedHotelId(
-                                hotel.id
-                              )
-                            }
-                            className={[
-                              "rounded-full border px-5 py-2.5 text-sm font-medium transition",
-                              isSelected
-                                ? "border-sky-600 bg-sky-600 text-white"
-                                : otaCount === 0
-                                  ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
-                                  : "border-neutral-200 bg-white text-neutral-700 hover:border-sky-300 hover:text-sky-700",
-                            ].join(" ")}
-                          >
-                            {t(
-                              hotel.name_vi,
-                              hotel.name_en
-                            ) as string}
-                          </button>
-                        );
-                      }
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center rounded-2xl border border-neutral-200 bg-white p-4 md:col-span-1 md:px-5">
-                  {selectedHotel && (
-                    <>
-                      <div className="min-w-0">
-                        <h3 className="text-lg font-semibold text-neutral-900">
-                          {t(
-                            selectedHotel.name_vi,
-                            selectedHotel.name_en
-                          ) as string}
-                        </h3>
-
-                        <div className="mt-1.5 flex items-start gap-2 text-sm text-neutral-600">
-                          <MapPin
-                            className="mt-0.5 h-4 w-4 shrink-0 text-sky-600"
-                            aria-hidden="true"
-                          />
-
-                          {t(
-                            selectedHotel.address_vi,
-                            selectedHotel.address_en
-                          ) ? (
-                            <span>{t(
-                              selectedHotel.address_vi,
-                              selectedHotel.address_en
-                            )}</span>
-                          ) : (
-                            <span className="inline-block">
-                              {isVi
-                                ? "Đang cập nhật địa chỉ"
-                                : "Address coming soon"}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Hàng dưới: danh sách OTA — chiếm toàn bộ chiều rộng section */}
-              <div
-                id="ota-panel"
-                className="mt-6"
-                role="tabpanel"
-                aria-labelledby={
-                  selectedHotelId !==
-                  null
-                    ? `ota-tab-${selectedHotelId}`
-                    : undefined
-                }
+              <Link
+                href="/phong"
+                className="inline-flex items-center gap-2 text-[13px] font-bold text-[#155d2f] hover:underline max-sm:text-[11px]"
               >
-                {selectedHotel && (
-                  <h3 className="mb-4 text-lg font-semibold text-neutral-900">
-                    {t(
-                      selectedHotel.name_vi,
-                      selectedHotel.name_en
-                    ) as string}
-                  </h3>
-                )}
-
-                {selectedOTAs.length ===
-                0 ? (
-                  <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
-                    <p className="text-sm text-neutral-500">
-                      {isVi
-                        ? "Hiện chưa có nền tảng đặt phòng cho nơi lưu trú này."
-                        : "No booking platforms are currently available for this stay."}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {selectedOTAs.map(
-                      (ota) => {
-                        const href =
-                          ota.listing_url ||
-                          ota.website ||
-                          null;
-
-                        const content = (
-                          <>
-                            <div className="flex min-w-0 items-center gap-3">
-                              {ota.logo ? (
-                                <div className="relative h-5 w-12 shrink-0">
-                                  <Image
-                                    src={
-                                      ota.logo
-                                    }
-                                    alt={
-                                      ota.name
-                                    }
-                                    fill
-                                    sizes="48px"
-                                    className="object-contain object-left"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="h-5 w-12 shrink-0" />
-                              )}
-
-                              <span className="truncate text-sm font-semibold text-neutral-800">
-                                {ota.name}
-                              </span>
-                            </div>
-
-                            <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-neutral-400" />
-                          </>
-                        );
-
-                        if (!href) {
-                          return (
-                            <div
-                              key={
-                                ota.id
-                              }
-                              className="flex items-center rounded-xl border border-neutral-200 bg-white p-4"
-                            >
-                              {content}
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <a
-                            key={
-                              ota.id
-                            }
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-sky-300 hover:shadow-sm"
-                          >
-                            {content}
-                          </a>
-                        );
-                      }
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* =====================================================
-            TIỆN NGHI
-        ====================================================== */}
-        <section
-          className="px-4 py-16 sm:px-6"
-          aria-labelledby="amenities-heading"
-        >
-          <div className="mx-auto max-w-7xl">
-            <div className="max-w-2xl">
-              <h2
-                id="amenities-heading"
-                className="text-2xl font-bold md:text-3xl"
-              >
-                {isVi
-                  ? "Tiện nghi"
-                  : "Amenities"}
-              </h2>
-
-              <p className="mt-4 text-neutral-500">
-                {isVi
-                  ? "Phòng đầy đủ tiện nghi, không gian sạch sẽ, vị trí trung tâm dễ di chuyển."
-                  : "Fully equipped rooms, clean spaces, central easy-to-reach locations."}
-              </p>
+                {isVi ? "Xem tất cả cơ sở" : "View all properties"}
+                <span aria-hidden="true" className="text-lg">→</span>
+              </Link>
             </div>
 
-            <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3">
-              {amenities.map(
-                (item) => {
-                  const Icon = item.icon;
+            {/* Danh sách thật từ Supabase */}
+            {hotels.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-neutral-300 p-7 text-center text-sm text-neutral-500">
+                {isVi
+                  ? "Chưa có cơ sở lưu trú nào hoạt động."
+                  : "No active properties available."}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-4 max-lg:gap-3">
+                {hotels.map((hotel) => {
+                  const image = hotelCovers[hotel.id];
+
+                  const name = t(
+                    hotel.name_vi,
+                    hotel.name_en
+                  ) as string;
+
+                  const propertyType =
+                    hotel.slug === "huyen-house" ||
+                    hotel.slug === "huyen-homestay"
+                      ? isVi
+                        ? "Căn hộ dịch vụ"
+                        : "Serviced apartment"
+                      : hotel.slug === "anh-kim-hotel" ||
+                          hotel.slug === "ae-guesthouse"
+                        ? isVi
+                          ? "Khách sạn"
+                          : "Hotel"
+                        : isVi
+                          ? "Cơ sở lưu trú"
+                          : "Property";
+
+                  const href = `/khach-san/${hotel.slug}`;
 
                   return (
-                    <div
-                      key={
-                        item.titleVi
-                      }
-                      className="rounded-xl border border-neutral-100 p-5 transition-colors hover:border-sky-100 hover:bg-sky-50"
+                    <article
+                      key={hotel.id}
+                      className="group relative overflow-hidden rounded-[13px] border border-[#e1e4e1] bg-white shadow-[0_2px_5px_rgba(0,0,0,.06)] transition-all hover:-translate-y-1 hover:shadow-[0_10px_22px_rgba(0,0,0,.1)]"
                     >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
-                        <Icon
-                          size={20}
-                          strokeWidth={
-                            1.8
-                          }
-                        />
-                      </div>
+                      <Link
+                        href={href}
+                        aria-label={
+                          isVi
+                            ? `Xem chi tiết ${name}`
+                            : `View details of ${name}`
+                        }
+                        className="block"
+                      >
+                        <div className="relative h-[140px] overflow-hidden bg-neutral-100 max-sm:h-[170px]">
+                          {image ? (
+                            <Image
+                              src={image}
+                              alt={name}
+                              fill
+                              loading="lazy"
+                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-xs text-neutral-400">
+                              {isVi ? "Chưa có ảnh" : "No image"}
+                            </div>
+                          )}
+                        </div>
 
-                      <h3 className="mt-3 font-medium text-neutral-900">
-                        {isVi
-                          ? item.titleVi
-                          : item.titleEn}
-                      </h3>
-                    </div>
+                        <div className="relative min-h-[78px] px-[14px] pb-[10px] pt-[7px]">
+                          <h3 className="mb-1 pr-7 text-[14px] font-bold leading-snug text-[#111613]">
+                            {name}
+                          </h3>
+
+                          <span className="inline-block rounded-[10px] bg-[#d8f2dc] px-[7px] py-[3px] text-[10px] font-semibold leading-tight text-[#125d26]">
+                            {propertyType}
+                          </span>
+
+                          <p className="mt-[6px] flex items-center gap-1 text-[10px] text-[#5b625d]">
+                            <MapPin size={13} aria-hidden="true" />
+                            {isVi
+                              ? "TP. Hồ Chí Minh"
+                              : "Ho Chi Minh City"}
+                          </p>
+
+                          <span
+                            aria-hidden="true"
+                            className="absolute bottom-[10px] right-[10px] grid h-[28px] w-[28px] place-items-center rounded-full border border-[#e1e4e1] bg-white text-[#111613] shadow-sm transition-colors group-hover:bg-[#d8f2dc]"
+                          >
+                            <span className="text-[18px] leading-none">→</span>
+                          </span>
+                        </div>
+                      </Link>
+                    </article>
                   );
-                }
+                })}
+              </div>
+            )}
+
+          </div>
+        </section>
+        {/* =====================================================
+            OTA + CUSTOMER REVIEWS - BOLT DESIGN
+        ====================================================== */}
+        <section
+          id="bolt-ota-reviews"
+          className="bg-white px-4 pb-[22px] pt-[22px] sm:px-6"
+          aria-label={
+            isVi
+              ? "Đặt phòng và đánh giá khách lưu trú"
+              : "Booking channels and guest reviews"
+          }
+        >
+          <div className="mx-auto grid max-w-[1100px] gap-[18px] lg:grid-cols-[1fr_1.25fr]">
+
+            {/* OTA - COT TRAI */}
+            <div
+              id="ota-booking"
+              className="min-w-0 rounded-[13px] border border-[#e0e4e1] bg-white px-[14px] py-3 shadow-[0_2px_4px_rgba(0,0,0,.04)]"
+            >
+              <div className="flex items-start gap-2">
+                <div className="mt-0.5 text-[#12652f]">
+                  <svg
+                    width="21"
+                    height="21"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                    <path d="M7 3v4M17 3v4M3 10h18" />
+                    <path d="m9 15 2 2 4-4" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-[14px] font-bold text-[#111613]">
+                    {isVi
+                      ? "Đặt phòng qua các nền tảng (OTA)"
+                      : "Book through OTA platforms"}
+                  </h2>
+                  <p className="text-[11px] leading-[1.5] text-[#515b54]">
+                    {isVi
+                      ? "Chọn cơ sở và đặt phòng nhanh chóng, an toàn."
+                      : "Choose a property and book quickly, safely."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Chon co so tu Supabase */}
+              <div className="relative mt-3 w-full max-w-[320px]">
+                <select
+                  aria-label={
+                    isVi ? "Chọn cơ sở lưu trú" : "Choose a property"
+                  }
+                  value={selectedHotelId ?? ""}
+                  onChange={(event) =>
+                    setPickedHotelId(Number(event.target.value))
+                  }
+                  disabled={!hasAnyOTA}
+                  className="w-full appearance-none rounded-[10px] border border-[#dfe3e0] bg-white py-2 pl-3 pr-9 text-[12px] font-semibold text-[#111613] outline-none focus:border-[#0a6b36] disabled:opacity-50"
+                >
+                  {hotels.length === 0 && (
+                    <option value="">
+                      {isVi ? "Chưa có cơ sở" : "No properties"}
+                    </option>
+                  )}
+                  {hotels.map((hotel) => (
+                    <option
+                      key={hotel.id}
+                      value={hotel.id}
+                      disabled={
+                        (otaByHotel[hotel.id]?.length ?? 0) === 0
+                      }
+                    >
+                      {t(hotel.name_vi, hotel.name_en) as string}
+                    </option>
+                  ))}
+                </select>
+                <ChevronRight
+                  size={16}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-[#111613]"
+                  aria-hidden="true"
+                />
+              </div>
+
+              {/* Link OTA that, khong dung du lieu mau */}
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                {selectedOTAs.length === 0 ? (
+                  <p className="col-span-full py-3 text-[12px] text-neutral-500">
+                    {isVi
+                      ? "Chưa có kênh đặt phòng đang hoạt động."
+                      : "No active booking channels available."}
+                  </p>
+                ) : (
+                  selectedOTAs.map((ota) => {
+                    const href = ota.listing_url || ota.website;
+                    const inner = (
+                      <>
+                        {ota.logo ? (
+                          <span className="relative h-6 w-8 shrink-0">
+                            <Image
+                              src={ota.logo}
+                              alt=""
+                              fill
+                              sizes="32px"
+                              className="object-contain"
+                            />
+                          </span>
+                        ) : (
+                          <span className="grid h-6 w-7 shrink-0 place-items-center rounded bg-[#0a6b36] text-[11px] font-bold text-white">
+                            {ota.name.charAt(0)}
+                          </span>
+                        )}
+
+                        <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[#111613]">
+                          {ota.name}
+                        </span>
+
+                        <span
+                          aria-hidden="true"
+                          className="shrink-0 text-[15px] text-[#64716a]"
+                        >
+                          ↗
+                        </span>
+                      </>
+                    );
+
+                    return href ? (
+                      <a
+                        key={ota.id}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[#e2e5e3] bg-white px-2 py-2 transition-colors hover:border-[#0a6b36] hover:bg-[#f4fbf5]"
+                      >
+                        {inner}
+                      </a>
+                    ) : (
+                      <div
+                        key={ota.id}
+                        className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[#e2e5e3] px-2 py-2 opacity-60"
+                      >
+                        {inner}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* REVIEWS - COT PHAI */}
+            <div
+              className="min-w-0 rounded-[13px] border border-[#e0e4e1] bg-white px-[14px] py-3 shadow-[0_2px_4px_rgba(0,0,0,.04)]"
+              aria-labelledby="reviews-heading"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#12652f"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="7" r="4" />
+                  <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
+                </svg>
+
+                <h2
+                  id="reviews-heading"
+                  className="text-[14px] font-bold text-[#111613]"
+                >
+                  {isVi
+                    ? "Đánh giá từ khách lưu trú"
+                    : "Guest reviews"}
+                </h2>
+
+                <Link
+                  href="/#cau-hoi-thuong-gap"
+                  className="ml-auto text-[11px] font-semibold text-[#12652f] hover:underline"
+                >
+                  {isVi ? "Xem thêm thông tin" : "More information"}
+                  <span aria-hidden="true"> →</span>
+                </Link>
+              </div>
+
+              {customerReviews.length === 0 ? (
+                <p className="py-6 text-center text-[12px] text-neutral-500">
+                  {isVi
+                    ? "Chưa có đánh giá của khách lưu trú."
+                    : "No guest reviews yet."}
+                </p>
+              ) : (
+                <>
+                  <div className="mt-3 flex items-center gap-2">
+                    {/* Nut truoc */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReviewIndex((index) =>
+                          (index - 1 + customerReviews.length) %
+                          customerReviews.length
+                        );
+                        setReviewExpanded(false);
+                      }}
+                      aria-label={
+                        isVi ? "Đánh giá trước" : "Previous review"
+                      }
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#e5e8e5] bg-white hover:bg-neutral-50"
+                    >
+                      <ChevronRight
+                        size={16}
+                        className="rotate-180"
+                      />
+                    </button>
+
+                    {/* Hien 2 danh gia song song */}
+                    <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
+                      {Array.from(
+                        {
+                          length: Math.min(
+                            2,
+                            customerReviews.length
+                          ),
+                        },
+                        (_, offset) => {
+                          const review =
+                            customerReviews[
+                              (reviewIndex + offset) %
+                              customerReviews.length
+                            ];
+
+                          const content = isVi
+                            ? review.review_vi
+                            : review.review_en?.trim() ||
+                              review.review_vi;
+
+                          const rating = Math.max(
+                            1,
+                            Math.min(
+                              5,
+                              Math.round(Number(review.rating) || 5)
+                            )
+                          );
+
+                          return (
+                            <article
+                              key={review.id}
+                              className="flex min-w-0 flex-col rounded-[12px] border border-[#e7e9e7] px-3 py-2 shadow-[0_2px_5px_rgba(0,0,0,.04)]"
+                            >
+                              <div
+                                className="text-[14px] tracking-[1px] text-[#f2bd00]"
+                                aria-label={`${rating}/5`}
+                              >
+                                {"★".repeat(rating)}
+                              </div>
+
+                              <p
+                                className={`mt-1 text-[11px] leading-[1.4] text-[#111613] ${
+                                  reviewExpanded ? "" : "line-clamp-2"
+                                }`}
+                              >
+                                &ldquo;{content}&rdquo;
+                              </p>
+
+                              <div className="mt-auto pt-1 text-[11px] font-semibold text-[#111613]">
+                                {review.guest_name}
+                                {review.guest_country
+                                  ? ` – ${review.guest_country}`
+                                  : ""}
+                              </div>
+
+                              {content.length > 85 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setReviewExpanded((value) => !value)
+                                  }
+                                  className="mt-1 self-start text-[10px] font-semibold text-[#075bd7]"
+                                >
+                                  {reviewExpanded
+                                    ? isVi ? "Thu gọn" : "Show less"
+                                    : isVi ? "Xem thêm" : "Read more"}
+                                </button>
+                              )}
+                            </article>
+                          );
+                        }
+                      )}
+                    </div>
+
+                    {/* Nut sau */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReviewIndex((index) =>
+                          (index + 1) % customerReviews.length
+                        );
+                        setReviewExpanded(false);
+                      }}
+                      aria-label={
+                        isVi ? "Đánh giá tiếp" : "Next review"
+                      }
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#e5e8e5] bg-white hover:bg-neutral-50"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+
+                  <div className="mt-2 flex justify-center gap-1.5">
+                    {customerReviews.length <= 8 ? (
+                      customerReviews.map((review, index) => (
+                        <button
+                          key={review.id}
+                          type="button"
+                          onClick={() => {
+                            setReviewIndex(index);
+                            setReviewExpanded(false);
+                          }}
+                          aria-label={
+                            isVi
+                              ? `Đến đánh giá ${index + 1}`
+                              : `Go to review ${index + 1}`
+                          }
+                          aria-current={
+                            reviewIndex === index ? "true" : undefined
+                          }
+                          className={`h-[7px] w-[7px] rounded-full ${
+                            reviewIndex === index
+                              ? "bg-[#21a33d]"
+                              : "bg-[#d4d7d5]"
+                          }`}
+                        />
+                      ))
+                    ) : (
+                      <span className="text-[11px] text-neutral-500">
+                        {reviewIndex + 1} / {customerReviews.length}
+                      </span>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </div>
         </section>
-
         {/* =====================================================
-            ĐÁNH GIÁ
+            TRẢI NGHIỆM LƯU TRÚ - BOLT GALLERY
         ====================================================== */}
         <section
-          className="bg-neutral-50 px-4 py-16 sm:px-6"
-          aria-labelledby="reviews-heading"
+          id="stay-experiences"
+          className="bg-white px-4 pb-[42px] pt-[34px] sm:px-6"
+          aria-labelledby="experience-heading"
         >
-          <div className="mx-auto max-w-7xl">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-sm font-semibold uppercase tracking-widest text-sky-500">
-                {isVi
-                  ? "Khách hàng"
-                  : "Guests"}
-              </p>
+          <div className="mx-auto max-w-[1100px]">
+            <div className="mb-6 flex items-center justify-center gap-4">
+              <span
+                aria-hidden="true"
+                className="h-px w-[37px] shrink-0 bg-[#111613]"
+              />
 
               <h2
-                id="reviews-heading"
-                className="mt-2 text-2xl font-bold md:text-3xl"
+                id="experience-heading"
+                className="text-center text-[14px] font-semibold tracking-[2.5px] text-[#111613] max-sm:text-[11px] max-sm:tracking-[1.5px]"
               >
                 {isVi
-                  ? "Khách nói về chúng tôi"
-                  : "What Guests Say"}
+                  ? "TRẢI NGHIỆM LƯU TRÚ CÙNG HUYEN’S"
+                  : "STAY EXPERIENCES WITH HUYEN’S"}
               </h2>
+
+              <span
+                aria-hidden="true"
+                className="h-px w-[37px] shrink-0 bg-[#111613]"
+              />
             </div>
 
-            {customerReviews.length === 0 ? (
-              <div className="mt-10 rounded-xl border border-dashed border-neutral-200 bg-white p-8 text-center">
-                <p className="text-sm text-neutral-500">
-                  {isVi
-                    ? "Chưa có nhận xét nào."
-                    : "No reviews yet."}
-                </p>
-              </div>
+            {galleryPosts.length === 0 ? (
+              <p className="py-8 text-center text-sm text-neutral-500">
+                {isVi
+                  ? "Chưa có bài viết có hình ảnh."
+                  : "No articles with images are available yet."}
+              </p>
             ) : (
-              <div className="relative mt-10">
-                <div
-                  className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-neutral-300 scrollbar-track-transparent"
-                  aria-label={
-                    isVi
-                      ? "Danh sách đánh giá của khách hàng"
-                      : "Customer reviews"
-                  }
-                >
-                  {customerReviews.map(
-                    (review) => {
-                      const reviewText = isVi
-                        ? review.review_vi
-                        : review.review_en?.trim() ||
-                          review.review_vi;
+              <>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+                  {visibleGalleryPosts.map((post) => {
+                    const title = isVi
+                      ? post.title_vi
+                      : post.title_en || post.title_vi;
 
-                      const rating = Math.max(
-                        1,
-                        Math.min(
-                          5,
-                          Number(review.rating) || 5
-                        )
-                      );
-
-                      return (
-                        <article
-                          key={
-                            review.id
-                          }
-                          className="w-[85%] shrink-0 snap-start rounded-xl bg-white p-6 shadow-sm sm:w-[calc((100%-16px)/2)] lg:w-[calc((100%-48px)/4)]"
-                        >
-                          <div
-                            className="text-amber-400"
-                            role="img"
-                            aria-label={
-                              isVi
-                                ? `${rating} trên 5 sao`
-                                : `${rating} out of 5 stars`
-                            }
-                          >
-                            {"★".repeat(
-                              rating
-                            )}
-                          </div>
-
-                          <p className="mt-4 text-sm leading-relaxed text-neutral-600">
-                            &quot;
-                            {
-                              reviewText
-                            }
-                            &quot;
-                          </p>
-
-                          <div className="mt-4 border-t border-neutral-50 pt-4">
-                            <p className="text-sm font-semibold text-neutral-900">
-                              {
-                                review.guest_name
-                              }
-                            </p>
-
-                            {review.guest_country && (
-                              <p className="mt-1 text-xs text-neutral-400">
-                                {
-                                  review.guest_country
-                                }
-                              </p>
-                            )}
-                          </div>
-                        </article>
-                      );
-                    }
-                  )}
+                    return (
+                      <Link
+                        key={post.id}
+                        href={`/blog/${post.slug}`}
+                        title={title}
+                        aria-label={
+                          isVi
+                            ? `Đọc bài viết: ${title}`
+                            : `Read article: ${title}`
+                        }
+                        className="group block overflow-hidden rounded-[11px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a6b36]"
+                      >
+                        <div className="h-[130px] overflow-hidden sm:h-[170px] md:h-[200px]">
+                          <img
+                            src={post.image || ""}
+                            alt={title}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
 
-                {customerReviews.length > 4 && (
-                  <p className="mt-2 text-center text-xs text-neutral-400">
-                    {isVi
-                      ? "Kéo sang để xem thêm đánh giá →"
-                      : "Scroll horizontally to see more reviews →"}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="bg-sky-50 px-4 py-14 sm:px-6" aria-labelledby="home-blog-heading">
-          <div className="mx-auto max-w-7xl">
-            <h2 id="home-blog-heading" className="text-2xl font-bold text-sky-900">{isVi ? "Kinh nghiệm lưu trú & khám phá Sài Gòn" : "Saigon stay tips & local experiences"}</h2>
-            <p className="mt-3 leading-7 text-neutral-600">{isVi ? "Chọn nơi ở theo lịch công tác, đi học, sự kiện và những trải nghiệm địa phương." : "Plan accommodation around work, study, events and local experiences."}</p>
-            <div className="mt-6 grid gap-5 md:grid-cols-3">
-              {latestPosts.map(post => <article key={post.id} className="rounded-xl border border-sky-100 bg-white p-5">
-                <h3 className="text-lg font-semibold text-sky-900"><Link href={"/blog/" + post.slug} className="hover:underline">{isVi ? post.title_vi : post.title_en || post.title_vi}</Link></h3>
-                <p className="mt-3 text-sm leading-6 text-neutral-600">{isVi ? post.excerpt_vi : post.excerpt_en || post.excerpt_vi}</p>
-              </article>)}
-            </div>
-            <Link href="/blog" className="mt-6 inline-flex min-h-12 items-center font-semibold text-sky-800 underline">{isVi ? "Xem tất cả bài viết →" : "Read all articles →"}</Link>
-          </div>
-        </section>
-
-        {/* HỎI ĐÁP TRƯỚC KHI ĐẶT PHÒNG */}
-        <section
-          id="cau-hoi-thuong-gap"
-          className="bg-white px-4 py-16 sm:px-6"
-          aria-labelledby="home-faq-heading"
-        >
-          <div className="mx-auto max-w-5xl">
-            <div className="mb-10 text-center">
-              <p className="text-sm font-semibold uppercase tracking-widest text-sky-600">
-                {isVi ? "Thông tin dành cho khách lưu trú" : "Guest information"}
-              </p>
-              <h2
-                id="home-faq-heading"
-                className="mt-2 text-2xl font-bold text-neutral-900 md:text-3xl"
-              >
-                {isVi
-                  ? "Câu hỏi thường gặp trước khi đặt phòng"
-                  : "Frequently asked questions before booking"}
-              </h2>
-              <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-neutral-600">
-                {isVi
-                  ? "Thông tin về đặt phòng, giờ lưu trú, loại phòng, thanh toán, vị trí, tiện nghi và lưu trú dài ngày tại Huyen’s Hotels & Stays."
-                  : "Information about booking, stay times, room types, payment, location, amenities, and long stays at Huyen’s Hotels & Stays."}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {HOME_FAQ_GROUPS.map((group, groupIndex) => (
-                <details
-                  key={group.titleEn}
-                  className="group overflow-hidden rounded-xl border border-neutral-200 bg-white"
-                >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold text-neutral-900 marker:hidden hover:bg-sky-50">
-                    <span className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-bold text-sky-800">
-                        {groupIndex + 1}
-                      </span>
-                      <span>{isVi ? group.titleVi : group.titleEn}</span>
-                      <span className="text-xs font-normal text-neutral-500">
-                        ({group.items.length})
-                      </span>
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="shrink-0 text-xl text-sky-700 transition-transform group-open:rotate-45"
+                {galleryPageCount > 1 && (
+                  <nav
+                    className="mt-5 flex items-center justify-center gap-4"
+                    aria-label={
+                      isVi
+                        ? "Phân trang hình ảnh Blog"
+                        : "Blog image pagination"
+                    }
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setGalleryPage(
+                          (currentGalleryPage - 1 +
+                            galleryPageCount) % galleryPageCount
+                        )
+                      }
+                      aria-label={
+                        isVi ? "Trang ảnh trước" : "Previous page"
+                      }
+                      className="grid h-9 w-9 place-items-center rounded-full border border-[#e1e4e1] bg-white text-[#111613] hover:bg-[#f0f7f1]"
                     >
-                      +
-                    </span>
-                  </summary>
-                  <div className="border-t border-neutral-200 px-2 sm:px-4">
-                    {group.items.map((item) => (
-                      <details
-                        key={item.questionEn}
-                        className="group/item border-b border-neutral-100 px-3 py-4 last:border-b-0"
-                      >
-                        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium leading-6 text-neutral-900 marker:hidden">
-                          <span>
-                            {isVi
-                              ? item.questionVi
-                              : item.questionEn}
-                          </span>
-                          <span
-                            aria-hidden="true"
-                            className="shrink-0 text-lg text-sky-700 transition-transform group-open/item:rotate-45"
-                          >
-                            +
-                          </span>
-                        </summary>
-                        <p className="mt-3 pr-7 text-sm leading-6 text-neutral-600">
-                          {isVi
-                            ? item.answerVi
-                            : item.answerEn}
-                        </p>
-                        {item.questionEn === "How long does it take to get from a hotel to Bui Vien Street?" && (
-                          <p className="mt-3 flex flex-wrap gap-4 text-sm font-medium text-sky-800">
-                            <Link href="/khach-san/ae-guesthouse" className="underline">A&amp;E Guesthouse — Đỗ Quang Đẩu</Link>
-                            <Link href="/khach-san/anh-kim-hotel" className="underline">Anh Kim Hotel — Cô Bắc</Link>
-                          </p>
-                        )}
-                        {group.titleEn === "Location & transport" &&
-                          item.questionEn === "Where are Huyen’s hotels located?" && (
-                            <ul className="mt-3 space-y-2 pr-7 text-sm leading-6 text-neutral-600">
-                              {hotels.map((hotel) => {
-                                const address = isVi
-                                  ? hotel.address_vi
-                                  : hotel.address_en;
+                      <ChevronRight
+                        size={19}
+                        className="rotate-180"
+                      />
+                    </button>
 
-                                if (!address) {
-                                  return null;
-                                }
+                    <div className="flex items-center gap-2">
+                      {Array.from(
+                        { length: galleryPageCount },
+                        (_, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => setGalleryPage(index)}
+                            aria-label={
+                              isVi
+                                ? `Xem trang ảnh ${index + 1}`
+                                : `Show image page ${index + 1}`
+                            }
+                            aria-current={
+                              index === currentGalleryPage
+                                ? "page"
+                                : undefined
+                            }
+                            className={`h-2 w-2 rounded-full transition-colors ${
+                              index === currentGalleryPage
+                                ? "bg-[#0a6b36]"
+                                : "bg-[#d4d7d5] hover:bg-[#8ca995]"
+                            }`}
+                          />
+                        )
+                      )}
+                    </div>
 
-                                return (
-                                  <li key={hotel.id}>
-                                    <Link
-                                      href={`/khach-san/${hotel.slug}`}
-                                      className="font-medium text-sky-800 hover:underline"
-                                    >
-                                      {
-                                        t(
-                                          hotel.name_vi,
-                                          hotel.name_en
-                                        ) as string
-                                      }
-                                    </Link>
-                                    {`: ${address}`}
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
-                      </details>
-                    ))}
-                  </div>
-                </details>
-              ))}
-            </div>
-
-            <div className="mt-8 rounded-xl bg-sky-50 p-5 text-sm leading-6 text-neutral-700">
-              <p>
-                {isVi
-                  ? "Cần xác nhận thông tin theo khách sạn hoặc kênh đặt phòng? Gọi "
-                  : "Need to confirm details for a hotel or booking channel? Call "}
-                <a
-                  className="font-semibold text-sky-800 hover:underline"
-                  href="tel:+84902095669"
-                >
-                  +84 902 095 669
-                </a>
-                {isVi ? " hoặc " : " or "}
-                <EmailLink address="buihongnhung83@gmail.com" className="font-semibold text-sky-800 hover:underline" />.
-              </p>
-              <p className="mt-2">
-                <Link
-                  href="#hotels"
-                  className="font-semibold text-sky-800 hover:underline"
-                >
-                  {isVi
-                    ? "Xem các khách sạn và địa chỉ →"
-                    : "View hotels and addresses →"}
-                </Link>
-              </p>
-            </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setGalleryPage(
+                          (currentGalleryPage + 1) % galleryPageCount
+                        )
+                      }
+                      aria-label={
+                        isVi ? "Trang ảnh tiếp" : "Next page"
+                      }
+                      className="grid h-9 w-9 place-items-center rounded-full border border-[#e1e4e1] bg-white text-[#111613] hover:bg-[#f0f7f1]"
+                    >
+                      <ChevronRight size={19} />
+                    </button>
+                  </nav>
+                )}
+              </>
+            )}
           </div>
         </section>
       </div>
