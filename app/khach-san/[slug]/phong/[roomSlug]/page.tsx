@@ -128,7 +128,7 @@ export async function generateMetadata({
     baseUrl.replace(/\/+$/, "");
 
   const canonicalUrl =
-    `${siteUrl}/khach-san/${slug}/phong/${roomSlug}`;
+    `${siteUrl}/khach-san/${encodeURIComponent(slug)}/phong/${encodeURIComponent(roomSlug)}`;
 
   const hotelName =
     cleanText(
@@ -617,8 +617,7 @@ export default async function RoomDetailPage({
           "Media query error:",
           mediaResult.error
         );
-        errorCode =
-          "load-error";
+        // Optional data error: keep the valid room page visible.
       } else {
         media =
           (mediaResult.data ??
@@ -630,8 +629,7 @@ export default async function RoomDetailPage({
           "Room amenities error:",
           amenityResult.error
         );
-        errorCode =
-          "load-error";
+        // Optional data error: keep the valid room page visible.
       } else {
         roomAmenities =
           (amenityResult.data ??
@@ -677,7 +675,7 @@ export default async function RoomDetailPage({
       );
 
     const roomUrl =
-      `${siteUrl}/khach-san/${slug}/phong/${roomSlug}`;
+      `${siteUrl}/khach-san/${encodeURIComponent(slug)}/phong/${encodeURIComponent(roomSlug)}`;
 
     const roomImage =
       media.length > 0
