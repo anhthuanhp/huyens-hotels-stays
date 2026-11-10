@@ -337,7 +337,7 @@ function createHotelStructuredData(
           undefined;
 
         const roomUrl =
-          `${siteUrl}/khach-san/${hotel.slug}/phong/${room.slug}`;
+          `${siteUrl}/khach-san/${encodeURIComponent(hotel.slug)}/phong/${encodeURIComponent(room.slug)}`;
 
         const roomId =
           `${roomUrl}#room`;
