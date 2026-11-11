@@ -1,5 +1,6 @@
 
 "use client";
+import { canonicalRoomSlug } from "@/app/lib/room-seo-slugs";
 
 import { useLanguage } from "@/app/lib/use-language";
 
@@ -688,7 +689,7 @@ export default function HotelDetailClient({
                             </h3>
 
                             <Link
-                              href={`/khach-san/${initialHotel.slug}/phong/${room.slug}`}
+                              href={`/khach-san/${initialHotel.slug}/phong/${canonicalRoomSlug(initialHotel.slug, room.slug)}`}
                               className="shrink-0 text-sm font-medium text-mist transition hover:text-brand"
                             >
                               {language === "vi"

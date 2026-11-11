@@ -1,4 +1,4 @@
-import { canonicalSeoPath } from "@/app/lib/room-seo-slugs";
+import { canonicalSeoPath, canonicalRoomSlug } from "@/app/lib/room-seo-slugs";
 import Link from "next/link";
 import Head from "next/head";
 import RoomChoiceGuide from "./RoomChoiceGuide";
@@ -14,7 +14,7 @@ import { localizedHref } from "../lib/localized-path";
 
 const origin = (process.env.NEXT_PUBLIC_SITE_URL || "https://huyenhotels.com").replace(/\/$/, "");
 const hotelPath = (hotel: Hotel) => "/en/khach-san/" + encodeURIComponent(hotel.slug);
-const roomPath = (hotel: Hotel, room: Room) => hotelPath(hotel) + "/phong/" + encodeURIComponent(room.slug);
+const roomPath = (hotel: Hotel, room: Room) => hotelPath(hotel) + "/phong/" + encodeURIComponent(canonicalRoomSlug(hotel.slug, room.slug));
 const money = (value: number | null) => value && value > 0 ? new Intl.NumberFormat("en-US").format(value) + " VND" : "Ask for a quote";
 const card = "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm";
 const button = "inline-flex min-h-12 items-center justify-center rounded-xl bg-sky-700 px-5 py-3 font-semibold text-white hover:bg-sky-800";
@@ -36,7 +36,7 @@ export default function EnglishSite({ data }: { data: EnglishData }) {
   const schema = { "@context": "https://schema.org", "@type": post ? "BlogPosting" : "WebPage", url: canonical, name: data.title, inLanguage: "en", description: data.description, ...(post ? { headline: post.title_en, datePublished: post.date, ...(post.image ? { image: post.image } : {}), author: { "@type": "Organization", name: "Huyen's Hotels & Stays", url: origin } } : {}) };
   return <>
     <Head><title>{fullTitle}</title><meta name="description" content={data.description} /><meta name="robots" content="index,follow,max-image-preview:large" /><link rel="canonical" href={canonical} /><link rel="alternate" hrefLang="vi-VN" href={vietnamese} /><link rel="alternate" hrefLang="en" href={canonical} /><link rel="alternate" hrefLang="x-default" href={vietnamese} /><meta property="og:type" content={post ? "article" : "website"} /><meta property="og:locale" content="en_US" /><meta property="og:title" content={fullTitle} /><meta property="og:description" content={data.description} /><meta property="og:url" content={canonical} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\u003c") }} /></Head>
-    <header className="border-b border-slate-200 bg-white px-4 py-4"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4"><Link className="inline-flex min-h-12 items-center py-2 font-bold text-sky-900" href="/en">Huyen&apos;s Hotels &amp; Stays</Link><nav aria-label="Main navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold"><Link className="py-3" href="/en">Hotels</Link><Link className="py-3" href="/en/phong">Rooms &amp; rates</Link><Link className="py-3" href="/en/blog">Travel guides</Link><Link className="py-3" href="/en/tim-phong">Find a room</Link><Link className="py-3" href={data.path} lang="vi" hrefLang="vi-VN" onClick={() => { try { localStorage.setItem("huyen-language", "vi"); localStorage.setItem("language", "vi"); } catch { /* Storage is optional. */ } }}>VI</Link><span aria-current="page">EN</span></nav></div></header>
+    <header className="border-b border-slate-200 bg-white px-4 py-4"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4"><Link className="inline-flex min-h-12 items-center py-2 font-bold text-sky-900" href="/en">Huyen&apos;s Hotels &amp; Stays</Link><nav aria-label="Main navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold"><Link className="py-3" href="/en">Hotels</Link><Link className="py-3" href="/en/phong">Rooms &amp; rates</Link><Link className="py-3" href="/en/blog">Travel guides</Link><Link className="py-3" href="/en/tim-phong">Find a room</Link><Link className="py-3" href={canonicalPath} lang="vi" hrefLang="vi-VN" onClick={() => { try { localStorage.setItem("huyen-language", "vi"); localStorage.setItem("language", "vi"); } catch { /* Storage is optional. */ } }}>VI</Link><span aria-current="page">EN</span></nav></div></header>
     <main lang="en" className="mx-auto min-w-0 max-w-7xl px-4 py-10 sm:px-6">
       <h1 className="max-w-4xl text-3xl font-bold leading-tight text-slate-950 sm:text-5xl">{data.title}</h1>
       <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">{data.description}</p>

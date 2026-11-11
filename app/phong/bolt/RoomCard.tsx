@@ -1,3 +1,4 @@
+import { canonicalRoomSlug } from "@/app/lib/room-seo-slugs";
 import { LayoutTemplate, MapPin, Users, Maximize, BedDouble, Sparkles } from 'lucide-react';
 import type { Lang, RoomWithHotel } from './types';
 import { copy, pick } from './copy';
@@ -5,7 +6,7 @@ import { copy, pick } from './copy';
 export type PriceMode = 'daily' | 'monthly';
 
 export function roomDetailPath(room: RoomWithHotel): string {
-  return `/khach-san/${encodeURIComponent(room.hotel.slug)}/phong/${encodeURIComponent(room.room.slug)}`;
+  return `/khach-san/${encodeURIComponent(room.hotel.slug)}/phong/${encodeURIComponent(canonicalRoomSlug(room.hotel.slug, room.room.slug))}`;
 }
 
 function formatVnd(value: number): string {
