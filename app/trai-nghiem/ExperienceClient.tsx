@@ -3,7 +3,7 @@
 import { useLanguage } from "@/app/lib/use-language";
 
 import Image from "next/image";
-import Footer from "../components/Footer";
+
 
 type Language = "vi" | "en";
 
@@ -250,7 +250,7 @@ export default function ExperienceClient({ activities, hotels, media, hasError }
         </div>
       </section>
 
-      <Footer />
+
     </main>
   );
 }

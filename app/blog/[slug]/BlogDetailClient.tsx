@@ -183,54 +183,6 @@ export default function BlogDetailClient({
             : "FIND A ROOM"}
         </Link>
       </section>
-
-      {/* FOOTER */}
-      <footer className="bg-white px-6 py-12">
-        <div className="mx-auto flex max-w-[1200px] flex-col justify-between gap-6 border-t border-slate-200 pt-8 md:flex-row">
-          <Link
-            href="/"
-            className="font-semibold"
-          >
-            Huyen&apos;s Hotels &amp; Stays
-          </Link>
-
-          <div className="flex flex-wrap gap-6 text-sm text-slate-500">
-            <Link
-              href="/kham-pha-huyens"
-              className="hover:text-sky-600"
-            >
-              {isVi
-                ? "Khám phá"
-                : "Discover"}
-            </Link>
-
-            <Link
-              href="/phong"
-              className="hover:text-sky-600"
-            >
-              {isVi
-                ? "Phòng"
-                : "Rooms"}
-            </Link>
-
-            <Link
-              href="/trai-nghiem"
-              className="hover:text-sky-600"
-            >
-              {isVi
-                ? "Trải nghiệm"
-                : "Experiences"}
-            </Link>
-
-            <Link
-              href="/blog"
-              className="hover:text-sky-600"
-            >
-              Blog
-            </Link>
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }
