@@ -85,3 +85,66 @@ body {
   --color-moss: #56645A;
   --font-serif: Georgia, "Times New Roman", serif;
 }
+
+/* Bolt Rooms Palette */
+@theme {
+  --color-pinedeep: #092B1E;
+  --color-mist: #56645A;
+  --shadow-card: 0 1px 2px rgba(9,43,30,.04), 0 12px 32px -12px rgba(9,43,30,.14);
+  --shadow-card-hover: 0 2px 4px rgba(9,43,30,.05), 0 24px 48px -16px rgba(9,43,30,.22);
+}
+
+/* Bolt Hotel Detail Theme */
+@theme {
+  --color-brand: #103A29;
+  --color-brand-deep: #092B1E;
+  --color-brand-accent: #24603F;
+  --color-cream: #F7F6F1;
+  --color-sage: #E9EFE8;
+  --color-ink: #17392A;
+  --color-muted: #56645A;
+  --color-mist: #56645A;
+  --font-display: Georgia, "Times New Roman", serif;
+  --tracking-widest2: 0.20em;
+  --shadow-card: 0 12px 32px -12px rgba(9,43,30,.14);
+  --shadow-lift: 0 24px 48px -16px rgba(9,43,30,.22);
+}
+@keyframes hotelZoomIn {
+  from {opacity:0; transform:scale(.97);}
+  to {opacity:1; transform:scale(1);}
+}
+.animate-zoom-in {
+  animation: hotelZoomIn .25s ease-out both;
+}
+
+/* BOLT EXPERIENCE STORYTELLING v1 */
+@theme {
+  --color-pine: #103A29;
+  --color-pine-deep: #092B1E;
+  --color-accent: #24603F;
+  --color-cream: #F7F6F1;
+  --color-sage: #E9EFE8;
+  --color-ink: #17392A;
+  --color-muted: #56645A;
+}
+.experience-story .reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1);
+}
+.experience-story .reveal.is-visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .experience-story .reveal, .experience-story .reveal.is-visible { opacity: 1; transform: none; transition: none; }
+}
+
+/* Bolt Blog Journal v1 */
+@theme {
+  --color-pine: #103A29;
+  --color-accent: #24603F;
+  --color-cream: #F7F6F1;
+  --color-sage: #E9EFE8;
+  --color-ink: #17392A;
+  --color-muted: #56645A;
+  --shadow-card: 0 1px 2px rgba(16,58,41,.06),0 8px 24px -12px rgba(16,58,41,.18);
+  --shadow-card-hover: 0 2px 4px rgba(16,58,41,.08),0 20px 40px -16px rgba(16,58,41,.28);
+}

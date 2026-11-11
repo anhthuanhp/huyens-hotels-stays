@@ -1,4 +1,4 @@
-import { FACEBOOK_PAGE_URL } from "./lib/social";
+import { FACEBOOK_PAGE_URL, INSTAGRAM_PAGE_URL, THREADS_PAGE_URL } from "./lib/social";
 import { staticMetadata } from "./lib/seo";
 import type { Metadata } from "next";
 import { cache } from "react";
@@ -594,7 +594,7 @@ function buildStructuredData(
           `${SITE_URL}/#organization`,
 
         name: SITE_NAME,
-        sameAs: [FACEBOOK_PAGE_URL],
+        sameAs: [FACEBOOK_PAGE_URL, INSTAGRAM_PAGE_URL, THREADS_PAGE_URL],
 
         url: SITE_URL,
 

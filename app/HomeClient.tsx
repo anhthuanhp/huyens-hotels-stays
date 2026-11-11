@@ -668,7 +668,7 @@ export default function HomeClient({
                 href="/phong"
                 className="inline-flex items-center gap-2 text-[13px] font-bold text-[#155d2f] hover:underline max-sm:text-[11px]"
               >
-                {isVi ? "Xem tất cả cơ sở" : "View all properties"}
+                {isVi ? "Xem toàn bộ phòng" : "View all rooms"}
                 <span aria-hidden="true" className="text-lg">→</span>
               </Link>
             </div>

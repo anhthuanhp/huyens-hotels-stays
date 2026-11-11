@@ -16,6 +16,8 @@ import {
   Users,
 } from "lucide-react";
 import HotelBookingSidebar from "./HotelBookingSidebar";
+import BoltHotelHero from "./bolt/components/HotelHero";
+import BoltFinalCta from "./bolt/components/FinalCta";
 import HotelGuides from "../../components/HotelGuides";
 
 type Language = "vi" | "en";
@@ -344,6 +346,16 @@ export default function HotelDetailClient({
   initialNearby,
 }: Props) {
   const language = useLanguage();
+  // ROOM_EXPAND_INLINE_V2
+  const [expandedRoomIds, setExpandedRoomIds] = useState<number[]>([]);
+
+  const toggleRoom = (id: number) => {
+    setExpandedRoomIds((current) =>
+      current.includes(id)
+        ? current.filter((value) => value !== id)
+        : [...current, id]
+    );
+  };
 
   const [activeNearbyCategory, setActiveNearbyCategory] =
     useState<number | null>(null);
@@ -483,31 +495,56 @@ export default function HotelDetailClient({
     language
   );
 
+
+  // Real room photos belonging to this hotel.
+  // No stock or demo imagery is used.
+  const galleryImages = Array.from(
+    new Set(
+      activeRooms
+        .map((room) => roomCovers[room.id])
+        .filter((url): url is string =>
+          typeof url === "string" && url.trim().length > 0
+        )
+    )
+  ).map((url) => ({
+    url,
+    alt: {
+      vi: "Hình ảnh phòng tại " + hotelName,
+      en: "Room photo at " + hotelName
+    }
+  }));
+
   return (
-    <main className="min-h-screen bg-white text-slate-900">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-cream text-ink">
+      <BoltHotelHero
+        images={galleryImages}
+        hotelName={displayH1}
+        locale={language}
+        placeholderText={language === "vi"
+          ? "Hình ảnh phòng đang được cập nhật"
+          : "Room photos coming soon"}
+      />
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="min-w-0">
             <section>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-                {displayH1}
-              </h1>
+
 
               {hotelAddress && (
-                <div className="mt-3 flex items-start gap-2 text-sm text-slate-600">
-                  <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+                <div className="mt-3 flex items-start gap-2 text-sm text-mist">
+                  <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-mist" />
                   <span>{hotelAddress}</span>
                 </div>
               )}
 
               {hotelDescription && (
-                <div className="mt-5 whitespace-pre-line text-[15px] leading-7 text-slate-600">
+                <div className="mt-5 whitespace-pre-line text-[15px] leading-7 text-mist">
                   {hotelDescription}
                 </div>
               )}
 
               {displayLocalDescription && (
-                <p className="mt-3 text-[15px] leading-7 text-slate-600">
+                <p className="mt-3 text-[15px] leading-7 text-mist">
                   {displayLocalDescription}
                 </p>
               )}
@@ -520,13 +557,13 @@ export default function HotelDetailClient({
               className="mt-10 scroll-mt-24"
             >
               <div className="mb-5">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-950">
+                <h2 className="text-2xl font-bold tracking-tight text-brand">
                   {language === "vi"
                     ? "Các loại phòng"
                     : "Room types"}
                 </h2>
 
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-mist">
                   {language === "vi"
                     ? "Lựa chọn phòng phù hợp với nhu cầu lưu trú của bạn."
                     : "Choose a room that suits your stay."}
@@ -534,7 +571,7 @@ export default function HotelDetailClient({
               </div>
 
               {activeRooms.length === 0 ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
+                <div className="rounded-2xl border border-brand/10 bg-sage/50 p-8 text-center text-sm text-mist">
                   {language === "vi"
                     ? "Hiện chưa có loại phòng đang hoạt động."
                     : "No active room types are currently available."}
@@ -620,9 +657,9 @@ export default function HotelDetailClient({
                     return (
                       <article
                         key={room.id}
-                        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+                        className="flex h-full flex-col overflow-hidden rounded-2xl border border-brand/10 bg-white shadow-sm transition hover:shadow-md"
                       >
-                        <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                        <div className="relative aspect-[16/10] overflow-hidden bg-sage">
                           {roomImage ? (
                             <Image
                               src={roomImage}
@@ -640,15 +677,15 @@ export default function HotelDetailClient({
                           )}
                         </div>
 
-                        <div className="p-5">
-                          <div className="flex items-start justify-between gap-4">
-                            <h3 className="text-xl font-bold text-slate-950">
+                        <div className="flex flex-1 flex-col p-5">
+                          <div className="flex min-h-[56px] items-start justify-between gap-4">
+                            <h3 className="text-xl font-bold text-brand">
                               {roomName}
                             </h3>
 
                             <Link
                               href={`/khach-san/${initialHotel.slug}/phong/${room.slug}`}
-                              className="shrink-0 text-sm font-medium text-slate-600 transition hover:text-slate-950"
+                              className="shrink-0 text-sm font-medium text-mist transition hover:text-brand"
                             >
                               {language === "vi"
                                 ? "Chi tiết"
@@ -656,13 +693,17 @@ export default function HotelDetailClient({
                             </Link>
                           </div>
 
-                          {roomDescription && (
-                            <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">
-                              {roomDescription}
-                            </p>
-                          )}
+                          
+                          {/* ROOM_CARD_UNIFORM_V1 */}
+                          <div className="mt-3 min-h-[48px]">
+                            {roomDescription && (
+                              <p className={`text-sm leading-6 text-mist ${expandedRoomIds.includes(room.id) ? "" : "line-clamp-2"}`}>
+                                {roomDescription}
+                              </p>
+                            )}
+                          </div>
 
-                          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm text-slate-600">
+                          <div className="mt-4 grid min-h-[76px] grid-cols-2 content-start gap-x-4 gap-y-3 text-sm text-mist">
                             {typeof room.size ===
                               "number" &&
                               room.size > 0 && (
@@ -709,45 +750,67 @@ export default function HotelDetailClient({
                               )}
                           </div>
 
-                          {amenities.length > 0 && (
-                            <div className="mt-4 border-t border-slate-100 pt-4">
-                              <div className="mb-2 text-sm font-semibold text-slate-800">
-                                {language === "vi"
-                                  ? "Tiện nghi"
-                                  : "Amenities"}
-                              </div>
-
-                              <div className="grid gap-2 sm:grid-cols-2">
-                                {amenities.map(
-                                  (
-                                    amenity,
-                                    index
-                                  ) => (
+                          
+                          <div className="mt-4 min-h-[126px] border-t border-brand/10 pt-4">
+                            {amenities.length > 0 && (
+                              <>
+                                <div className="mb-2 text-sm font-semibold text-ink">
+                                  {language === "vi" ? "Tiện nghi" : "Amenities"}
+                                </div>
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                  {(expandedRoomIds.includes(room.id) ? amenities : amenities.slice(0, 4)).map((amenity, index) => (
                                     <div
-                                      key={`${room.id}-${index}`}
-                                      className="flex items-start gap-2 text-sm text-slate-600"
+                                      key={room.id + "-amenity-" + index}
+                                      className="flex items-start gap-2 text-sm text-mist"
                                     >
-                                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-
-                                      <span>
-                                        {amenity}
-                                      </span>
+                                      <Check className="mt-0.5 h-4 w-4 shrink-0" />
+                                      <span>{amenity}</span>
                                     </div>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          )}
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
 
-                          <div className="mt-5 flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-end sm:justify-between">
+                          
+                          <div className="flex min-h-[48px] items-center">
+                            {(roomDescription || amenities.length > 4) && (
+                              <button
+                                type="button"
+                                onClick={() => toggleRoom(room.id)}
+                                aria-expanded={expandedRoomIds.includes(room.id)}
+                                className="flex w-full items-center justify-between rounded-lg border border-brand/25 bg-sage/60 px-4 py-3 text-sm font-bold uppercase tracking-wide text-brand transition-colors hover:border-brand hover:bg-sage"
+                              >
+                                <span>
+                                  {expandedRoomIds.includes(room.id)
+                                    ? (language === "vi" ? "THU GỌN" : "SHOW LESS")
+                                    : (language === "vi" ? "XEM ĐẦY ĐỦ THÔNG TIN" : "VIEW ALL DETAILS")}
+                                </span>
+                                <svg
+                                  aria-hidden="true"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  className={`h-5 w-5 transition-transform ${
+                                    expandedRoomIds.includes(room.id) ? "rotate-180" : ""
+                                  }`}
+                                >
+                                  <path d="m6 9 6 6 6-6" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="mt-auto flex flex-col gap-4 border-t border-brand/10 pt-5 sm:flex-row sm:items-end sm:justify-between">
                             <div>
-                              <div className="text-xs text-slate-500">
+                              <div className="text-xs text-mist">
                                 {language === "vi"
                                   ? "Giá từ"
                                   : "From"}
                               </div>
 
-                              <div className="mt-1 text-xl font-bold text-slate-950">
+                              <div className="mt-1 text-xl font-bold text-brand">
                                 {formatPrice(
                                   room.base_price,
                                   language
@@ -756,7 +819,7 @@ export default function HotelDetailClient({
                                 {typeof room.base_price === "number" &&
                                   Number.isFinite(room.base_price) &&
                                   room.base_price > 0 && (
-                                    <span className="ml-1 text-sm font-normal text-slate-500">
+                                    <span className="ml-1 text-sm font-normal text-mist">
                                       VND{priceUnit}
                                     </span>
                                   )}
@@ -766,7 +829,7 @@ export default function HotelDetailClient({
                             <Link
                               href={bookingUrl}
                               prefetch={false}
-                              className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
+                              className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-accent"
                             >
                               {language === "vi"
                                 ? "Đặt phòng"
@@ -784,16 +847,16 @@ export default function HotelDetailClient({
             {hasNearby && activeNearbyGroup && (
               <section
                 id="nearby"
-                className="mt-12 scroll-mt-24 border-t border-slate-200 pt-10"
+                className="mt-12 scroll-mt-24 border-t border-brand/10 pt-10"
               >
                 <div className="mb-5">
-                  <h2 className="text-2xl font-bold tracking-tight text-slate-950">
+                  <h2 className="text-2xl font-bold tracking-tight text-brand">
                     {language === "vi"
                       ? "Khám phá xung quanh"
                       : "Explore nearby"}
                   </h2>
 
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                  <p className="mt-1 text-sm leading-6 text-mist">
                     {language === "vi"
                       ? `Những địa điểm gần ${hotelName}.`
                       : `Places near ${hotelName}.`}
@@ -820,8 +883,8 @@ export default function HotelDetailClient({
                             }}
                             className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
                               isActive
-                                ? "border-slate-900 bg-slate-900 text-white"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                                ? "border-slate-900 bg-brand-deep text-white"
+                                : "border-brand/10 bg-white text-mist hover:border-brand/20 hover:bg-sage/50"
                             }`}
                           >
                             {category.icon && (
@@ -864,10 +927,10 @@ export default function HotelDetailClient({
                       return (
                         <article
                           key={place.id}
-                          className="flex min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-sm"
+                          className="flex min-w-0 overflow-hidden rounded-xl border border-brand/10 bg-white transition hover:border-brand/20 hover:shadow-sm"
                         >
                           {place.image ? (
-                            <div className="relative h-[92px] w-[92px] shrink-0 overflow-hidden bg-slate-100">
+                            <div className="relative h-[92px] w-[92px] shrink-0 overflow-hidden bg-sage">
                               <Image
                                 src={place.image}
                                 alt={placeName}
@@ -877,14 +940,14 @@ export default function HotelDetailClient({
                               />
                             </div>
                           ) : (
-                            <div className="flex h-[92px] w-[92px] shrink-0 items-center justify-center bg-slate-100">
+                            <div className="flex h-[92px] w-[92px] shrink-0 items-center justify-center bg-sage">
                               <MapPin className="h-5 w-5 text-slate-400" />
                             </div>
                           )}
 
                           <div className="min-w-0 flex-1 p-3.5">
                             <div className="flex items-start gap-2">
-                              <h3 className="min-w-0 flex-1 line-clamp-2 text-[15px] font-semibold leading-5 text-slate-900">
+                              <h3 className="min-w-0 flex-1 line-clamp-2 text-[15px] font-semibold leading-5 text-ink">
                                 {placeName}
                               </h3>
 
@@ -900,7 +963,7 @@ export default function HotelDetailClient({
                                       ? `Chỉ đường đến ${placeName}`
                                       : `Directions to ${placeName}`
                                   }
-                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-brand/10 text-mist transition hover:border-brand/20 hover:bg-sage/50 hover:text-ink"
                                 >
                                   <Navigation className="h-4 w-4" />
                                 </a>
@@ -910,7 +973,7 @@ export default function HotelDetailClient({
                             {(distance ||
                               typeof place.walking_minutes ===
                                 "number") && (
-                              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-mist">
                                 {distance && (
                                   <span className="inline-flex items-center gap-1">
                                     <MapPin className="h-3.5 w-3.5 shrink-0" />
@@ -949,7 +1012,7 @@ export default function HotelDetailClient({
                           (current) => !current
                         )
                       }
-                      className="inline-flex items-center rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      className="inline-flex items-center rounded-full border border-brand/20 px-5 py-2.5 text-sm font-semibold text-mist transition hover:bg-sage/50"
                     >
                       {showAllNearby
                         ? language === "vi"
@@ -972,7 +1035,7 @@ export default function HotelDetailClient({
                   <div className="mt-5 text-center">
                     <a
                       href="#hotel-map"
-                      className="inline-flex items-center rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      className="inline-flex items-center rounded-full border border-brand/20 px-5 py-2.5 text-sm font-semibold text-mist transition hover:bg-sage/50"
                     >
                       <MapPin className="mr-2 h-4 w-4" />
 
@@ -988,24 +1051,24 @@ export default function HotelDetailClient({
             {mapUrl && (
               <section
                 id="hotel-map"
-                className="mt-12 scroll-mt-24 border-t border-slate-200 pt-10"
+                className="mt-12 scroll-mt-24 border-t border-brand/10 pt-10"
               >
                 <div className="mb-5">
-                  <h2 className="text-2xl font-bold tracking-tight text-slate-950">
+                  <h2 className="text-2xl font-bold tracking-tight text-brand">
                     {language === "vi"
                       ? "Vị trí"
                       : "Location"}
                   </h2>
 
                   {hotelAddress && (
-                    <div className="mt-2 flex items-start gap-2 text-sm text-slate-600">
+                    <div className="mt-2 flex items-start gap-2 text-sm text-mist">
                       <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
                       <span>{hotelAddress}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="overflow-hidden rounded-2xl border border-slate-200">
+                <div className="overflow-hidden rounded-2xl border border-brand/10">
                   <iframe
                     src={mapUrl}
                     title={`${hotelName} map`}
@@ -1019,25 +1082,25 @@ export default function HotelDetailClient({
 
             {initialFaqs.length > 0 && (
               <section
-                className="mt-12 border-t border-slate-200 pt-10"
+                className="mt-12 border-t border-brand/10 pt-10"
                 aria-labelledby="hotel-faq-heading"
               >
                 <h2
                   id="hotel-faq-heading"
-                  className="mb-5 text-2xl font-bold tracking-tight text-slate-950"
+                  className="mb-5 text-2xl font-bold tracking-tight text-brand"
                 >
                   {language === "vi"
                     ? `Hỏi đáp về ${hotelName}`
                     : `FAQs about ${hotelName}`}
                 </h2>
 
-                <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white px-5">
+                <div className="divide-y divide-slate-200 rounded-2xl border border-brand/10 bg-white px-5">
                   {initialFaqs.map((faq) => (
                     <details
                       key={faq.id}
                       className="group py-4"
                     >
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-800">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink">
                         <span>
                           {language === "vi"
                             ? faq.question_vi
@@ -1053,7 +1116,7 @@ export default function HotelDetailClient({
                         </span>
                       </summary>
 
-                      <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">
+                      <p className="mt-3 whitespace-pre-line text-sm leading-7 text-mist">
                         {language === "vi"
                           ? faq.answer_vi
                           : faq.answer_en ||
@@ -1079,6 +1142,7 @@ export default function HotelDetailClient({
           </div>
         </div>
       </div>
+      <BoltFinalCta hotelName={hotelName} locale={language} />
     </main>
   );
 }

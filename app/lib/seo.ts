@@ -19,7 +19,7 @@ export function seoDescription(value: string, limit = 158): string {
 
 export const STATIC_SEO: Record<string, { title: string; description: string }> = {
   "/khach-san-quan-1-cu": { title: "Khách sạn Quận 1 cũ Sài Gòn", description: "Tìm hiểu cách chọn khách sạn Quận 1 cũ, trung tâm Sài Gòn cùng Huyen's. So sánh vị trí, loại phòng và chính sách trước khi gửi yêu cầu đặt phòng." },
-  "/": { title: "Khách sạn, homestay trung tâm TP.HCM", description: "Khám phá khách sạn và homestay Huyen’s tại Quận 1 cũ, trung tâm Sài Gòn. Xem cơ sở ở Cô Bắc, Đỗ Quang Đẩu, Nguyễn Thị Minh Khai và đặt phòng trực tiếp." },
+  "/": { title: "Huyen's Hotels & Stays \| Khách sạn, homestay TP.HCM", description: "Khám phá khách sạn và homestay Huyen’s tại Quận 1 cũ, trung tâm Sài Gòn. Xem cơ sở ở Cô Bắc, Đỗ Quang Đẩu, Nguyễn Thị Minh Khai và đặt phòng trực tiếp." },
   "/phong": { title: "Phòng và giá lưu trú tại TP.HCM", description: "So sánh các loại phòng tại Huyen's Hotels & Stays ở TP.HCM. Xem giá thuê ngày, giá tháng, diện tích, sức chứa và tiện nghi để chọn phòng phù hợp." },
   "/kham-pha-huyens": { title: "Về Huyen's Hotels & Stays", description: "Tìm hiểu Huyen's Hotels & Stays và các cơ sở lưu trú tại TP.HCM. Khám phá phong cách từng khách sạn, guesthouse, homestay và cách liên hệ đặt phòng." },
   "/trai-nghiem": { title: "Trải nghiệm và khám phá TP.HCM", description: "Khám phá hoạt động, ẩm thực và những góc phố tại TP.HCM cùng Huyen's Hotels & Stays. Tham khảo ý tưởng trải nghiệm để lên kế hoạch cho kỳ lưu trú." },
