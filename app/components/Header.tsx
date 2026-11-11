@@ -119,7 +119,7 @@ export default function Header() {
     <header
       data-public-site
       className="absolute inset-x-0 top-0 z-50
-                 h-[72px] bg-[rgba(12,27,24,0.82)]
+                 h-[72px] bg-transparent
                  text-white"
     >
       <div
