@@ -73,3 +73,15 @@ body {
     outline: 3px solid #0f766e; outline-offset: 3px;
   }
 }
+
+/* Huyen Explore Bolt Palette */
+@theme {
+  --color-pine: #103A29;
+  --color-pine-deep: #092B1E;
+  --color-pine-accent: #24603F;
+  --color-cream: #F7F6F1;
+  --color-sage: #E9EFE8;
+  --color-ink: #17392A;
+  --color-moss: #56645A;
+  --font-serif: Georgia, "Times New Roman", serif;
+}
