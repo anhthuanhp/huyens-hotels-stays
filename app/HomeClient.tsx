@@ -27,6 +27,8 @@ type Hotel = {
   address_en: string | null;
   description_vi: string | null;
   description_en: string | null;
+  property_type: string | null;
+  official_star_rating: number | null;
 };
 
 type HeroSlide = {
@@ -690,21 +692,22 @@ export default function HomeClient({
                     hotel.name_en
                   ) as string;
 
+                  const typeLabels: Record<string, [string, string]> = {
+                    hotel: ["Khách sạn", "Hotel"],
+                    guesthouse: ["Guesthouse / Nhà khách", "Guesthouse"],
+                    homestay: ["Homestay", "Homestay"],
+                    serviced_apartment: ["Căn hộ dịch vụ", "Serviced apartment"]
+                  };
                   const propertyType =
-                    hotel.slug === "huyen-house" ||
-                    hotel.slug === "huyen-homestay"
-                      ? isVi
-                        ? "Căn hộ dịch vụ"
-                        : "Serviced apartment"
-                      : hotel.slug === "anh-kim-hotel" ||
-                          hotel.slug === "ae-guesthouse"
-                        ? isVi
-                          ? "Khách sạn"
-                          : "Hotel"
-                        : isVi
-                          ? "Cơ sở lưu trú"
-                          : "Property";
-
+                    typeLabels[hotel.property_type || ""]?.[isVi ? 0 : 1] ||
+                    (isVi ? "Cơ sở lưu trú" : "Property");
+                  const officialStars =
+                    hotel.official_star_rating != null &&
+                    Number.isInteger(hotel.official_star_rating) &&
+                    hotel.official_star_rating >= 1 &&
+                    hotel.official_star_rating <= 5
+                      ? hotel.official_star_rating
+                      : null;
                   const href = `/khach-san/${hotel.slug}`;
 
                   return (
@@ -746,12 +749,22 @@ export default function HomeClient({
                           <span className="inline-block rounded-[10px] bg-[#d8f2dc] px-[7px] py-[3px] text-[10px] font-semibold leading-tight text-[#125d26]">
                             {propertyType}
                           </span>
+                           {officialStars !== null && (
+                             <span
+                               className="ml-2 text-[13px] tracking-[1px] text-amber-500"
+                               aria-label={isVi ? officialStars + " sao" : officialStars + " stars"}
+                             >
+                               {"★".repeat(officialStars)}
+                             </span>
+                           )}
 
                           <p className="mt-[6px] flex items-center gap-1 text-[10px] text-[#5b625d]">
                             <MapPin size={13} aria-hidden="true" />
-                            {isVi
-                              ? "TP. Hồ Chí Minh"
-                              : "Ho Chi Minh City"}
+                            {(isVi
+          ? hotel.address_vi || hotel.address_en
+          : hotel.address_en || hotel.address_vi
+        )?.normalize("NFC") ||
+          (isVi ? "TP. Hồ Chí Minh" : "Ho Chi Minh City")}
                           </p>
 
                           <span

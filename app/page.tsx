@@ -35,6 +35,8 @@ type Hotel = {
   address_en: string | null;
   description_vi: string | null;
   description_en: string | null;
+  property_type: string | null;
+  official_star_rating: number | null;
 };
 
 type HeroSlide = {
@@ -173,7 +175,7 @@ async function getHotels(): Promise<
     await getSupabase()
       .from("hotels")
       .select(
-        "id, slug, name_vi, name_en, address_vi, address_en, description_vi, description_en"
+        "id, slug, name_vi, name_en, address_vi, address_en, description_vi, description_en, property_type, official_star_rating"
       )
       .eq("status", "active")
       .order("id", {

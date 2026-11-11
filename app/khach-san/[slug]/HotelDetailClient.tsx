@@ -33,6 +33,8 @@ type Hotel = {
   description_en: string | null;
   map_url: string | null;
   business_model: string | null;
+  property_type: string | null;
+  official_star_rating: number | null;
 };
 
 type Room = {
@@ -481,7 +483,7 @@ export default function HotelDetailClient({
     HOTEL_H1_SEO[initialHotel.slug];
 
   const displayH1 =
-    seoH1?.[language] || hotelName;
+    (seoH1?.[language] || hotelName).normalize("NFC");
 
   const displayLocalDescription =
     localSeoContent?.[language] || "";
@@ -519,6 +521,8 @@ export default function HotelDetailClient({
       <BoltHotelHero
         images={galleryImages}
         hotelName={displayH1}
+        propertyType={initialHotel.property_type}
+        officialStarRating={initialHotel.official_star_rating}
         locale={language}
         placeholderText={language === "vi"
           ? "Hình ảnh phòng đang được cập nhật"

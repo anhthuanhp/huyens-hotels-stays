@@ -7,13 +7,16 @@ import { format, ui } from '../lib/uiText';
 interface Props {
   images: HotelImage[];
   hotelName: string;
+  propertyType: string | null;
+  officialStarRating: number | null;
   locale: Locale;
   placeholderText: string;
 }
 
 const BASE_COUNT = 5;
 
-export default function HotelHero({ images, hotelName, locale, placeholderText }: Props) {
+export default function HotelHero({ images, hotelName, locale, placeholderText, propertyType, officialStarRating }: Props) {
+  hotelName = hotelName.normalize("NFC");
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef<number | null>(null);
@@ -64,9 +67,35 @@ export default function HotelHero({ images, hotelName, locale, placeholderText }
           <span className="text-brand font-medium">{hotelName}</span>
         </nav>
 
-        <h1 className="font-display text-4xl leading-tight text-brand sm:text-5xl lg:text-6xl">
+        <h1 className="text-4xl leading-[1.2] tracking-normal text-brand sm:text-5xl lg:text-6xl" style={{ fontFamily: 'Cambria, "Times New Roman", serif' }}>
           {hotelName}
         </h1>
+
+        {/* HOTEL_CLASSIFICATION_V2 */}
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          {propertyType && (
+            <span className="rounded-full bg-sage px-3 py-1.5 text-xs font-semibold text-brand">
+              {({
+                hotel: locale === "vi" ? "Khách sạn" : "Hotel",
+                guesthouse: locale === "vi" ? "Guesthouse / Nhà khách" : "Guesthouse",
+                homestay: "Homestay",
+                serviced_apartment: locale === "vi" ? "Căn hộ dịch vụ" : "Serviced apartment"
+              } as Record<string, string>)[propertyType] || (locale === "vi" ? "Cơ sở lưu trú" : "Property")}
+            </span>
+          )}
+          {officialStarRating !== null &&
+           Number.isInteger(officialStarRating) &&
+           officialStarRating >= 1 &&
+           officialStarRating <= 5 && (
+            <span
+              className="text-lg tracking-[2px] text-amber-500"
+              aria-label={locale === "vi" ? officialStarRating + " sao" : officialStarRating + " stars"}
+            >
+              {"★".repeat(officialStarRating)}
+            </span>
+          )}
+        </div>
+
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-6 sm:mt-8">

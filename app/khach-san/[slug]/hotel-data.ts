@@ -21,6 +21,8 @@ export type Hotel = {
   map_url: string | null;
   nearby_vi: string | null;
   nearby_en: string | null;
+  property_type: string | null;
+  official_star_rating: number | null;
 };
 
 export type Room = {
@@ -152,8 +154,7 @@ export async function getCachedHotel(
             longitude,
             map_url,
             nearby_vi,
-            nearby_en
-          `
+            nearby_en, property_type, official_star_rating`
         )
         .eq("slug", currentSlug)
         .eq("status", "active")

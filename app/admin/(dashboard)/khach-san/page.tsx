@@ -5,6 +5,7 @@ import { supabase } from "../../../lib/supabase";
 
 type HotelStatus = "active" | "inactive";
 type BusinessModel = "daily" | "monthly";
+type PropertyType = "hotel" | "guesthouse" | "homestay" | "serviced_apartment";
 type OtaStatus = "active" | "inactive";
 
 type Hotel = {
@@ -31,6 +32,8 @@ type Hotel = {
   contact_phone: string | null;
   contact_email: string | null;
   contact_messaging: string | null;
+  property_type: PropertyType | null;
+  official_star_rating: number | null;
 };
 
 type HotelForm = {
@@ -55,6 +58,8 @@ type HotelForm = {
   contact_messaging: string;
   status: HotelStatus;
   business_model: BusinessModel;
+  property_type: PropertyType | "";
+  official_star_rating: string;
 };
 
 type HotelAmenity = {
@@ -109,6 +114,8 @@ type OtaPlatformForm = {
 };
 
 const EMPTY_FORM: HotelForm = {
+  property_type: "",
+  official_star_rating: "",
   slug: "",
   name_vi: "",
   name_en: "",
@@ -350,6 +357,8 @@ export default function KhachSanPage() {
       status: hotel.status === "inactive" ? "inactive" : "active",
       business_model:
         hotel.business_model === "monthly" ? "monthly" : "daily",
+      property_type: hotel.property_type || "",
+      official_star_rating: hotel.official_star_rating == null ? "" : String(hotel.official_star_rating),
     });
 
     setAmenities([]);
@@ -439,6 +448,11 @@ export default function KhachSanPage() {
       setError("Vui lòng nhập slug.");
       return;
     }
+    if (!form.property_type) {
+      setError("Vui lòng chọn loại hình cơ sở lưu trú.");
+      return;
+    }
+
 
     if (!form.business_model) {
       setError("Vui lòng chọn mô hình kinh doanh.");
@@ -505,6 +519,8 @@ export default function KhachSanPage() {
         contact_messaging: form.contact_messaging.trim() || null,
         status: form.status,
         business_model: form.business_model,
+        property_type: form.property_type,
+        official_star_rating: form.official_star_rating === "" ? null : Number(form.official_star_rating),
       };
 
       if (editingHotelId === null) {
@@ -1631,6 +1647,41 @@ export default function KhachSanPage() {
                         placeholder="anh-kim-hotel"
                       />
                     </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                        Loại cơ sở lưu trú *
+                      </label>
+                      <select
+                        value={form.property_type}
+                        onChange={(e) => updateField("property_type", e.target.value as PropertyType | "")}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                      >
+                        <option value="">Chọn loại cơ sở</option>
+                        <option value="hotel">Khách sạn</option>
+                        <option value="guesthouse">Guesthouse / Nhà khách</option>
+                        <option value="homestay">Homestay</option>
+                        <option value="serviced_apartment">Căn hộ dịch vụ</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                        Hạng sao chính thức
+                      </label>
+                      <select
+                        value={form.official_star_rating}
+                        onChange={(e) => updateField("official_star_rating", e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                      >
+                        <option value="">Chưa xếp hạng</option>
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <option key={n} value={String(n)}>{n} sao</option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Chỉ chọn hạng sao được xác nhận, không phải điểm Google.
+                      </p>
+                    </div>
+
 
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
