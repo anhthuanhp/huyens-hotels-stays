@@ -163,41 +163,53 @@ export default function LienHePage() {
     }
   };
 
+
   const deleteMessage = async (message: ContactMessage) => {
     const confirmed = window.confirm(
       `Bạn có chắc muốn xóa tin nhắn của "${message.name}" không?\n\nThao tác này không thể hoàn tác.`
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     setDeletingId(message.id);
     setError("");
 
-    const { error: deleteError } = await supabase
-      .from("contact_messages")
-      .delete()
-      .eq("id", message.id);
+    try {
+      const { data: deletedRows, error: deleteError } = await supabase
+        .from("contact_messages")
+        .delete()
+        .eq("id", message.id)
+        .select("id");
 
-    if (deleteError) {
-      console.error("Delete contact message error:", deleteError);
-      setError(
-        `Không thể xóa tin nhắn: ${deleteError.message || "Lỗi không xác định."}`
+      if (deleteError) {
+        throw new Error(deleteError.message);
+      }
+
+      if (!deletedRows?.some((row) => row.id === message.id)) {
+        throw new Error(
+          "Supabase không xác nhận xóa bản ghi. Kiểm tra quyền DELETE."
+        );
+      }
+
+      // Chỉ cập nhật giao diện khi Supabase xác nhận đã xóa.
+      setMessages((current) =>
+        current.filter((item) => item.id !== message.id)
       );
+
+      setSelectedMessage((current) =>
+        current?.id === message.id ? null : current
+      );
+
+    } catch (err) {
+      const messageText =
+        err instanceof Error ? err.message : "Lỗi không xác định";
+
+      console.error("Delete contact message error:", err);
+      setError("Không thể xóa tin nhắn: " + messageText);
+
+    } finally {
       setDeletingId(null);
-      return;
     }
-
-    setMessages((current) =>
-      current.filter((item) => item.id !== message.id)
-    );
-
-    setSelectedMessage((current) =>
-      current?.id === message.id ? null : current
-    );
-
-    setDeletingId(null);
   };
 
   const filteredMessages = useMemo(() => {
