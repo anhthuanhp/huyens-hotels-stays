@@ -1,4 +1,5 @@
 import { canonicalSeoPath, canonicalRoomSlug } from "@/app/lib/room-seo-slugs";
+import { cleanSeoText, seoHotelName } from "@/app/lib/seo";
 import Link from "next/link";
 import Head from "next/head";
 import RoomChoiceGuide from "./RoomChoiceGuide";
@@ -28,7 +29,22 @@ export default function EnglishSite({ data }: { data: EnglishData }) {
   const canonicalPath = canonicalSeoPath(data.path);
   const canonical = origin + localizedHref(canonicalPath, "en");
   const vietnamese = origin + (canonicalPath === "/" ? "" : canonicalPath);
-  const fullTitle = data.title + " | Huyen's Hotels & Stays";
+  const englishHotelTitles: Record<string, string> = {
+    "anh-kim-hotel": "Anh Kim Hotel – Co Bac, Saigon | Huyen's",
+    "ae-guesthouse": "A&E Guesthouse – Near Bui Vien | Huyen's",
+    "huyen-house": "Huyen House – Near US Consulate | Huyen's",
+    "huyenhomestay": "Huyen Homestay – Monthly Stays | Huyen's",
+  };
+  const fullTitle =
+    data.kind === "hotel" && data.hotel
+      ? englishHotelTitles[data.hotel.slug] || `${seoHotelName(data.hotel.slug, data.hotel.name_en || "")} | Huyen's`
+      : data.kind === "room" && data.hotel && data.room
+        ? `${cleanSeoText(data.room.name_en || data.room.name_vi || "")} | ${seoHotelName(data.hotel.slug, data.hotel.name_en || "")}`
+        : data.kind === "blog"
+          ? "Saigon Travel Guides | Huyen's"
+          : data.kind === "article"
+            ? `${data.title.length > 45 ? data.title.slice(0, 45).trimEnd() + "…" : data.title} | Huyen's`
+            : `${data.title} | Huyen's`;
   const hotel = data.hotel;
   const room = data.room;
   const post = data.post;

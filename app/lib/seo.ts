@@ -50,14 +50,24 @@ export function staticMetadata(path: string): Metadata {
 }
 
 type HotelSeoData = { slug?: string; name_vi: string | null; name_en: string | null; address_vi: string | null; address_en: string | null };
+export function seoHotelName(slug: string, fallback: string): string {
+  const names: Record<string, string> = {
+    "anh-kim-hotel": "Anh Kim Hotel",
+    "ae-guesthouse": "A&E Guesthouse",
+    "huyen-house": "Huyen House",
+    "huyenhomestay": "Huyen Homestay",
+  };
+  return names[slug] || cleanSeoText(fallback);
+}
+
 export function hotelSeo(hotel: HotelSeoData) {
   const name = cleanSeoText(hotel.name_vi || hotel.name_en) || "Cơ sở lưu trú";
   const address = cleanSeoText(hotel.address_vi || hotel.address_en);
   const positioning: Record<string, { title: string; description: string }> = {
-    "anh-kim-hotel": { title: "Anh Kim Hotel – Khách sạn Cô Bắc, gần Bùi Viện", description: "Anh Kim Hotel trên đường Cô Bắc, thuận tiện đến Bùi Viện và chợ Bến Thành. So sánh phòng đôi, phòng gia đình, giá mỗi đêm và đặt phòng trực tiếp." },
-    "ae-guesthouse": { title: "A&E Guesthouse – Gần Bùi Viện, Phạm Ngũ Lão", description: "A&E Guesthouse tại Đỗ Quang Đẩu, gần Bùi Viện và Phạm Ngũ Lão. So sánh giá, phòng đôi và phòng gia đình để chọn chỗ ở phù hợp ngân sách tại Sài Gòn." },
-    "huyen-house": { title: "Huyen House – Lưu trú gần Tổng Lãnh sự quán Mỹ", description: "Huyen House trên đường Nguyễn Thị Minh Khai, gần Tổng Lãnh sự quán Mỹ tại TP.HCM. Tham khảo phòng cho khách công tác, đi học hoặc có lịch hẹn lãnh sự." },
-    "huyenhomestay": { title: "Huyen Homestay – Ở dài ngày tại Nguyễn Thị Minh Khai", description: "Huyen Homestay tại Nguyễn Thị Minh Khai, trung tâm TP.HCM. So sánh phòng và giá ở dài ngày; xác nhận tiền cọc, điện nước, dịch vụ trước khi thuê tháng." },
+    "anh-kim-hotel": { title: "Anh Kim Hotel – Cô Bắc, gần Bùi Viện", description: "Anh Kim Hotel trên đường Cô Bắc, thuận tiện đến Bùi Viện và chợ Bến Thành. So sánh phòng đôi, phòng gia đình, giá mỗi đêm và đặt phòng trực tiếp." },
+    "ae-guesthouse": { title: "A&E Guesthouse – Gần Bùi Viện", description: "A&E Guesthouse tại Đỗ Quang Đẩu, gần Bùi Viện và Phạm Ngũ Lão. So sánh giá, phòng đôi và phòng gia đình để chọn chỗ ở phù hợp ngân sách tại Sài Gòn." },
+    "huyen-house": { title: "Huyen House – Gần Lãnh sự quán Mỹ", description: "Huyen House trên đường Nguyễn Thị Minh Khai, gần Tổng Lãnh sự quán Mỹ tại TP.HCM. Tham khảo phòng cho khách công tác, đi học hoặc có lịch hẹn lãnh sự." },
+    "huyenhomestay": { title: "Huyen Homestay – Thuê tháng TP.HCM", description: "Huyen Homestay tại Nguyễn Thị Minh Khai, trung tâm TP.HCM. So sánh phòng và giá ở dài ngày; xác nhận tiền cọc, điện nước, dịch vụ trước khi thuê tháng." },
   };
   const copy = hotel.slug ? positioning[hotel.slug] : undefined;
   if (copy) return { title: copy.title + " | Huyen's", description: seoDescription(copy.description) };

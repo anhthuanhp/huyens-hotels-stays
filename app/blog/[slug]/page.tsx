@@ -271,7 +271,17 @@ export async function generateMetadata({
     );
 
   const copy = BLOG_SEO[post.slug];
-  const metaTitle = `${copy?.title || titleVi || titleEn} | Huyen's`;
+  const shortBlogTitles: Record<string, string> = {
+    "anh-kim-hotel-co-bac-chon-phong-cap-doi-gia-dinh":
+      "Anh Kim Hotel: Chọn phòng đôi hay phòng gia đình",
+    "huyen-homestay-sinh-vien-quoc-te-su-kien-chay-bo":
+      "Huyen Homestay: Chỗ ở đi học và dự giải chạy",
+    "huyen-house-nguyen-thi-minh-khai-phong-mot-hai-nguoi":
+      "Huyen House: Phòng cho 1–2 người",
+    "khach-san-cong-tac-tap-huan-mb-di-hoc-kham-rang-anh-kim":
+      "Khách sạn công tác, học tại Sài Gòn",
+  };
+  const metaTitle = `${shortBlogTitles[post.slug] || copy?.title || titleVi || titleEn} | Huyen's`;
   const description = seoDescription(copy?.description || `${titleVi || titleEn}. ${cleanText(post.excerpt_vi || post.excerpt_en || post.content_vi || post.content_en)}`);
 
   const imageUrl =

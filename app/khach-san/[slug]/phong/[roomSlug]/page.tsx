@@ -1,7 +1,7 @@
 import { languageAlternates } from "@/app/lib/localized-path";
 import { canonicalRoomSlug } from "@/app/lib/room-seo-slugs";
 import { districtOnePlace } from "../../../../lib/local-schema";
-import { cleanSeoText, seoDescription } from "../../../../lib/seo";
+import { cleanSeoText, seoDescription, seoHotelName } from "../../../../lib/seo";
 import RoomDetailClient from "./RoomDetailClient";
 import { supabase } from "../../../../lib/supabase";
 import type { Metadata } from "next";
@@ -184,7 +184,7 @@ export async function generateMetadata({
     "trung tâm TP.HCM";
 
   const title =
-    `${cleanSeoText(roomName)} – ${hotelName} | Huyen's`;
+    `${cleanSeoText(roomName)} | ${seoHotelName(slug, hotelName)}`;
 
   const description = seoDescription([
     `${cleanSeoText(roomName)} tại ${hotelName}.`,
