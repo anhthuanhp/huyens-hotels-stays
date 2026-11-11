@@ -1,4 +1,4 @@
-import { FACEBOOK_PAGE_URL } from "./lib/social";
+import { FACEBOOK_PAGE_URL, INSTAGRAM_PAGE_URL, THREADS_PAGE_URL } from "./lib/social";
 import type { Metadata } from "next";
 import "./globals.css";
 import VisitorTracker from "./components/VisitorTracker";
@@ -6,6 +6,7 @@ import BackToTopButton from "./components/BackToTopButton";
 import LazyWidgets from "./components/LazyWidgets";
 import { Suspense } from "react";
 import SiteHeader from "./components/SiteHeader";
+import Footer from "./components/Footer";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -83,9 +84,9 @@ export default function RootLayout({ children }: LayoutProps) {
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              "@id": `${siteUrl}#organization`,
+              "@id": `${siteUrl}/#organization`,
               name: siteName,
-              sameAs: [FACEBOOK_PAGE_URL],
+              sameAs: [FACEBOOK_PAGE_URL, INSTAGRAM_PAGE_URL, THREADS_PAGE_URL],
               url: siteUrl,
               telephone: "+84 902095669",
               description:
@@ -102,6 +103,7 @@ export default function RootLayout({ children }: LayoutProps) {
         <main className="flex-1">
           {children}
         </main>
+        <Footer />
         <LazyWidgets />
       </body>
     </html>
