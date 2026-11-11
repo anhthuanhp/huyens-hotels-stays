@@ -1,3 +1,4 @@
+import { canonicalSeoPath } from "@/app/lib/room-seo-slugs";
 import Link from "next/link";
 import Head from "next/head";
 import RoomChoiceGuide from "./RoomChoiceGuide";
@@ -24,8 +25,9 @@ function RoomCard({ hotel, room }: { hotel: Hotel; room: Room }) {
   return <article className={card}><Cover src={room.image} alt={room.name_en || "Guest room"} /><h3 className="text-xl font-semibold"><Link className="hover:underline" href={roomPath(hotel, room)}>{room.name_en}</Link></h3><p className="mt-2 text-sm text-slate-500">{hotel.name_en} · {room.size} m² · Up to {room.max_guests} guests</p><p className="mt-2">{room.beds_en || "Confirm bed arrangement with the property"}</p><p className="mt-3">Nightly: {money(room.base_price_daily)} · Monthly: {money(room.base_price_monthly)}</p><p className="mt-3 leading-7 text-slate-600">{room.description_en}</p><Link className="mt-4 inline-flex min-h-12 items-center font-semibold text-sky-800 underline" href={roomPath(hotel, room)}>View room details</Link></article>;
 }
 export default function EnglishSite({ data }: { data: EnglishData }) {
-  const canonical = origin + localizedHref(data.path, "en");
-  const vietnamese = origin + (data.path === "/" ? "" : data.path);
+  const canonicalPath = canonicalSeoPath(data.path);
+  const canonical = origin + localizedHref(canonicalPath, "en");
+  const vietnamese = origin + (canonicalPath === "/" ? "" : canonicalPath);
   const fullTitle = data.title + " | Huyen's Hotels & Stays";
   const hotel = data.hotel;
   const room = data.room;

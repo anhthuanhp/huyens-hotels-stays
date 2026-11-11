@@ -1,4 +1,5 @@
 import { englishInventory, englishPaths } from "./lib/english-data";
+import { canonicalRoomSlug, canonicalSeoPath } from "./lib/room-seo-slugs";
 import { languageAlternates, localizedHref } from "./lib/localized-path";
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
@@ -205,7 +206,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         );
 
         return {
-          url: `${siteUrl}/khach-san/${encodeURIComponent(hotelSlug!)}/phong/${encodeURIComponent(room.slug)}`,
+          url: `${siteUrl}/khach-san/${encodeURIComponent(hotelSlug!)}/phong/${encodeURIComponent(canonicalRoomSlug(hotelSlug!, room.slug))}`,
           changeFrequency: "weekly" as const,
           priority: 0.6,
         };
@@ -233,7 +234,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .map(parts => parts.length ? "/" + parts.map(encodeURIComponent).join("/") : "/")
     // Trang chủ /en đã bị loại bỏ (redirect vĩnh viễn về "/"),
     // không liệt kê vào sitemap nữa.
-    .filter(path => path !== "/");
+    .filter(path => path !== "/")
+    .map(canonicalSeoPath);
   const paired = new Set(english);
   const vietnamese = [...staticUrls, ...hotelUrls, ...roomUrls, ...blogUrls].map(entry => {
     const path = new URL(entry.url).pathname;

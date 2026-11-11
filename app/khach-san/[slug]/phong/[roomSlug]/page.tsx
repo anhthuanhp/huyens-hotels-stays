@@ -1,4 +1,5 @@
 import { languageAlternates } from "@/app/lib/localized-path";
+import { canonicalRoomSlug } from "@/app/lib/room-seo-slugs";
 import { districtOnePlace } from "../../../../lib/local-schema";
 import { cleanSeoText, seoDescription } from "../../../../lib/seo";
 import RoomDetailClient from "./RoomDetailClient";
@@ -128,7 +129,7 @@ export async function generateMetadata({
     baseUrl.replace(/\/+$/, "");
 
   const canonicalUrl =
-    `${siteUrl}/khach-san/${encodeURIComponent(slug)}/phong/${encodeURIComponent(roomSlug)}`;
+    `${siteUrl}/khach-san/${encodeURIComponent(slug)}/phong/${encodeURIComponent(canonicalRoomSlug(slug, roomSlug))}`;
 
   const hotelName =
     cleanText(
