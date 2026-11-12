@@ -31,6 +31,38 @@ type BlogPostRow = {
   updated_at: string | null;
 };
 
+
+function validLastModified(
+  ...values: (string | null | undefined)[]
+): Date | undefined {
+  for (const value of values) {
+    if (!value) continue;
+
+    const time = Date.parse(value);
+
+    if (
+      Number.isFinite(time) &&
+      time <= Date.now() + 86400000
+    ) {
+      return new Date(time);
+    }
+  }
+
+  return undefined;
+}
+
+function uniqueSitemap(
+  entries: MetadataRoute.Sitemap
+): MetadataRoute.Sitemap {
+  const seen = new Set<string>();
+
+  return entries.filter((entry) => {
+    if (seen.has(entry.url)) return false;
+    seen.add(entry.url);
+    return true;
+  });
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticUrls: MetadataRoute.Sitemap = [
     { url: `${siteUrl}/khach-san-quan-1-cu`, changeFrequency: "monthly", priority: 0.8 },
@@ -94,11 +126,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let activeBlogPosts: BlogPostRow[] = [];
 
   if (!supabaseUrl || !supabaseKey) {
-    console.error(
-      "Sitemap: Supabase environment variables are missing; returning static URLs only."
+    throw new Error(
+      "Sitemap: missing Supabase environment variables"
     );
-
-    return staticUrls;
   }
 
   try {
@@ -132,27 +162,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ]);
 
     if (hotelsResult.error) {
-      console.error(
-        "Sitemap: failed to load hotels:",
-        hotelsResult.error
+      throw new Error(
+        "Sitemap: cannot load hotels: " +
+        hotelsResult.error.message
       );
     } else {
       activeHotels = (hotelsResult.data ?? []) as HotelRow[];
     }
 
     if (roomsResult.error) {
-      console.error(
-        "Sitemap: failed to load rooms:",
-        roomsResult.error
+      throw new Error(
+        "Sitemap: cannot load rooms: " +
+        roomsResult.error.message
       );
     } else {
       activeRooms = (roomsResult.data ?? []) as RoomRow[];
     }
 
     if (blogPostsResult.error) {
-      console.error(
-        "Sitemap: failed to load blog posts:",
-        blogPostsResult.error
+      throw new Error(
+        "Sitemap: cannot load blog_posts: " +
+        blogPostsResult.error.message
       );
     } else {
       activeBlogPosts =
@@ -163,8 +193,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       "Sitemap: Supabase request failed:",
       error
     );
-
-    return staticUrls;
+    throw error;
   }
 
   const hotelUrls: MetadataRoute.Sitemap =
@@ -221,11 +250,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       )
       .map((post) => ({
         url: `${siteUrl}/blog/${encodeURIComponent(post.slug)}`,
-        lastModified: post.updated_at
-          ? new Date(post.updated_at)
-          : post.date
-            ? new Date(post.date)
-            : undefined,
+        lastModified: validLastModified(post.updated_at, post.date),
         changeFrequency: "monthly" as const,
         priority: 0.7,
       }));
@@ -235,11 +260,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Trang chủ /en đã bị loại bỏ (redirect vĩnh viễn về "/"),
     // không liệt kê vào sitemap nữa.
     .filter(path => path !== "/")
-    .map(canonicalSeoPath);
+    .map(canonicalSeoPath)
+    .filter((url, index, urls) => urls.indexOf(url) === index);
   const paired = new Set(english);
   const vietnamese = [...staticUrls, ...hotelUrls, ...roomUrls, ...blogUrls].map(entry => {
     const path = new URL(entry.url).pathname;
     return paired.has(path) ? { ...entry, alternates: { languages: languageAlternates(path, siteUrl).languages } } : entry;
   });
-  return [...vietnamese, ...english.map(path => ({ url: siteUrl + localizedHref(path, "en"), changeFrequency: "weekly" as const, priority: 0.7, alternates: { languages: languageAlternates(path, siteUrl).languages } }))];
+  return uniqueSitemap([
+    ...vietnamese,
+    ...english.map(path => ({
+      url: siteUrl + localizedHref(path, "en"),
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+      alternates: {
+        languages: languageAlternates(path, siteUrl).languages
+      }
+    }))
+  ]);
 }
