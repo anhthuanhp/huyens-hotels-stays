@@ -391,6 +391,7 @@ export default function HomeClient({
                         alt={alt}
                         fill
                         preload={isFirst}
+                        fetchPriority={isFirst ? "high" : "auto"}
                         loading={isFirst ? "eager" : "lazy"}
                         quality={75}
                         sizes="100vw"
