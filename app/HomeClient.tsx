@@ -616,7 +616,11 @@ export default function HomeClient({
               <div className="grid h-[280px] min-h-0 grid-cols-[1.6fr_1fr] gap-[11px] pl-[14px] max-lg:h-[220px] max-sm:mt-2 max-sm:h-[180px] max-sm:pl-0">
 
                 <img
-                  src="https://images.pexels.com/photos/3771087/pexels-photo-3771087.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
+                  src="https://images.pexels.com/photos/3771087/pexels-photo-3771087.jpeg?auto=compress&cs=tinysrgb&h=360&w=520"
+                  srcSet="https://images.pexels.com/photos/3771087/pexels-photo-3771087.jpeg?auto=compress&cs=tinysrgb&w=320 320w, https://images.pexels.com/photos/3771087/pexels-photo-3771087.jpeg?auto=compress&cs=tinysrgb&w=520 520w, https://images.pexels.com/photos/3771087/pexels-photo-3771087.jpeg?auto=compress&cs=tinysrgb&w=760 760w"
+                  sizes="(max-width: 640px) 60vw, (max-width: 1023px) 60vw, 30vw"
+                  width={520}
+                  height={360}
                   alt={isVi ? "Không gian lưu trú Huyen's" : "Huyen's stay experience"}
                   loading="lazy"
                   className="h-full min-h-0 w-full rounded-xl object-cover"
@@ -624,14 +628,22 @@ export default function HomeClient({
 
                 <div className="grid min-h-0 grid-rows-2 gap-[11px]">
                   <img
-                    src="https://images.pexels.com/photos/40624417/pexels-photo-40624417.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
+                    src="https://images.pexels.com/photos/40624417/pexels-photo-40624417.jpeg?auto=compress&cs=tinysrgb&h=240&w=320"
+                  srcSet="https://images.pexels.com/photos/40624417/pexels-photo-40624417.jpeg?auto=compress&cs=tinysrgb&w=160 160w, https://images.pexels.com/photos/40624417/pexels-photo-40624417.jpeg?auto=compress&cs=tinysrgb&w=320 320w, https://images.pexels.com/photos/40624417/pexels-photo-40624417.jpeg?auto=compress&cs=tinysrgb&w=480 480w"
+                  sizes="(max-width: 640px) 38vw, (max-width: 1023px) 38vw, 18vw"
+                  width={320}
+                  height={240}
                     alt={isVi ? "Không gian phòng nghỉ" : "Guest room"}
                     loading="lazy"
                     className="h-full min-h-0 w-full rounded-xl object-cover"
                   />
 
                   <img
-                    src="https://images.pexels.com/photos/5007253/pexels-photo-5007253.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
+                    src="https://images.pexels.com/photos/5007253/pexels-photo-5007253.jpeg?auto=compress&cs=tinysrgb&h=240&w=320"
+                  srcSet="https://images.pexels.com/photos/5007253/pexels-photo-5007253.jpeg?auto=compress&cs=tinysrgb&w=160 160w, https://images.pexels.com/photos/5007253/pexels-photo-5007253.jpeg?auto=compress&cs=tinysrgb&w=320 320w, https://images.pexels.com/photos/5007253/pexels-photo-5007253.jpeg?auto=compress&cs=tinysrgb&w=480 480w"
+                  sizes="(max-width: 640px) 38vw, (max-width: 1023px) 38vw, 18vw"
+                  width={320}
+                  height={240}
                     alt={isVi ? "Trải nghiệm lưu trú" : "Stay experience"}
                     loading="lazy"
                     className="h-full min-h-0 w-full rounded-xl object-cover"
