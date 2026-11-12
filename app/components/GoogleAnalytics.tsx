@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import Script from 'next/script';
+
 import { trackEvent } from './analytics';
 
 /** One GA4 instance. Does not initialize when no measurement ID is configured. */
@@ -11,6 +11,33 @@ export default function GoogleAnalytics() {
   const pathname = usePathname();
   const enabled = Boolean(measurementId && /^G-[A-Z0-9]+$/.test(measurementId));
 
+  useEffect(() => {
+    if (!enabled || !measurementId) return;
+
+    const gaWindow = window as Window & {
+      dataLayer?: unknown[][];
+      __huyenGa4Configured?: boolean;
+    };
+
+    if (gaWindow.__huyenGa4Configured) return;
+    gaWindow.__huyenGa4Configured = true;
+
+    gaWindow.dataLayer = gaWindow.dataLayer || [];
+    window.gtag = window.gtag || ((...args: unknown[]) => {
+      gaWindow.dataLayer!.push(args);
+    });
+
+    const script = document.createElement('script');
+    script.id = 'huyen-ga4-loader';
+    script.async = true;
+    script.src =
+      'https://www.googletagmanager.com/gtag/js?id=' +
+      encodeURIComponent(measurementId);
+    document.head.appendChild(script);
+
+    window.gtag('js', new Date());
+    window.gtag('config', measurementId);
+  }, [enabled, measurementId]);
   useEffect(() => {
     if (!enabled || !pathname || pathname.startsWith('/admin')) return;
     const match = pathname.match(/^\/(?:en\/)?khach-san\/([^/]+)\/phong\/([^/]+)\/?$/);
@@ -57,14 +84,5 @@ export default function GoogleAnalytics() {
     return () => document.removeEventListener('click', onClick, true);
   }, [enabled]);
 
-  if (!enabled) return null;
-  return <>
-    <Script src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`} strategy="afterInteractive" />
-    <Script id="huyen-ga4-init" strategy="afterInteractive">{`
-      window.dataLayer = window.dataLayer || [];
-      window.gtag = window.gtag || function(){dataLayer.push(arguments);};
-      gtag('js', new Date());
-      gtag('config', '${measurementId}', { send_page_view: true });
-    `}</Script>
-  </>;
+  return null;
 }
