@@ -1,6 +1,6 @@
+"use client";
 import { trackEvent } from "../components/analytics";
 /* eslint-disable react-hooks/set-state-in-effect */
-"use client";
 import { localizedHref } from "@/app/lib/localized-path";
 
 import { useLanguage } from "@/app/lib/use-language";
