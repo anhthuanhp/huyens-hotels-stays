@@ -39,10 +39,11 @@ export default function EnglishSite({ data }: { data: EnglishData }) {
     "ae-guesthouse": "Stay near Bui Vien Street and Pham Ngu Lao at A&E Guesthouse in central Saigon. Explore rooms, check nightly rates and book directly.",
     "anh-kim-hotel": "Stay in central Saigon at Anh Kim Hotel on Co Bac Street, near Bui Vien. Explore double and family rooms, check nightly rates and book directly.",
   };
+  const articleDescription = data.kind === "article" ? data.post?.excerpt_en || data.description : data.description;
   const metaDescription =
     data.kind === "hotel" && data.hotel
       ? englishHotelDescriptions[data.hotel.slug] || data.description
-      : data.description;
+      : articleDescription;
   const fullTitle =
     data.kind === "hotel" && data.hotel
       ? englishHotelTitles[data.hotel.slug] || `${seoHotelName(data.hotel.slug, data.hotel.name_en || "")} | Huyen's`
@@ -51,7 +52,7 @@ export default function EnglishSite({ data }: { data: EnglishData }) {
         : data.kind === "blog"
           ? "Saigon Travel Guides | Huyen's"
           : data.kind === "article"
-            ? `${data.title.length > 45 ? data.title.slice(0, 45).trimEnd() + "…" : data.title} | Huyen's`
+            ? `${data.post?.title_en || data.title} | Huyen's`
             : `${data.title} | Huyen's`;
   const hotel = data.hotel;
   const room = data.room;
@@ -62,7 +63,7 @@ export default function EnglishSite({ data }: { data: EnglishData }) {
     <Head><title>{fullTitle}</title><meta name="description" content={metaDescription} /><meta name="robots" content="index,follow,max-image-preview:large" /><link rel="canonical" href={canonical} /><link rel="alternate" hrefLang="vi-VN" href={vietnamese} /><link rel="alternate" hrefLang="en" href={canonical} /><link rel="alternate" hrefLang="x-default" href={vietnamese} /><meta property="og:type" content={post ? "article" : "website"} /><meta property="og:locale" content="en_US" /><meta property="og:title" content={fullTitle} /><meta property="og:description" content={metaDescription} /><meta property="og:url" content={canonical} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\u003c") }} /></Head>
     <header className="border-b border-slate-200 bg-white px-4 py-4"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4"><Link className="inline-flex min-h-12 items-center py-2 font-bold text-sky-900" href="/en">Huyen&apos;s Hotels &amp; Stays</Link><nav aria-label="Main navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold"><Link className="py-3" href="/en">Hotels</Link><Link className="py-3" href="/en/phong">Rooms &amp; rates</Link><Link className="py-3" href="/en/blog">Travel guides</Link><Link className="py-3" href="/en/tim-phong">Find a room</Link><Link className="py-3" href={canonicalPath} lang="vi" hrefLang="vi-VN" onClick={() => { try { localStorage.setItem("huyen-language", "vi"); localStorage.setItem("language", "vi"); } catch { /* Storage is optional. */ } }}>VI</Link><span aria-current="page">EN</span></nav></div></header>
     <main lang="en" className="mx-auto min-w-0 max-w-7xl px-4 py-10 sm:px-6">
-      <h1 className="max-w-4xl text-3xl font-bold leading-tight text-slate-950 sm:text-5xl">{data.title}</h1>
+      <h1 className="max-w-4xl text-3xl font-bold leading-tight text-slate-950 sm:text-5xl">{data.kind === "article" ? data.post?.title_en || data.title : data.title}</h1>
       <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">{data.description}</p>
       {hotel && <p className="mt-4 text-slate-600">{hotel.address_en}</p>}
       {(data.kind === "home" || data.kind === "hotel" || data.kind === "room") && <Link className={button + " mt-6"} href={booking}>Check dates &amp; availability</Link>}
