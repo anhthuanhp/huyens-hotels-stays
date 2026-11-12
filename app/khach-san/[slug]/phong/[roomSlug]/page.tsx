@@ -676,7 +676,7 @@ export default async function RoomDetailPage({
       );
 
     const roomUrl =
-      `${siteUrl}/khach-san/${encodeURIComponent(slug)}/phong/${encodeURIComponent(roomSlug)}`;
+      `${siteUrl}/khach-san/${encodeURIComponent(slug)}/phong/${encodeURIComponent(canonicalRoomSlug(slug, roomSlug))}`;
 
     const roomImage =
       media.length > 0

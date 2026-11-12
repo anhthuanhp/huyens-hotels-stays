@@ -1,4 +1,5 @@
 import { languageAlternates } from "@/app/lib/localized-path";
+import { canonicalRoomSlug } from "@/app/lib/room-seo-slugs";
 import { districtOnePlace } from "../../lib/local-schema";
 import { cleanSeoText, hotelSeo } from "../../lib/seo";
 
@@ -337,7 +338,7 @@ function createHotelStructuredData(
           undefined;
 
         const roomUrl =
-          `${siteUrl}/khach-san/${encodeURIComponent(hotel.slug)}/phong/${encodeURIComponent(room.slug)}`;
+          `${siteUrl}/khach-san/${encodeURIComponent(hotel.slug)}/phong/${encodeURIComponent(canonicalRoomSlug(hotel.slug, room.slug))}`;
 
         const roomId =
           `${roomUrl}#room`;
