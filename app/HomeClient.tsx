@@ -1189,12 +1189,14 @@ export default function HomeClient({
                         }
                         className="group block overflow-hidden rounded-[11px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a6b36]"
                       >
-                        <div className="h-[130px] overflow-hidden sm:h-[170px] md:h-[200px]">
-                          <img
+                        <div className="relative h-[130px] overflow-hidden sm:h-[170px] md:h-[200px]">
+                          <Image
                             src={post.image || ""}
                             alt={title}
+                            fill
+                            sizes="(max-width: 767px) 50vw, (max-width: 1023px) 50vw, 260px"
                             loading="lazy"
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         </div>
                       </Link>
