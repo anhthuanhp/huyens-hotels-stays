@@ -1,5 +1,7 @@
 "use client";
 
+
+import { trackEvent } from "../components/analytics";
 import { useLanguage } from "@/app/lib/use-language";
 import BookingSuccessReceipt from "./BookingSuccessReceipt";
 import Link from "@/app/components/LocalizedLink";
@@ -918,6 +920,7 @@ function BookingPageContent() {
         );
       }
 
+      trackEvent("submit_booking_request", { hotel_slug: hotelSlug, language, room_count: selectedRooms.length, stay_type: stayType === "day" ? "night" : "month" });
       // The booking API sends Telegram after saving; do not send a second notification here.
       setConfirmed(
         result.booking,

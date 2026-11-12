@@ -1,3 +1,4 @@
+import { trackEvent } from "../components/analytics";
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import { localizedHref } from "@/app/lib/localized-path";
@@ -1359,6 +1360,8 @@ function TimPhongContent() {
         "roomsCount",
         String(requestedRooms)
       );
+
+      trackEvent("begin_booking", { hotel_slug: hotel.slug, language, room_count: selectedRoomCount, stay_type: stayType === "day" ? "night" : "month" });
 
       router.push(
         localizedHref(`/dat-phong?${params.toString()}`, language)

@@ -1,6 +1,8 @@
 
 "use client";
 
+
+import { trackEvent } from "./analytics";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -169,6 +171,7 @@ export default function BookingSearch({
       return;
     }
 
+    trackEvent("search_rooms", { hotel_slug: hotel, language, guest_count: adults + children, stay_type: "night" });
     const params = new URLSearchParams();
     params.set("hotel", hotel);
     params.set("checkIn", checkIn);

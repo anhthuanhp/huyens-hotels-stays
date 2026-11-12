@@ -2,6 +2,7 @@ import { FACEBOOK_PAGE_URL, INSTAGRAM_PAGE_URL, THREADS_PAGE_URL } from "./lib/s
 import type { Metadata } from "next";
 import "./globals.css";
 import VisitorTracker from "./components/VisitorTracker";
+import GoogleAnalytics from "./components/GoogleAnalytics";
 import BackToTopButton from "./components/BackToTopButton";
 import LazyWidgets from "./components/LazyWidgets";
 import { Suspense } from "react";
@@ -95,6 +96,7 @@ export default function RootLayout({ children }: LayoutProps) {
           }}
         />
 
+        <GoogleAnalytics />
         <VisitorTracker />
         <BackToTopButton />
         <Suspense fallback={null}>
