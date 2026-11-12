@@ -25,10 +25,15 @@ declare global {
   }
 }
 
+// Public GA4 stream ID (not a secret). Vercel may override it with the
+// NEXT_PUBLIC_GA_MEASUREMENT_ID environment variable.
+export const GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-3S58RPCTSB';
+
 export function trackEvent(name: AnalyticsEvent, params: EventParameters = {}) {
   if (
   typeof window === 'undefined' ||
-  !process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+  !/^G-[A-Z0-9]+$/.test(GA_MEASUREMENT_ID)
 ) return;
 
 const gaWindow = window as Window & {

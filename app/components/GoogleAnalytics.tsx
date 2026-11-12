@@ -3,16 +3,16 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
-import { trackEvent } from './analytics';
+import { GA_MEASUREMENT_ID, trackEvent } from './analytics';
 
 /** One GA4 instance. Does not initialize when no measurement ID is configured. */
 export default function GoogleAnalytics() {
-  const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  const measurementId = GA_MEASUREMENT_ID;
   const pathname = usePathname();
   const enabled = Boolean(measurementId && /^G-[A-Z0-9]+$/.test(measurementId));
 
   useEffect(() => {
-    if (!enabled || !measurementId) return;
+    if (!enabled || !measurementId || pathname?.startsWith('/admin')) return;
 
     const gaWindow = window as Window & {
       dataLayer?: unknown[][];
@@ -37,7 +37,7 @@ export default function GoogleAnalytics() {
 
     window.gtag('js', new Date());
     window.gtag('config', measurementId);
-  }, [enabled, measurementId]);
+  }, [enabled, measurementId, pathname]);
   useEffect(() => {
     if (!enabled || !pathname || pathname.startsWith('/admin')) return;
     const match = pathname.match(/^\/(?:en\/)?khach-san\/([^/]+)\/phong\/([^/]+)\/?$/);
