@@ -30,11 +30,19 @@ export default function EnglishSite({ data }: { data: EnglishData }) {
   const canonical = origin + localizedHref(canonicalPath, "en");
   const vietnamese = origin + (canonicalPath === "/" ? "" : canonicalPath);
   const englishHotelTitles: Record<string, string> = {
-    "anh-kim-hotel": "Anh Kim Hotel – Co Bac, Saigon | Huyen's",
-    "ae-guesthouse": "A&E Guesthouse – Near Bui Vien | Huyen's",
+    "anh-kim-hotel": "Anh Kim Hotel – Central Saigon, Near Bui Vien | Huyen's",
+    "ae-guesthouse": "A&E Guesthouse – Near Bui Vien Street, Saigon | Huyen's",
     "huyen-house": "Huyen House – Near US Consulate | Huyen's",
     "huyenhomestay": "Huyen Homestay – Monthly Stays | Huyen's",
   };
+  const englishHotelDescriptions: Record<string, string> = {
+    "ae-guesthouse": "Stay near Bui Vien Street and Pham Ngu Lao at A&E Guesthouse in central Saigon. Explore rooms, check nightly rates and book directly.",
+    "anh-kim-hotel": "Stay in central Saigon at Anh Kim Hotel on Co Bac Street, near Bui Vien. Explore double and family rooms, check nightly rates and book directly.",
+  };
+  const metaDescription =
+    data.kind === "hotel" && data.hotel
+      ? englishHotelDescriptions[data.hotel.slug] || data.description
+      : data.description;
   const fullTitle =
     data.kind === "hotel" && data.hotel
       ? englishHotelTitles[data.hotel.slug] || `${seoHotelName(data.hotel.slug, data.hotel.name_en || "")} | Huyen's`
@@ -51,7 +59,7 @@ export default function EnglishSite({ data }: { data: EnglishData }) {
   const booking = "/en/tim-phong" + (hotel ? "?hotel=" + encodeURIComponent(hotel.slug) + (room ? "&room=" + encodeURIComponent(room.slug) : "") : "");
   const schema = { "@context": "https://schema.org", "@type": post ? "BlogPosting" : "WebPage", url: canonical, name: data.title, inLanguage: "en", description: data.description, ...(post ? { headline: post.title_en, datePublished: post.date, ...(post.image ? { image: post.image } : {}), author: { "@type": "Organization", name: "Huyen's Hotels & Stays", url: origin } } : {}) };
   return <>
-    <Head><title>{fullTitle}</title><meta name="description" content={data.description} /><meta name="robots" content="index,follow,max-image-preview:large" /><link rel="canonical" href={canonical} /><link rel="alternate" hrefLang="vi-VN" href={vietnamese} /><link rel="alternate" hrefLang="en" href={canonical} /><link rel="alternate" hrefLang="x-default" href={vietnamese} /><meta property="og:type" content={post ? "article" : "website"} /><meta property="og:locale" content="en_US" /><meta property="og:title" content={fullTitle} /><meta property="og:description" content={data.description} /><meta property="og:url" content={canonical} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\u003c") }} /></Head>
+    <Head><title>{fullTitle}</title><meta name="description" content={metaDescription} /><meta name="robots" content="index,follow,max-image-preview:large" /><link rel="canonical" href={canonical} /><link rel="alternate" hrefLang="vi-VN" href={vietnamese} /><link rel="alternate" hrefLang="en" href={canonical} /><link rel="alternate" hrefLang="x-default" href={vietnamese} /><meta property="og:type" content={post ? "article" : "website"} /><meta property="og:locale" content="en_US" /><meta property="og:title" content={fullTitle} /><meta property="og:description" content={metaDescription} /><meta property="og:url" content={canonical} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\u003c") }} /></Head>
     <header className="border-b border-slate-200 bg-white px-4 py-4"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4"><Link className="inline-flex min-h-12 items-center py-2 font-bold text-sky-900" href="/en">Huyen&apos;s Hotels &amp; Stays</Link><nav aria-label="Main navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold"><Link className="py-3" href="/en">Hotels</Link><Link className="py-3" href="/en/phong">Rooms &amp; rates</Link><Link className="py-3" href="/en/blog">Travel guides</Link><Link className="py-3" href="/en/tim-phong">Find a room</Link><Link className="py-3" href={canonicalPath} lang="vi" hrefLang="vi-VN" onClick={() => { try { localStorage.setItem("huyen-language", "vi"); localStorage.setItem("language", "vi"); } catch { /* Storage is optional. */ } }}>VI</Link><span aria-current="page">EN</span></nav></div></header>
     <main lang="en" className="mx-auto min-w-0 max-w-7xl px-4 py-10 sm:px-6">
       <h1 className="max-w-4xl text-3xl font-bold leading-tight text-slate-950 sm:text-5xl">{data.title}</h1>
