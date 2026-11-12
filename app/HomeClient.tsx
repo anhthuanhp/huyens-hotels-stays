@@ -84,7 +84,9 @@ declare global {
   }
 }
 
-const SLIDE_DURATION = 20;
+// Four slides should not replace the initial LCP image during the first few seconds.
+// A 40-second cycle keeps each slide visible for roughly 10 seconds.
+const SLIDE_DURATION = 40;
 
 const heroFallbackTexts = [
   {
