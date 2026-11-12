@@ -58,7 +58,57 @@ export default function EnglishSite({ data }: { data: EnglishData }) {
   const room = data.room;
   const post = data.post;
   const booking = "/en/tim-phong" + (hotel ? "?hotel=" + encodeURIComponent(hotel.slug) + (room ? "&room=" + encodeURIComponent(room.slug) : "") : "");
-  const schema = { "@context": "https://schema.org", "@type": post ? "BlogPosting" : "WebPage", url: canonical, name: data.title, inLanguage: "en", description: data.description, ...(post ? { headline: post.title_en, datePublished: post.date, ...(post.image ? { image: post.image } : {}), author: { "@type": "Organization", name: "Huyen's Hotels & Stays", url: origin } } : {}) };
+  const pageSchema = { "@context": "https://schema.org", "@type": post ? "BlogPosting" : "WebPage", url: canonical, name: data.title, inLanguage: "en", description: data.description, ...(post ? { headline: post.title_en, datePublished: post.date, ...(post.image ? { image: post.image } : {}), author: { "@type": "Organization", name: "Huyen's Hotels & Stays", url: origin } } : {}) };
+  const roomSchema =
+    data.kind === "room" && room && hotel
+      ? {
+          "@context": "https://schema.org",
+          "@type": "HotelRoom",
+          name: room.name_en,
+          description: room.description_en,
+          url: canonical,
+          inLanguage: "en",
+          ...(room.image ? { image: room.image } : {}),
+          containedInPlace: {
+            "@type": "Hotel",
+            name: hotel.name_en,
+            url: `${origin}/en/khach-san/${hotel.slug}`,
+            address: {
+              "@type": "PostalAddress",
+              streetAddress: hotel.address_en,
+              addressCountry: "VN",
+            },
+          },
+          occupancy: {
+            "@type": "QuantitativeValue",
+            maxValue: room.max_guests,
+          },
+          floorSize: {
+            "@type": "QuantitativeValue",
+            value: room.size,
+            unitCode: "MTK",
+          },
+          ...(typeof room.base_price_daily === "number" &&
+          room.base_price_daily > 0
+            ? {
+                offers: {
+                  "@type": "Offer",
+                  price: room.base_price_daily,
+                  priceCurrency: "VND",
+                  url: `${origin}${booking}`,
+                  priceSpecification: {
+                    "@type": "UnitPriceSpecification",
+                    price: room.base_price_daily,
+                    priceCurrency: "VND",
+                    unitText: "night",
+                  },
+                },
+              }
+            : {}),
+        }
+      : null;
+
+  const schema = roomSchema || pageSchema;
   return <>
     <Head><title>{fullTitle}</title><meta name="description" content={metaDescription} /><meta name="robots" content="index,follow,max-image-preview:large" /><link rel="canonical" href={canonical} /><link rel="alternate" hrefLang="vi-VN" href={vietnamese} /><link rel="alternate" hrefLang="en" href={canonical} /><link rel="alternate" hrefLang="x-default" href={vietnamese} /><meta property="og:type" content={post ? "article" : "website"} /><meta property="og:locale" content="en_US" /><meta property="og:title" content={fullTitle} /><meta property="og:description" content={metaDescription} /><meta property="og:url" content={canonical} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\u003c") }} /></Head>
     <header className="border-b border-slate-200 bg-white px-4 py-4"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4"><Link className="inline-flex min-h-12 items-center py-2 font-bold text-sky-900" href="/en">Huyen&apos;s Hotels &amp; Stays</Link><nav aria-label="Main navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold"><Link className="py-3" href="/en">Hotels</Link><Link className="py-3" href="/en/phong">Rooms &amp; rates</Link><Link className="py-3" href="/en/blog">Travel guides</Link><Link className="py-3" href="/en/tim-phong">Find a room</Link><Link className="py-3" href={canonicalPath} lang="vi" hrefLang="vi-VN" onClick={() => { try { localStorage.setItem("huyen-language", "vi"); localStorage.setItem("language", "vi"); } catch { /* Storage is optional. */ } }}>VI</Link><span aria-current="page">EN</span></nav></div></header>
