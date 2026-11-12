@@ -729,7 +729,7 @@ export default function HotelDetailClient({
                                     {room.max_guests}{" "}
                                     {language === "vi"
                                       ? "khách"
-                                      : "guests"}
+                                      : room.max_guests === 1 ? "guest" : "guests"}
                                   </span>
                                 </div>
                               )}

@@ -1133,7 +1133,7 @@ export default function RoomDetailClient({
                     {language ===
                     "vi"
                       ? "khách"
-                      : "guests"}
+                      : room.max_guests === 1 ? "guest" : "guests"}
                   </p>
                 </div>
               )}

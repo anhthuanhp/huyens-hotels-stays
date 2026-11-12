@@ -257,9 +257,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const english = englishPaths(await englishInventory())
     .map(parts => parts.length ? "/" + parts.map(encodeURIComponent).join("/") : "/")
-    // Trang chủ /en đã bị loại bỏ (redirect vĩnh viễn về "/"),
-    // không liệt kê vào sitemap nữa.
-    .filter(path => path !== "/")
     .map(canonicalSeoPath)
     .filter((url, index, urls) => urls.indexOf(url) === index);
   const paired = new Set(english);
