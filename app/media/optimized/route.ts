@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 export const runtime = "nodejs";
 const LIMIT = 199_000;
 const HOST = "lltfkvpgzxybvzpqpjqk.supabase.co";
-const WIDTHS = [16, 32, 48, 64, 96, 128, 256, 320, 384, 480, 576, 640, 750, 828, 1080, 1200, 1920];
+const WIDTHS = [16, 32, 48, 64, 96, 128, 256, 384, 640, 750, 828, 1080, 1200, 1920];
 
 export async function GET(request: NextRequest) {
   const src = request.nextUrl.searchParams.get("src") || "";
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     if (!output || output.length >= LIMIT) return new Response("Image cannot fit budget", { status: 422 });
     return new Response(new Uint8Array(output), { headers: {
       "Content-Type": "image/webp", "Content-Length": String(output.length),
-      "Cache-Control": "public, max-age=604800, s-maxage=2592000, stale-while-revalidate=604800",
+      "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800",
       "X-Content-Type-Options": "nosniff",
     } });
   } catch {
