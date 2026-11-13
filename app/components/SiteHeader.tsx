@@ -90,7 +90,7 @@ export default function SiteHeader() {
   const language = useLanguage();
 
   if (
-    pathname === "/" ||
+    (pathname === "/" || pathname === "/en") ||
     pathname === "/admin" ||
     pathname.startsWith("/admin/")
   ) {
