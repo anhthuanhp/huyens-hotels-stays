@@ -84,9 +84,7 @@ declare global {
   }
 }
 
-// Four slides should not replace the initial LCP image during the first few seconds.
-// A 40-second cycle keeps each slide visible for roughly 10 seconds.
-const SLIDE_DURATION = 40;
+const SLIDE_DURATION = 20;
 
 const heroFallbackTexts = [
   {
@@ -391,7 +389,6 @@ export default function HomeClient({
                         alt={alt}
                         fill
                         preload={isFirst}
-                        fetchPriority={isFirst ? "high" : "auto"}
                         loading={isFirst ? "eager" : "lazy"}
                         quality={75}
                         sizes="100vw"
@@ -616,11 +613,7 @@ export default function HomeClient({
               <div className="grid h-[280px] min-h-0 grid-cols-[1.6fr_1fr] gap-[11px] pl-[14px] max-lg:h-[220px] max-sm:mt-2 max-sm:h-[180px] max-sm:pl-0">
 
                 <img
-                  src="https://images.pexels.com/photos/3771087/pexels-photo-3771087.jpeg?auto=compress&cs=tinysrgb&h=360&w=520"
-                  srcSet="https://images.pexels.com/photos/3771087/pexels-photo-3771087.jpeg?auto=compress&cs=tinysrgb&w=320 320w, https://images.pexels.com/photos/3771087/pexels-photo-3771087.jpeg?auto=compress&cs=tinysrgb&w=520 520w, https://images.pexels.com/photos/3771087/pexels-photo-3771087.jpeg?auto=compress&cs=tinysrgb&w=760 760w"
-                  sizes="(max-width: 640px) 60vw, (max-width: 1023px) 60vw, 30vw"
-                  width={520}
-                  height={360}
+                  src="https://images.pexels.com/photos/3771087/pexels-photo-3771087.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
                   alt={isVi ? "Không gian lưu trú Huyen's" : "Huyen's stay experience"}
                   loading="lazy"
                   className="h-full min-h-0 w-full rounded-xl object-cover"
@@ -628,22 +621,14 @@ export default function HomeClient({
 
                 <div className="grid min-h-0 grid-rows-2 gap-[11px]">
                   <img
-                    src="https://images.pexels.com/photos/40624417/pexels-photo-40624417.jpeg?auto=compress&cs=tinysrgb&h=240&w=320"
-                  srcSet="https://images.pexels.com/photos/40624417/pexels-photo-40624417.jpeg?auto=compress&cs=tinysrgb&w=160 160w, https://images.pexels.com/photos/40624417/pexels-photo-40624417.jpeg?auto=compress&cs=tinysrgb&w=320 320w, https://images.pexels.com/photos/40624417/pexels-photo-40624417.jpeg?auto=compress&cs=tinysrgb&w=480 480w"
-                  sizes="(max-width: 640px) 38vw, (max-width: 1023px) 38vw, 18vw"
-                  width={320}
-                  height={240}
+                    src="https://images.pexels.com/photos/40624417/pexels-photo-40624417.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
                     alt={isVi ? "Không gian phòng nghỉ" : "Guest room"}
                     loading="lazy"
                     className="h-full min-h-0 w-full rounded-xl object-cover"
                   />
 
                   <img
-                    src="https://images.pexels.com/photos/5007253/pexels-photo-5007253.jpeg?auto=compress&cs=tinysrgb&h=240&w=320"
-                  srcSet="https://images.pexels.com/photos/5007253/pexels-photo-5007253.jpeg?auto=compress&cs=tinysrgb&w=160 160w, https://images.pexels.com/photos/5007253/pexels-photo-5007253.jpeg?auto=compress&cs=tinysrgb&w=320 320w, https://images.pexels.com/photos/5007253/pexels-photo-5007253.jpeg?auto=compress&cs=tinysrgb&w=480 480w"
-                  sizes="(max-width: 640px) 38vw, (max-width: 1023px) 38vw, 18vw"
-                  width={320}
-                  height={240}
+                    src="https://images.pexels.com/photos/5007253/pexels-photo-5007253.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
                     alt={isVi ? "Trải nghiệm lưu trú" : "Stay experience"}
                     loading="lazy"
                     className="h-full min-h-0 w-full rounded-xl object-cover"
@@ -1201,14 +1186,12 @@ export default function HomeClient({
                         }
                         className="group block overflow-hidden rounded-[11px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a6b36]"
                       >
-                        <div className="relative h-[130px] overflow-hidden sm:h-[170px] md:h-[200px]">
-                          <Image
+                        <div className="h-[130px] overflow-hidden sm:h-[170px] md:h-[200px]">
+                          <img
                             src={post.image || ""}
                             alt={title}
-                            fill
-                            sizes="(max-width: 767px) 50vw, (max-width: 1023px) 50vw, 260px"
                             loading="lazy"
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         </div>
                       </Link>
