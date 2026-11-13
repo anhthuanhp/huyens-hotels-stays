@@ -1,11 +1,19 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { createContext, createElement, useContext, useSyncExternalStore, type ReactNode } from "react";
 
 export type Language = "vi" | "en";
 let currentLanguage: Language | undefined;
+const RouteLanguageContext = createContext<Language | null>(null);
+
+export function RouteLanguage({ language, children }: { language: Language; children: ReactNode }) {
+  return createElement(RouteLanguageContext.Provider, { value: language }, children);
+}
 
 function readLanguage(): Language {
+  if (currentLanguage) return currentLanguage;
+  // Always start on the requested language for indexed English paths.
+  if (typeof window !== "undefined" && /^\/en(?:\/|$)/.test(window.location.pathname)) return "en";
   try {
     for (const key of ["huyen-language", "language"]) {
       const saved = localStorage.getItem(key);
@@ -14,7 +22,7 @@ function readLanguage(): Language {
   } catch {
     // Fall back to memory when browser storage is unavailable.
   }
-  return currentLanguage ?? "vi";
+  return "vi";
 }
 
 function subscribe(onChange: () => void) {
@@ -56,7 +64,8 @@ export function setLanguage(language: Language) {
 const serverLanguage = (): Language => "vi";
 
 export function useLanguage() {
-  const saved = useSyncExternalStore(subscribe, readLanguage, serverLanguage);
+  const routeLanguage = useContext(RouteLanguageContext);
+  const saved = useSyncExternalStore(subscribe, readLanguage, () => routeLanguage ?? serverLanguage());
   return saved;
 }
 
