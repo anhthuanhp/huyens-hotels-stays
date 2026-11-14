@@ -2,12 +2,12 @@
 "use client";
 
 
+import BookingDateField, { localToday, nextBookingDay } from "./BookingDateField";
 import { trackEvent } from "./analytics";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
-  CalendarDays,
   ChevronDown,
   Search,
   UserRound,
@@ -31,14 +31,6 @@ type BookingSearchProps = {
   stayMode?: "short" | "long";
   floating?: boolean;
 };
-
-function localToday() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 export default function BookingSearch({
   hotels,
@@ -76,27 +68,6 @@ export default function BookingSearch({
   const [children, setChildren] = useState(0);
   const [guestsOpen, setGuestsOpen] = useState(false);
   const guestsRef = useRef<HTMLDivElement>(null);
-  const checkInRef = useRef<HTMLInputElement>(null);
-  const checkOutRef = useRef<HTMLInputElement>(null);
-
-  const openDatePicker = (
-    inputRef: React.RefObject<HTMLInputElement | null>
-  ) => {
-    const input = inputRef.current;
-    if (!input) return;
-
-    try {
-      if (typeof input.showPicker === "function") {
-        input.showPicker();
-      } else {
-        input.focus();
-        input.click();
-      }
-    } catch {
-      input.focus();
-    }
-  };
-
   const today = localToday();
 
   useEffect(() => {
@@ -264,84 +235,26 @@ export default function BookingSearch({
           />
         </label>
 
-        {/* Ngày nhận phòng */}
-        <div className={`${fieldBase} relative cursor-pointer`}>
-          <CalendarDays
-            size={20}
-            className="shrink-0"
-            aria-hidden="true"
-          />
-
-          <span className="min-w-0 flex-1">
-            <span className={smallLabel}>
-              {isVi ? "Ngày nhận phòng" : "Check-in"}
-            </span>
-
-            <span className="block text-[12px] font-bold text-[#151b18]">
-              {checkIn
-                ? checkIn.split("-").reverse().join("/")
-                : "dd/mm/yyyy"}
-            </span>
-          </span>
-
-          <input
-            ref={checkInRef}
-            type="date"
-            min={today}
-            value={checkIn}
-            onClick={() => openDatePicker(checkInRef)}
-            onChange={(event) => {
-              const next = event.target.value;
-              setCheckIn(next);
-
-              if (checkOut && checkOut <= next) {
-                setCheckOut("");
-              }
-            }}
-            aria-label={isVi ? "Ngày nhận phòng" : "Check-in"}
-            className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
-          />
-        </div>
-{/* Ngày trả phòng */}
-        <div className={`${fieldBase} relative cursor-pointer`}>
-          <CalendarDays
-            size={20}
-            className="shrink-0"
-            aria-hidden="true"
-          />
-
-          <span className="min-w-0 flex-1">
-            <span className={smallLabel}>
-              {isVi ? "Ngày trả phòng" : "Check-out"}
-            </span>
-
-            <span className="block text-[12px] font-bold text-[#151b18]">
-              {checkOut
-                ? checkOut.split("-").reverse().join("/")
-                : "dd/mm/yyyy"}
-            </span>
-          </span>
-
-          <input
-            ref={checkOutRef}
-            type="date"
-            min={checkIn || today}
-            value={checkOut}
-            onClick={() => openDatePicker(checkOutRef)}
-            onChange={(event) => {
-              const next = event.target.value;
-
-              if (checkIn && next <= checkIn) {
-                setCheckOut("");
-              } else {
-                setCheckOut(next);
-              }
-            }}
-            aria-label={isVi ? "Ngày trả phòng" : "Check-out"}
-            className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
-          />
-        </div>
-{/* Số khách: người lớn và trẻ em */}
+        <BookingDateField
+          compact
+          label={isVi ? "Ngày nhận phòng" : "Check-in"}
+          value={checkIn}
+          min={today}
+          isVi={isVi}
+          onChange={(next) => {
+            setCheckIn(next);
+            if (checkOut && checkOut <= next) setCheckOut("");
+          }}
+        />
+        <BookingDateField
+          compact
+          label={isVi ? "Ngày trả phòng" : "Check-out"}
+          value={checkOut}
+          min={checkIn ? nextBookingDay(checkIn) : nextBookingDay(today)}
+          isVi={isVi}
+          onChange={setCheckOut}
+        />
+        {/* Số khách: người lớn và trẻ em */}
         <div
           ref={guestsRef}
           className="relative min-w-0 lg:mr-3"

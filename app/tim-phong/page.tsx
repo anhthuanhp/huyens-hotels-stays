@@ -1,4 +1,6 @@
 "use client";
+import BookingDateField, { localToday, nextBookingDay } from "../components/BookingDateField";
+import ContactFloat from "../components/ContactFloat";
 import { trackEvent } from "../components/analytics";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { localizedHref } from "@/app/lib/localized-path";
@@ -14,7 +16,6 @@ import {
   useRef,
   useState,
   useCallback,
-  type RefObject,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
@@ -245,11 +246,7 @@ function TimPhongContent() {
   const [editError, setEditError] =
     useState("");
 
-  const checkInRef =
-    useRef<HTMLInputElement>(null);
-
-  const checkOutRef =
-    useRef<HTMLInputElement>(null);
+  const today = localToday();
 
   useEffect(() => {
     let cancelled = false;
@@ -969,28 +966,6 @@ function TimPhongContent() {
       nights,
     ]);
 
-  const openDatePicker =
-    useCallback(
-      (
-        ref: RefObject<
-          HTMLInputElement | null
-        >
-      ) => {
-        ref.current?.focus();
-
-        try {
-          (
-            ref.current as
-              | (HTMLInputElement & {
-                  showPicker?: () => void;
-                })
-              | null
-          )?.showPicker?.();
-        } catch {}
-      },
-      []
-    );
-
   /*
     Đổi loại thuê.
   */
@@ -1026,6 +1001,17 @@ function TimPhongContent() {
             language === "vi"
               ? "Chọn ngày vào và ngày ra"
               : "Select check-in/out dates"
+          );
+          return;
+        }
+
+        if (
+          editCheckIn < localToday()
+        ) {
+          setEditError(
+            language === "vi"
+              ? "Ngày vào không được ở trong quá khứ"
+              : "Check-in cannot be in the past"
           );
           return;
         }
@@ -1501,130 +1487,23 @@ function TimPhongContent() {
             {editStayType ===
             "day" ? (
               <>
-                <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    {language === "vi"
-                      ? "Ngày vào"
-                      : "Check-in"}
-                  </label>
-
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() =>
-                      openDatePicker(
-                        checkInRef
-                      )
-                    }
-                    onKeyDown={(
-                      event
-                    ) => {
-                      if (
-                        event.key ===
-                          "Enter" ||
-                        event.key ===
-                          " "
-                      ) {
-                        event.preventDefault();
-
-                        openDatePicker(
-                          checkInRef
-                        );
-                      }
-                    }}
-                    className="relative flex h-12 w-full cursor-pointer items-center rounded-xl border border-neutral-200 bg-white px-4 hover:border-slate-400 focus-within:border-slate-500"
-                  >
-                    <input
-                      ref={
-                        checkInRef
-                      }
-                      type="date"
-                      min={
-                        new Date()
-                          .toISOString()
-                          .split(
-                            "T"
-                          )[0]
-                      }
-                      value={
-                        editCheckIn
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        setEditCheckIn(
-                          event
-                            .target
-                            .value
-                        )
-                      }
-                      className="h-full w-full cursor-pointer border-0 bg-transparent p-0 text-sm font-medium text-slate-900 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    {language === "vi"
-                      ? "Ngày đi"
-                      : "Check-out"}
-                  </label>
-
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() =>
-                      openDatePicker(
-                        checkOutRef
-                      )
-                    }
-                    onKeyDown={(
-                      event
-                    ) => {
-                      if (
-                        event.key ===
-                          "Enter" ||
-                        event.key ===
-                          " "
-                      ) {
-                        event.preventDefault();
-
-                        openDatePicker(
-                          checkOutRef
-                        );
-                      }
-                    }}
-                    className="relative flex h-12 w-full cursor-pointer items-center rounded-xl border border-neutral-200 bg-white px-4 hover:border-slate-400 focus-within:border-slate-500"
-                  >
-                    <input
-                      ref={
-                        checkOutRef
-                      }
-                      type="date"
-                      value={
-                        editCheckOut
-                      }
-                      min={
-                        editCheckIn ||
-                        new Date()
-                          .toISOString()
-                          .split(
-                            "T"
-                          )[0]
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        setEditCheckOut(
-                          event
-                            .target
-                            .value
-                        )
-                      }
-                      className="h-full w-full cursor-pointer border-0 bg-transparent p-0 text-sm font-medium text-slate-900 outline-none"
-                    />
-                  </div>
-                </div>
+                <BookingDateField
+                  label={language === "vi" ? "Ngày vào" : "Check-in"}
+                  value={editCheckIn}
+                  min={today}
+                  isVi={language === "vi"}
+                  onChange={(next) => {
+                    setEditCheckIn(next);
+                    if (editCheckOut && editCheckOut <= next) setEditCheckOut("");
+                  }}
+                />
+                <BookingDateField
+                  label={language === "vi" ? "Ngày đi" : "Check-out"}
+                  value={editCheckOut}
+                  min={nextBookingDay(editCheckIn >= today ? editCheckIn : today)}
+                  isVi={language === "vi"}
+                  onChange={setEditCheckOut}
+                />
               </>
             ) : (
               <div>
@@ -1911,6 +1790,8 @@ function TimPhongContent() {
             </div>
           </div>
         </section>
+
+        <ContactFloat inline />
 
         {!hasValidSearch ? (
           <div className="rounded-2xl border border-neutral-200 bg-white p-10 text-center shadow-sm">
