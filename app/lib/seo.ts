@@ -20,7 +20,7 @@ export function seoDescription(value: string, limit = 158): string {
 export const STATIC_SEO: Record<string, { title: string; description: string }> = {
   "/khach-san-quan-1-cu": { title: "Khách sạn Quận 1 cũ Sài Gòn", description: "Tìm hiểu cách chọn khách sạn Quận 1 cũ, trung tâm Sài Gòn cùng Huyen's. So sánh vị trí, loại phòng và chính sách trước khi gửi yêu cầu đặt phòng." },
   "/": { title: "Huyen's Hotels & Stays \| Khách sạn, homestay TP.HCM", description: "Khám phá khách sạn và homestay Huyen’s tại Quận 1 cũ, trung tâm Sài Gòn. Xem cơ sở ở Cô Bắc, Đỗ Quang Đẩu, Nguyễn Thị Minh Khai và đặt phòng trực tiếp." },
-  "/phong": { title: "Phòng và giá lưu trú tại TP.HCM", description: "So sánh các loại phòng tại Huyen's Hotels & Stays ở TP.HCM. Xem giá thuê ngày, giá tháng, diện tích, sức chứa và tiện nghi để chọn phòng phù hợp." },
+  "/phong": { title: "Phòng và giá lưu trú tại TP.HCM", description: "So sánh phòng theo giá mỗi đêm, diện tích, sức chứa và tiện nghi tại Huyen's Hotels & Stays ở TP.HCM. Chọn ngày lưu trú và xem thông tin đặt phòng." },
   "/kham-pha-huyens": { title: "Về Huyen's Hotels & Stays", description: "Tìm hiểu Huyen's Hotels & Stays và các cơ sở lưu trú tại TP.HCM. Khám phá phong cách từng khách sạn, guesthouse, homestay và cách liên hệ đặt phòng." },
   "/trai-nghiem": { title: "Trải nghiệm và khám phá TP.HCM", description: "Khám phá hoạt động, ẩm thực và những góc phố tại TP.HCM cùng Huyen's Hotels & Stays. Tham khảo ý tưởng trải nghiệm để lên kế hoạch cho kỳ lưu trú." },
   "/blog": { title: "Blog và kinh nghiệm du lịch TP.HCM", description: "Đọc kinh nghiệm chọn khách sạn, khám phá ẩm thực và lịch trình du lịch TP.HCM trên blog Huyen's Hotels & Stays để chuẩn bị cho chuyến đi của bạn." },
@@ -29,7 +29,7 @@ export const STATIC_SEO: Record<string, { title: string; description: string }> 
   "/chinh-sach-huy-phong": { title: "Chính sách hoàn và hủy phòng", description: "Tìm hiểu điều kiện hoàn tiền, hủy phòng, đổi ngày lưu trú và trường hợp không đến tại Huyen's Hotels & Stays trước khi xác nhận đặt phòng." },
   "/chinh-sach-bao-mat": { title: "Chính sách bảo mật thông tin", description: "Xem cách Huyen's Hotels & Stays thu thập, sử dụng và bảo vệ thông tin khi bạn tìm phòng, gửi yêu cầu đặt phòng hoặc liên hệ qua website." },
   "/chinh-sach-khac": { title: "Chính sách giá, cọc và thanh toán", description: "Xem chính sách giá, đặt cọc, thanh toán, khiếu nại và chấm dứt thuê phòng tại Huyen's Hotels & Stays. Xác nhận điều kiện áp dụng trước khi thanh toán." },
-  "/tim-phong": { title: "Tìm phòng theo ngày hoặc tháng", description: "Chọn khách sạn, ngày lưu trú, số khách và hình thức thuê ngày hoặc tháng tại Huyen's Hotels & Stays. Kiểm tra lựa chọn phù hợp trước khi đặt phòng." },
+  "/tim-phong": { title: "Tìm phòng theo ngày tại TP.HCM", description: "Chọn khách sạn, ngày nhận và trả phòng, số khách tại Huyen's Hotels & Stays. Xem phòng và giá theo đêm trước khi gửi yêu cầu đặt phòng." },
   "/dat-phong": { title: "Xác nhận yêu cầu đặt phòng", description: "Kiểm tra khách sạn, loại phòng, ngày lưu trú và tổng tiền tại Huyen's Hotels & Stays. Nhập thông tin liên hệ và gửi yêu cầu đặt phòng trực tiếp." },
 };
 
@@ -64,10 +64,10 @@ export function hotelSeo(hotel: HotelSeoData) {
   const name = cleanSeoText(hotel.name_vi || hotel.name_en) || "Cơ sở lưu trú";
   const address = cleanSeoText(hotel.address_vi || hotel.address_en);
   const positioning: Record<string, { title: string; description: string }> = {
-    "anh-kim-hotel": { title: "Anh Kim Hotel – Cô Bắc, gần Bùi Viện", description: "Anh Kim Hotel trên đường Cô Bắc, thuận tiện đến Bùi Viện và chợ Bến Thành. So sánh phòng đôi, phòng gia đình, giá mỗi đêm và đặt phòng trực tiếp." },
-    "ae-guesthouse": { title: "A&E Guesthouse – Gần Bùi Viện", description: "A&E Guesthouse tại Đỗ Quang Đẩu, gần Bùi Viện và Phạm Ngũ Lão. So sánh giá, phòng đôi và phòng gia đình để chọn chỗ ở phù hợp ngân sách tại Sài Gòn." },
-    "huyen-house": { title: "Huyen House – Gần Lãnh sự quán Mỹ", description: "Huyen House trên đường Nguyễn Thị Minh Khai, gần Tổng Lãnh sự quán Mỹ tại TP.HCM. Tham khảo phòng cho khách công tác, đi học hoặc có lịch hẹn lãnh sự." },
-    "huyenhomestay": { title: "Huyen Homestay – Thuê tháng TP.HCM", description: "Huyen Homestay tại Nguyễn Thị Minh Khai, trung tâm TP.HCM. So sánh phòng và giá ở dài ngày; xác nhận tiền cọc, điện nước, dịch vụ trước khi thuê tháng." },
+    "anh-kim-hotel": { title: "Anh Kim Hotel – Khách sạn Cô Bắc, gần Bùi Viện", description: "Anh Kim Hotel tại Cô Bắc, thuận tiện đến Bùi Viện và chợ Bến Thành. Xem phòng đôi, phòng gia đình, giá theo đêm và đặt phòng trực tiếp." },
+    "ae-guesthouse": { title: "A&E Guesthouse – Phòng nghỉ gần Bùi Viện, TP.HCM", description: "A&E Guesthouse tại Đỗ Quang Đẩu, gần Bùi Viện và Phạm Ngũ Lão. Xem các loại phòng, giá theo đêm và lựa chọn phù hợp cho chuyến du lịch Sài Gòn." },
+    "huyen-house": { title: "Huyen House – Phòng nghỉ Nguyễn Thị Minh Khai", description: "Huyen House tại Nguyễn Thị Minh Khai, gần Tổng Lãnh sự quán Mỹ. Xem phòng nghỉ theo ngày cho khách du lịch, công tác và các chuyến đi ngắn." },
+    "huyenhomestay": { title: "Huyen Homestay – Phòng nghỉ theo ngày tại TP.HCM", description: "Huyen Homestay tại Nguyễn Thị Minh Khai, trung tâm TP.HCM. Khám phá các loại phòng, xem giá theo đêm và đặt phòng trực tiếp cho chuyến đi của bạn." },
   };
   const copy = hotel.slug ? positioning[hotel.slug] : undefined;
   if (copy) return { title: copy.title + " | Huyen's", description: seoDescription(copy.description) };
