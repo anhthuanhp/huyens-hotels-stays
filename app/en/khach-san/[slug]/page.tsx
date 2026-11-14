@@ -1,4 +1,4 @@
-import { HotelDetails } from "../../../khach-san/[slug]/page";
+import { HotelDetails } from "../../../khach-san/[slug]/HotelDetails";
 import { englishRouteMetadata } from "../../../lib/english-route-metadata";
 
 export const revalidate = 60;

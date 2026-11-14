@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useLanguage } from "../lib/use-language";
 import { useState } from "react";
@@ -9,7 +10,9 @@ import {
   X,
 } from "lucide-react";
 
-export default function ContactFloat() {
+export default function ContactFloat({ inline = false }: { inline?: boolean }) {
+  const pathname = usePathname();
+  const isRoomSearch = pathname === "/tim-phong" || pathname === "/en/tim-phong";
   const language = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -22,10 +25,12 @@ export default function ContactFloat() {
   }
 
   return (
-    <div className="fixed bottom-5 right-5 z-[9998]">
+    <div className={inline
+      ? "relative z-40 mb-4 ml-auto w-fit md:hidden"
+      : `fixed bottom-5 right-5 z-[9998] ${isRoomSearch ? "hidden md:block" : ""}`}>
       {/* Các nút con */}
       <div
-        className={`absolute bottom-14 right-0 flex flex-col items-end gap-2 transition-all duration-200 ${
+        className={`absolute right-0 flex flex-col items-end gap-2 transition-all duration-200 ${inline ? "top-14" : "bottom-14"} ${
           isOpen
             ? "pointer-events-auto translate-y-0 opacity-100"
             : "pointer-events-none translate-y-3 opacity-0"
