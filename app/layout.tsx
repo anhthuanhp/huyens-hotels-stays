@@ -18,7 +18,7 @@ const siteName = "Huyen's Hotels & Stays";
 
 // === Tối ưu Title & Meta chính ===
 const defaultTitle = "Khách sạn và homestay TP.HCM | Huyen's Hotels & Stays";
-const defaultDescription = "Tìm khách sạn, guesthouse và homestay tại TP.HCM cùng Huyen's Hotels & Stays. Xem vị trí, loại phòng, giá ngày hoặc tháng và gửi yêu cầu đặt phòng.";
+const defaultDescription = "Tìm khách sạn, guesthouse và homestay tại TP.HCM cùng Huyen's Hotels & Stays. Xem vị trí, loại phòng, giá theo đêm và gửi yêu cầu đặt phòng.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -91,7 +91,7 @@ export default function RootLayout({ children }: LayoutProps) {
               url: siteUrl,
               telephone: "+84 902095669",
               description:
-                "Huyen's Hotels & Stays cung cấp khách sạn, homestay và căn hộ dịch vụ tại trung tâm Thành phố Hồ Chí Minh.",
+                "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay lưu trú theo đêm tại Thành phố Hồ Chí Minh.",
             }),
           }}
         />
