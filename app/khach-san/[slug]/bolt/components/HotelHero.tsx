@@ -15,8 +15,8 @@ interface Props {
 
 const BASE_COUNT = 5;
 
-export default function HotelHero({ images, hotelName, locale, placeholderText, propertyType, officialStarRating }: Props) {
-  hotelName = hotelName.normalize("NFC");
+export default function HotelHero({ images, hotelName: rawHotelName, locale, placeholderText, propertyType, officialStarRating }: Props) {
+  const hotelName = rawHotelName.normalize("NFC");
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef<number | null>(null);
@@ -60,7 +60,7 @@ export default function HotelHero({ images, hotelName, locale, placeholderText, 
     <section className="relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10">
         <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-2 text-sm text-muted">
-          <span>Huyen's Hotels &amp; Stays</span>
+          <span>Huyen&apos;s Hotels &amp; Stays</span>
           <span aria-hidden>/</span>
           <span>{t(ui.breadcrumbHotels, locale)}</span>
           <span aria-hidden>/</span>

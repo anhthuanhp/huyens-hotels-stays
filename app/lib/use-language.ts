@@ -4,6 +4,7 @@ import { createContext, createElement, useContext, useSyncExternalStore, type Re
 
 export type Language = "vi" | "en";
 let currentLanguage: Language | undefined;
+let subscriptions = 0;
 const RouteLanguageContext = createContext<Language | null>(null);
 
 export function RouteLanguage({ language, children }: { language: Language; children: ReactNode }) {
@@ -26,6 +27,7 @@ function readLanguage(): Language {
 }
 
 function subscribe(onChange: () => void) {
+  subscriptions++;
   const handleChange = (event: Event) => {
     const detail: unknown = (event as CustomEvent<unknown>).detail;
     currentLanguage = detail === "vi" || detail === "en" ? detail : undefined;
@@ -43,6 +45,13 @@ function subscribe(onChange: () => void) {
   return () => {
     window.removeEventListener("language-change", handleChange);
     window.removeEventListener("storage", handleStorage);
+    if (--subscriptions === 0) {
+      try {
+        if (localStorage.getItem("huyen-language") === currentLanguage) currentLanguage = undefined;
+      } catch {
+        // Preserve the in-memory preference when storage is blocked.
+      }
+    }
   };
 }
 

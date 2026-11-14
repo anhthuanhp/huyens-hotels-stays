@@ -12,7 +12,10 @@ export const dynamic = "force-static";
 
 export async function generateStaticParams() {
   const { data, error } = await getSupabaseServerClient().from("blog_posts").select("slug").eq("status", "active");
-  if (error) throw new Error(`Cannot generate blog paths: ${error.message}`);
+  if (error) {
+    console.warn("Blog slugs unavailable at build time. Posts will be generated on demand.");
+    return [];
+  }
   return (data || []).filter((post) => typeof post.slug === "string" && post.slug.trim()).map((post) => ({ slug: post.slug }));
 }
 
@@ -86,7 +89,7 @@ const getPost = cache(
         error
       );
 
-      return null;
+      throw new Error("Blog post data is temporarily unavailable.");
     }
 
     return data as BlogPost | null;

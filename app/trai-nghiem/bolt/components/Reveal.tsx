@@ -15,8 +15,8 @@ export default function Reveal({ children, delay = 0, className = '' }: RevealPr
     if (!element) return;
 
     if (typeof IntersectionObserver === 'undefined') {
-      setVisible(true);
-      return;
+      const frame = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(frame);
     }
 
     const observer = new IntersectionObserver(

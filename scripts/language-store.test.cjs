@@ -11,6 +11,7 @@ const source = ts.transpileModule(fs.readFileSync("app/lib/use-language.ts", "ut
 function createStore(values = {}, blocked = false) {
   const storage = new Map(Object.entries(values));
   const window = new EventTarget();
+  window.location = { pathname: "/" };
   const testModule = { exports: {} };
   const context = {
     module: testModule, exports: testModule.exports, window, CustomEvent,
@@ -19,10 +20,12 @@ function createStore(values = {}, blocked = false) {
       setItem: (key, value) => { if (blocked) throw new Error("Storage blocked"); storage.set(key, value); },
     },
     require: name => {
-      if (name === "./localized-path") return {};
-      if (name === "next/navigation") return { usePathname: () => "/" };
       assert.equal(name, "react");
-      return { useSyncExternalStore: (subscribe, read, server) => ({ subscribe, read, server }) };
+      return {
+        createContext: (initial) => ({ initial }),
+        useContext: (context) => context.initial,
+        useSyncExternalStore: (subscribe, read, server) => ({ subscribe, read, server }),
+      };
     },
   };
   vm.runInNewContext(source, context);
