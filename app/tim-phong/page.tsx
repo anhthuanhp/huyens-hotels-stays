@@ -18,6 +18,8 @@ import {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import { legacyRoomSlug } from "../lib/room-seo-slugs";
+import { MAX_REQUESTED_ROOMS } from "../lib/gohost-calendar";
 
 const EMPTY_SEARCH_PARAMS = new URLSearchParams();
 
@@ -87,8 +89,9 @@ type AvailabilityRoom = {
   roomSlug: string;
   hotelSlug: string;
   totalQuantity: number;
-  bookedQuantity: number;
-  availableQuantity: number;
+  bookedQuantity: number | null;
+  availableQuantity: number | null;
+  availabilityStatus: "available" | "sold_out" | "unverified";
   basePrice?: number | null;
   basePriceDaily?: number | null;
   basePriceMonthly?: number | null;
@@ -102,6 +105,7 @@ type DisplayRoom = Room & {
   availableQuantity: number;
   bookedQuantity: number;
   totalQuantity: number;
+  availabilityStatus: AvailabilityRoom["availabilityStatus"];
 };
 
 const fallbackRoomImage = "/images/hero/hero-2.jpg";
@@ -213,9 +217,12 @@ function TimPhongContent() {
 
   const [availabilityError, setAvailabilityError] =
     useState("");
+  const [searchAttempt, setSearchAttempt] = useState(0);
 
   const [editHotel, setEditHotel] =
     useState(hotelSlug);
+  const [editRoom, setEditRoom] = useState(roomToPreselect);
+  const [roomOptions, setRoomOptions] = useState<Pick<Room, "slug" | "name_vi" | "name_en">[]>([]);
 
   const [editStayType, setEditStayType] =
     useState<StayType>(stayType);
@@ -297,6 +304,7 @@ function TimPhongContent() {
   */
   useEffect(() => {
     setEditHotel(hotelSlug);
+    setEditRoom(roomToPreselect);
     setEditStayType(stayType);
     setEditCheckIn(checkIn);
     setEditCheckOut(checkOut);
@@ -305,6 +313,7 @@ function TimPhongContent() {
     setEditChildren(children);
     setEditError("");
     setSelectedRooms({});
+    autoSelectedRoomRef.current = "";
   }, [
     hotelSlug,
     stayType,
@@ -313,7 +322,20 @@ function TimPhongContent() {
     monthsFromUrl,
     adults,
     children,
+    roomToPreselect,
   ]);
+
+  useEffect(() => {
+    const selectedHotel = hotels.find((item) => item.slug === editHotel);
+    setRoomOptions([]);
+    if (!selectedHotel) return;
+    const controller = new AbortController();
+    void supabase.from("rooms").select("slug,name_vi,name_en").eq("hotel_id", selectedHotel.id)
+      .eq("status", "active").order("name_vi").abortSignal(controller.signal).then(({ data }) => {
+        if (!controller.signal.aborted) setRoomOptions(data ?? []);
+      });
+    return () => controller.abort();
+  }, [editHotel, hotels]);
 
   /*
     Đồng bộ ngôn ngữ.
@@ -567,6 +589,8 @@ function TimPhongContent() {
     setLoadingAvailability(true);
     setAvailabilityError("");
     setAvailabilityRooms([]);
+    setSelectedRooms({});
+    autoSelectedRoomRef.current = "";
 
     (async () => {
       try {
@@ -584,12 +608,16 @@ function TimPhongContent() {
                     hotelSlug,
                     stayType: "month",
                     months: monthsFromUrl,
+                    roomSlug: roomToPreselect,
+                    requestedRooms,
                   }
                 : {
                     hotelSlug,
                     stayType: "day",
                     checkIn,
                     checkOut,
+                    roomSlug: roomToPreselect,
+                    requestedRooms,
                   }
             ),
             cache: "no-store",
@@ -647,6 +675,9 @@ function TimPhongContent() {
     checkIn,
     checkOut,
     monthsFromUrl,
+    roomToPreselect,
+    requestedRooms,
+    searchAttempt,
   ]);
 
   const roomCoverMap = useMemo(() => {
@@ -782,6 +813,7 @@ function TimPhongContent() {
             totalQuantity,
             bookedQuantity,
             availableQuantity,
+            availabilityStatus: availability?.availabilityStatus ?? "unverified",
           };
         })
         .filter((room) => {
@@ -805,8 +837,7 @@ function TimPhongContent() {
               hotel.id &&
             maxGuests >=
               totalGuests &&
-            room.availableQuantity >
-              0 &&
+            (!roomToPreselect || room.slug === legacyRoomSlug(hotelSlug, roomToPreselect)) &&
             price > 0
           );
         })
@@ -840,6 +871,8 @@ function TimPhongContent() {
       amenitiesByRoomId,
       language,
       stayType,
+      roomToPreselect,
+      hotelSlug,
     ]);
 
   useEffect(() => {
@@ -851,7 +884,7 @@ function TimPhongContent() {
     }
 
     const requestedRoom = availableRooms.find(
-      (room) => room.slug === roomToPreselect
+      (room) => room.slug === legacyRoomSlug(hotelSlug, roomToPreselect)
     );
 
     if (!requestedRoom || requestedRoom.availableQuantity < 1) {
@@ -860,19 +893,19 @@ function TimPhongContent() {
 
     autoSelectedRoomRef.current = roomToPreselect;
     setSelectedRooms((previous) => {
-      if (previous[roomToPreselect]) {
+      if (previous[requestedRoom.slug]) {
         return previous;
       }
 
       return {
         ...previous,
-        [roomToPreselect]: Math.min(
+        [requestedRoom.slug]: Math.min(
           requestedRooms,
           requestedRoom.availableQuantity
         ),
       };
     });
-  }, [availableRooms, roomToPreselect, requestedRooms]);
+  }, [availableRooms, hotelSlug, roomToPreselect, requestedRooms]);
 
   const nights = useMemo(
     () =>
@@ -961,69 +994,10 @@ function TimPhongContent() {
   /*
     Đổi loại thuê.
   */
-  const handleStayTypeChange =
-    useCallback(
-      (value: StayType) => {
-        setEditStayType(value);
-        setEditError("");
-        setSelectedRooms({});
-
-        const params =
-          new URLSearchParams(
-            searchParams.toString()
-          );
-
-        params.set(
-          "stayType",
-          value
-        );
-
-        if (value === "day") {
-          params.delete("months");
-
-          if (editCheckIn) {
-            params.set(
-              "checkIn",
-              editCheckIn
-            );
-          }
-
-          if (editCheckOut) {
-            params.set(
-              "checkOut",
-              editCheckOut
-            );
-          }
-        } else {
-          params.delete("checkIn");
-          params.delete("checkOut");
-
-          params.set(
-            "months",
-            String(
-              Math.max(
-                1,
-                Math.floor(
-                  editMonths
-                )
-              )
-            )
-          );
-        }
-
-        router.replace(
-          localizedHref(`/tim-phong?${params.toString()}`, language)
-        );
-      },
-      [
-    language,
-        searchParams,
-        router,
-        editCheckIn,
-        editCheckOut,
-        editMonths,
-      ]
-    );
+  const handleStayTypeChange = (value: StayType) => {
+    setEditStayType(value);
+    setEditError("");
+  };
 
   /*
     Áp dụng thay đổi tìm phòng.
@@ -1174,11 +1148,13 @@ function TimPhongContent() {
         )
       );
 
-      router.replace(
-        localizedHref(`/tim-phong?${params.toString()}`, language)
-      );
+      if (editRoom) params.set("room", editRoom);
+      else params.delete("room");
+      if (params.toString() === searchParams.toString()) setSearchAttempt((previous) => previous + 1);
+      else router.replace(localizedHref(`/tim-phong?${params.toString()}`, language));
     }, [
       editHotel,
+      editRoom,
       editStayType,
       editCheckIn,
       editCheckOut,
@@ -1194,41 +1170,11 @@ function TimPhongContent() {
   /*
     Khi đổi khách sạn.
   */
-  const handleHotelChange =
-    useCallback(
-      (value: string) => {
-        setEditHotel(value);
-        setSelectedRooms({});
-        setEditError("");
-
-        const params =
-          new URLSearchParams(
-            searchParams.toString()
-          );
-
-        if (value) {
-          params.set(
-            "hotel",
-            value
-          );
-        } else {
-          params.delete(
-            "hotel"
-          );
-        }
-
-        router.replace(
-          params.toString()
-            ? localizedHref(`/tim-phong?${params.toString()}`, language)
-            : "/tim-phong"
-        );
-      },
-      [
-    language,
-        searchParams,
-        router,
-      ]
-    );
+  const handleHotelChange = (value: string) => {
+    setEditHotel(value);
+    setEditRoom("");
+    setEditError("");
+  };
 
   const changeRoomQuantity =
     useCallback(
@@ -1242,6 +1188,7 @@ function TimPhongContent() {
               previous[
                 room.slug
               ] || 0;
+            const alreadySelected = Object.values(previous).reduce((total, count) => total + count, 0);
 
             const next =
               Math.min(
@@ -1250,7 +1197,8 @@ function TimPhongContent() {
                     delta,
                   0
                 ),
-                room.availableQuantity
+                room.availableQuantity,
+                MAX_REQUESTED_ROOMS - alreadySelected + current
               );
 
             const result = {
@@ -1536,6 +1484,17 @@ function TimPhongContent() {
                     </option>
                   )
                 )}
+              </select>
+              <label htmlFor="tim-phong-room" className="mb-2 mt-3 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                {language === "vi" ? "Loại phòng" : "Room type"}
+              </label>
+              <select id="tim-phong-room" value={legacyRoomSlug(editHotel, editRoom)}
+                onChange={(event) => setEditRoom(event.target.value)} disabled={!editHotel || !roomOptions.length}
+                className="h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-slate-900 disabled:bg-neutral-50">
+                <option value="">{language === "vi" ? "Tất cả loại phòng" : "All room types"}</option>
+                {roomOptions.map((room) => <option key={room.slug} value={room.slug}>
+                  {language === "vi" ? room.name_vi : room.name_en}
+                </option>)}
               </select>
             </div>
 
@@ -1850,11 +1809,10 @@ function TimPhongContent() {
                 onClick={
                   applyBookingChanges
                 }
-                className="h-12 w-full rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 lg:min-w-[120px]"
+                disabled={loadingAvailability}
+                className="h-12 w-full rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 lg:min-w-[120px]"
               >
-                {language === "vi"
-                  ? "Cập nhật"
-                  : "Update"}
+                {language === "vi" ? "Tìm phòng" : "Find rooms"}
               </button>
             </div>
           </div>
@@ -1966,11 +1924,11 @@ function TimPhongContent() {
               {stayType ===
               "month"
                 ? language === "vi"
-                  ? "Vui lòng chọn khách sạn và số tháng, sau đó bấm Cập nhật."
-                  : "Please select a hotel and number of months, then click Update."
+                  ? "Vui lòng chọn khách sạn và số tháng, sau đó bấm Tìm phòng."
+                  : "Please select a hotel and number of months, then click Find rooms."
                 : language === "vi"
-                  ? "Vui lòng chọn khách sạn, ngày nhận phòng và ngày trả phòng, sau đó bấm Cập nhật."
-                  : "Please select a hotel, check-in and check-out dates, then click Update."}
+                  ? "Vui lòng chọn khách sạn, ngày nhận phòng và ngày trả phòng, sau đó bấm Tìm phòng."
+                  : "Please select a hotel, check-in and check-out dates, then click Find rooms."}
             </p>
           </div>
         ) : (
@@ -2044,7 +2002,7 @@ function TimPhongContent() {
                 0 && (
                 <div className="space-y-6">
                   <h2 className="text-xl font-bold text-slate-900">
-                    {language === "vi" ? "Các phòng phù hợp" : "Available rooms"}
+                    {language === "vi" ? "Các phòng phù hợp" : "Matching rooms"}
                   </h2>
                   {availableRooms.map(
                     (room) => {
@@ -2108,15 +2066,15 @@ function TimPhongContent() {
                                 className="object-cover"
                               />
 
-                              {room.availableQuantity >
-                                0 && (
-                                <div className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-slate-800">
-                                  {language ===
-                                  "vi"
-                                    ? `Còn ${room.availableQuantity} phòng`
-                                    : `${room.availableQuantity} available`}
-                                </div>
-                              )}
+                              <div className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-slate-800">
+                                {room.availabilityStatus === "unverified"
+                                  ? language === "vi" ? "Chưa thể xác minh tình trạng phòng" : "Availability could not be verified"
+                                  : room.availabilityStatus === "sold_out"
+                                    ? language === "vi" ? "Hết phòng" : "Sold out"
+                                    : language === "vi"
+                                      ? `Còn ${room.availableQuantity} phòng cho toàn bộ kỳ lưu trú`
+                                      : `${room.availableQuantity} rooms available for the entire stay`}
+                              </div>
                             </div>
 
                             <div className="flex flex-col p-5 sm:p-7">
@@ -2232,7 +2190,7 @@ function TimPhongContent() {
                                   →
                                 </Link>
 
-                                <div className="flex items-center gap-4">
+                                {room.availabilityStatus === "available" && <div className="flex items-center gap-4">
                                   <span className="text-sm font-medium text-neutral-600">
                                     {language ===
                                     "vi"
@@ -2273,7 +2231,7 @@ function TimPhongContent() {
                                         )
                                       }
                                       disabled={
-                                        quantity >=
+                                        selectedRoomCount >= MAX_REQUESTED_ROOMS || quantity >=
                                         room.availableQuantity
                                       }
                                       className="flex h-10 w-10 items-center justify-center rounded-r-full disabled:opacity-40"
@@ -2281,7 +2239,7 @@ function TimPhongContent() {
                                       +
                                     </button>
                                   </div>
-                                </div>
+                                </div>}
                               </div>
                             </div>
                           </div>
@@ -2295,7 +2253,7 @@ function TimPhongContent() {
         )}
       </div>
 
-      {selectedRoomCount >
+      {!loadingAvailability && !availabilityError && selectedRoomCount >
         0 && (
         <div className="sticky bottom-0 z-40 border-t border-neutral-200 bg-white/95 shadow-[0_-6px_20px_rgba(0,0,0,0.08)] backdrop-blur">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">

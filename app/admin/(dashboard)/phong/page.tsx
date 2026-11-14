@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState  } from "react";
 import { supabase } from "../../../lib/supabase";
+import GoHostSources, { countGoHostSources } from "./GoHostSources";
 
 type Hotel = {
   id: number;
@@ -367,12 +368,35 @@ export default function AdminRoomsPage() {
     let error = null;
 
     if (editingRoom) {
+      if (quantity < editingRoom.quantity) {
+        try {
+          if (quantity < await countGoHostSources(editingRoom.id)) {
+            window.alert("Số lượng mới thấp hơn số phòng vật lý đã khai báo trong GoHost.");
+            setSaving(false);
+            return;
+          }
+        } catch {
+          window.alert("Không thể kiểm tra nguồn GoHost trước khi giảm số lượng.");
+          setSaving(false);
+          return;
+        }
+      }
       const result = await supabase
         .from("rooms")
         .update(payload)
         .eq("id", editingRoom.id);
 
       error = result.error;
+    } else if (payload.status === "active") {
+      const result = await supabase.from("rooms").insert(payload).select("*").single();
+      error = result.error;
+      if (!error && result.data) {
+        setEditingRoom(result.data as Room);
+        setSaving(false);
+        await loadData();
+        window.alert("Đã lưu loại phòng. Có thể khai báo nguồn GoHost ngay bên dưới số lượng.");
+        return;
+      }
     } else {
       const result = await supabase
         .from("rooms")
@@ -961,6 +985,9 @@ export default function AdminRoomsPage() {
                     </p>
                   </Field>
                 </div>
+
+                <GoHostSources roomId={editingRoom?.id} quantity={Number(form.quantity)} disabled={saving}
+                  key={editingRoom ? editingRoom.id + "/" + editingRoom.quantity : "new"} />
 
                 <div className="mt-5 rounded-xl border border-sky-100 bg-sky-50 p-4">
                   <div className="text-sm font-semibold text-sky-900">

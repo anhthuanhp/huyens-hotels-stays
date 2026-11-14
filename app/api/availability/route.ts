@@ -1,497 +1,158 @@
+import { legacyRoomSlug } from "../../lib/room-seo-slugs";
+import { countFreeUnits, MAX_REQUESTED_ROOMS, MAX_STAY_NIGHTS, stayIsCovered, todayInVietnam, validDate } from "../../lib/gohost-calendar";
+import { getServerSupabase, loadCalendar, sourceConfiguration, sourceFields, type GoHostSource } from "../../lib/gohost-server";
 
-import { NextRequest, NextResponse } from "next/server";
+const MAX_HOTELS = 5;
+const MAX_ROOM_TYPES = 30;
+const MAX_SOURCES = 48;
 
-import { supabase } from "../../lib/supabase";
-
-type AvailabilityRequest = {
-  hotelSlug?: unknown;
-  stayType?: unknown;
-  months?: unknown;
-  checkIn?: unknown;
-  checkOut?: unknown;
-};
-
-type RoomRow = {
-  id: number;
-  hotel_id: number;
-  slug: string;
-  name_vi: string | null;
-  name_en: string | null;
-  base_price_daily: number | string | null;
-  base_price_monthly: number | string | null;
-  quantity: number | string | null;
-  status: string;
-};
-
-type BookingRoomRow = {
-  room_id: number | string | null;
-  quantity: number | string | null;
-};
-
-type BookingRow = {
-  id: number;
-  stay_type: "day" | "month";
-  check_in: string | null;
-  check_out: string | null;
-  status: string;
-  booking_rooms: BookingRoomRow[] | null;
-};
-
-function isValidDateString(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return false;
-  }
-
-  const date = new Date(`${value}T00:00:00`);
-
-  if (Number.isNaN(date.getTime())) {
-    return false;
-  }
-
-  const [year, month, day] = value.split("-").map(Number);
-
-  return (
-    date.getFullYear() === year &&
-    date.getMonth() + 1 === month &&
-    date.getDate() === day
-  );
+function reply(body: object, status = 200) {
+  return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
-export async function POST(request: NextRequest) {
+function monthlyCheckout(start: string, months: number) {
+  const date = new Date(start + "T00:00:00Z");
+  const day = date.getUTCDate();
+  date.setUTCDate(1);
+  date.setUTCMonth(date.getUTCMonth() + months + 1, 0);
+  date.setUTCDate(Math.min(day, date.getUTCDate()));
+  return date.toISOString().slice(0, 10);
+}
+
+export async function POST(request: Request) {
   try {
-    /*
-      ==========================================
-      1. ĐỌC REQUEST
-      ==========================================
-    */
-
-    let body: AvailabilityRequest;
-
-    try {
-      body = (await request.json()) as AvailabilityRequest;
-    } catch {
-      return NextResponse.json(
-        {
-          error: "Dữ liệu gửi lên không hợp lệ.",
-        },
-        { status: 400 }
-      );
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body)) return reply({ error: "Dữ liệu không hợp lệ." }, 400);
+    const hotels = Array.isArray(body.hotelSlugs) ? body.hotelSlugs : [body.hotelSlug];
+    const roomSlug = body.roomSlug ?? "";
+    const requestedRooms = body.requestedRooms ?? 1;
+    if (!hotels.length || hotels.length > MAX_HOTELS ||
+        hotels.some((slug: unknown) => typeof slug !== "string" || !slug.trim() || slug.length > 150) ||
+        typeof roomSlug !== "string" || roomSlug.length > 150 || (roomSlug && hotels.length !== 1) ||
+        !Number.isInteger(requestedRooms) || requestedRooms < 1 || requestedRooms > MAX_REQUESTED_ROOMS) {
+      return reply({ error: "Khách sạn, loại phòng hoặc số phòng yêu cầu không hợp lệ." }, 400);
     }
 
-    const hotelSlug =
-      typeof body.hotelSlug === "string"
-        ? body.hotelSlug.trim()
-        : "";
-
-    const stayType = body.stayType === "month" ? "month" : "day";
+    const today = todayInVietnam();
+    const monthly = body.stayType === "month";
     const months = Number(body.months);
-    const checkIn = typeof body.checkIn === "string" ? body.checkIn.trim() : "";
-    const checkOut = typeof body.checkOut === "string" ? body.checkOut.trim() : "";
-
-    if (stayType === "month") {
-      if (!Number.isInteger(months) || months < 1 || months > 60) {
-        return NextResponse.json({ error: "Số tháng thuê không hợp lệ." }, { status: 400 });
-      }
-    } else if (
-      !checkIn || !checkOut || !isValidDateString(checkIn) ||
-      !isValidDateString(checkOut) || checkOut <= checkIn
-    ) {
-      return NextResponse.json({ error: "Ngày nhận/trả phòng không hợp lệ." }, { status: 400 });
+    if (monthly && (!Number.isInteger(months) || months < 1 || months > 60)) {
+      return reply({ error: "Số tháng thuê không hợp lệ." }, 400);
+    }
+    const start = monthly ? today : body.checkIn;
+    const end = monthly ? monthlyCheckout(today, months) : body.checkOut;
+    if (typeof start !== "string" || typeof end !== "string" || !validDate(start) || !validDate(end) || end <= start) {
+      return reply({ error: "Ngày nhận/trả phòng không hợp lệ." }, 400);
     }
 
-    /*
-      ==========================================
-      2. KIỂM TRA INPUT
-      ==========================================
-    */
+    const db = getServerSupabase();
+    const { data: hotelRows, error: hotelError } = await db.from("hotels").select("id,slug")
+      .eq("status", "active").in("slug", hotels).limit(MAX_HOTELS);
+    if (hotelError) return reply({ error: "Không thể kiểm tra khách sạn." }, 503);
+    if (!hotelRows.length) return reply({ error: "Không tìm thấy khách sạn đang hoạt động." }, 404);
+    const hotelSlugs = new Map(hotelRows.map((hotel) => [hotel.id, hotel.slug]));
+    const roomQuery = db.from("rooms")
+      .select("id,hotel_id,slug,name_vi,name_en,base_price_daily,base_price_monthly,quantity")
+      .eq("status", "active").in("hotel_id", [...hotelSlugs.keys()]).order("id").limit(MAX_ROOM_TYPES + 1);
+    if (roomSlug) roomQuery.eq("slug", legacyRoomSlug(hotelRows[0].slug, roomSlug));
+    const { data: rooms, error: roomError } = await roomQuery;
+    if (roomError) return reply({ error: "Không thể đọc danh sách loại phòng." }, 503);
+    if (rooms.length > MAX_ROOM_TYPES) return reply({ error: "Hãy thu hẹp phạm vi tìm kiếm." }, 400);
 
-    if (!hotelSlug) {
-      return NextResponse.json({ error: "Thiếu thông tin khách sạn." }, { status: 400 });
-    }
+    // The old 90-day snapshot was a processing window, not a GoHost export guarantee.
+    // Set only after verifying the window on all published feeds.
+    const coverageDays = Number(process.env.GOHOST_ICAL_VERIFIED_COVERAGE_DAYS);
+    const covered = stayIsCovered({ start, end }, coverageDays, today);
+    const withinSearchWindow = stayIsCovered({ start, end }, MAX_STAY_NIGHTS, today);
+    const roomIds = rooms.map((room) => room.id);
+    const sourceByRoom = new Map<number, GoHostSource[]>();
+    const bookedByRoom = new Map<number, { total: number; changes: Map<string, number> }>();
+    let completeReads = false;
 
-    /*
-      Giới hạn độ dài slug để tránh request bất thường.
-    */
-    if (hotelSlug.length > 150) {
-      return NextResponse.json(
-        {
-          error: "Thông tin khách sạn không hợp lệ.",
-        },
-        { status: 400 }
-      );
-    }
-
-
-    /*
-      ==========================================
-      3. TÌM ĐÚNG KHÁCH SẠN
-      ==========================================
-    */
-
-    const {
-      data: hotel,
-      error: hotelError,
-    } = await supabase
-      .from("hotels")
-      .select("id, slug, status")
-      .eq("slug", hotelSlug)
-      .eq("status", "active")
-      .maybeSingle();
-
-    if (hotelError) {
-      console.error(
-        "Availability hotel error:",
-        hotelError
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "Không thể kiểm tra thông tin khách sạn.",
-        },
-        { status: 500 }
-      );
-    }
-
-    if (!hotel) {
-      return NextResponse.json(
-        {
-          error:
-            "Không tìm thấy khách sạn hoặc khách sạn không hoạt động.",
-        },
-        { status: 404 }
-      );
-    }
-
-    /*
-      ==========================================
-      4. LẤY PHÒNG CỦA KHÁCH SẠN
-      ==========================================
-
-      Chỉ lấy phòng:
-
-      - thuộc đúng hotel
-      - đang active
-    */
-
-    const {
-      data: roomRows,
-      error: roomError,
-    } = await supabase
-      .from("rooms")
-      .select(
-        `
-          id,
-          hotel_id,
-          slug,
-          name_vi,
-          name_en,
-          base_price_daily,
-          base_price_monthly,
-          quantity,
-          status
-        `
-      )
-      .eq("hotel_id", hotel.id)
-      .eq("status", "active")
-      .order("id", {
-        ascending: true,
-      });
-
-    if (roomError) {
-      console.error(
-        "Availability rooms error:",
-        roomError
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "Không thể tải danh sách phòng.",
-        },
-        { status: 500 }
-      );
-    }
-
-    const rooms = (roomRows ?? []) as RoomRow[];
-
-    /*
-      Nếu khách sạn không có phòng active.
-    */
-
-    if (rooms.length === 0) {
-      return NextResponse.json({
-        hotel: {
-          id: Number(hotel.id),
-          slug: hotel.slug,
-        },
-
-        checkIn,
-        checkOut,
-
-        rooms: [],
-      });
-    }
-
-    /*
-      ==========================================
-      5. LẤY BOOKING ĐANG GIỮ PHÒNG
-      ==========================================
-
-      QUY ƯỚC HIỆN TẠI:
-
-      confirmed = giữ phòng
-
-      cancelled = không giữ phòng
-
-      Các trạng thái khác KHÔNG được tự động
-      tính là giữ phòng.
-
-      Điều này an toàn hơn việc dùng:
-
-      .neq("status", "cancelled")
-
-      vì sau này có thể xuất hiện:
-
-      pending
-      draft
-      expired
-      no_show
-      ...
-    */
-
-    let bookingQuery = supabase
-      .from("bookings")
-      .select(`
-        id,
-        stay_type,
-        check_in,
-        check_out,
-        status,
-        booking_rooms (
-          room_id,
-          quantity
-        )
-      `)
-      .eq("hotel_id", hotel.id)
-      .eq("status", "confirmed");
-
-    if (stayType === "month") {
-      bookingQuery = bookingQuery.eq("stay_type", "month");
-    } else {
-      bookingQuery = bookingQuery.or(
-        `stay_type.eq.month,and(stay_type.eq.day,check_in.lt.${checkOut},check_out.gt.${checkIn})`
-      );
-    }
-
-    const { data: bookingRows, error: bookingError } = await bookingQuery;
-
-    if (bookingError) {
-      console.error(
-        "Availability booking error:",
-        bookingError
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "Không thể kiểm tra các đơn đặt phòng.",
-        },
-        { status: 500 }
-      );
-    }
-
-    const bookings =
-      (bookingRows ?? []) as BookingRow[];
-
-    /*
-      ==========================================
-      6. TÍNH SỐ PHÒNG ĐÃ ĐẶT
-      ==========================================
-    */
-
-    const bookedByRoom: Record<number, number> = {};
-
-    for (const booking of bookings) {
-      /*
-        Chỉ xử lý confirmed.
-
-        Kiểm tra thêm status ở đây để bảo vệ
-        trường hợp dữ liệu trả về không đúng kỳ vọng.
-      */
-
-      if (booking.status !== "confirmed") {
-        continue;
-      }
-
-      const bookingRooms =
-        booking.booking_rooms ?? [];
-
-      for (const bookingRoom of bookingRooms) {
-        const roomId = Number(
-          bookingRoom.room_id
-        );
-
-        const quantity = Number(
-          bookingRoom.quantity
-        );
-
-        /*
-          Dữ liệu booking room không hợp lệ
-          thì bỏ qua, không làm hỏng toàn bộ API.
-        */
-
-        if (
-          !Number.isInteger(roomId) ||
-          roomId <= 0
-        ) {
-          continue;
+    if (withinSearchWindow && roomIds.length) {
+      const [sources, bookings] = await Promise.all([
+        db.from("gohost_ical_sources").select(sourceFields).in("room_id", roomIds).limit(MAX_SOURCES + 1),
+        db.from("booking_rooms")
+          .select("room_id,quantity,bookings!inner(id,check_in,check_out)")
+          .in("room_id", roomIds).in("bookings.hotel_id", [...hotelSlugs.keys()])
+          .neq("bookings.status", "cancelled")
+          .lt("bookings.check_in", end).gt("bookings.check_out", start).limit(501),
+      ]);
+      completeReads = !sources.error && !bookings.error &&
+        sources.data.length <= MAX_SOURCES && bookings.data.length <= 500;
+      if (completeReads) {
+        for (const source of (sources.data ?? []) as GoHostSource[]) {
+          const list = sourceByRoom.get(source.room_id) ?? [];
+          list.push(source);
+          sourceByRoom.set(source.room_id, list);
         }
-
-        if (
-          !Number.isFinite(quantity) ||
-          quantity <= 0
-        ) {
-          continue;
+        for (const booking of bookings.data ?? []) {
+          const quantity = Number(booking.quantity);
+          const detail = Array.isArray(booking.bookings) ? booking.bookings[0] : booking.bookings;
+          if (!Number.isSafeInteger(quantity) || quantity < 1 || !detail ||
+              !validDate(detail.check_in) || !validDate(detail.check_out) || detail.check_out <= detail.check_in) {
+            completeReads = false;
+            break;
+          }
+          const occupied = bookedByRoom.get(booking.room_id) ?? { total: 0, changes: new Map<string, number>() };
+          occupied.total += quantity;
+          occupied.changes.set(detail.check_in, (occupied.changes.get(detail.check_in) ?? 0) + quantity);
+          occupied.changes.set(detail.check_out, (occupied.changes.get(detail.check_out) ?? 0) - quantity);
+          bookedByRoom.set(booking.room_id, occupied);
         }
-
-        /*
-          Chỉ chấp nhận số lượng nguyên.
-        */
-
-        const safeQuantity =
-          Math.floor(quantity);
-
-        if (safeQuantity <= 0) {
-          continue;
-        }
-
-        bookedByRoom[roomId] =
-          (bookedByRoom[roomId] ?? 0) +
-          safeQuantity;
       }
     }
 
-    /*
-      ==========================================
-      7. TÍNH AVAILABLE QUANTITY
-      ==========================================
-    */
-
-    const result = rooms.map((room) => {
-      /*
-        quantity trong rooms =
-        tổng số phòng của loại phòng.
-      */
-
-      const rawTotalQuantity =
-        Number(room.quantity);
-
-      const totalQuantity =
-        Number.isFinite(rawTotalQuantity) &&
-        rawTotalQuantity > 0
-          ? Math.floor(rawTotalQuantity)
-          : 0;
-
-      /*
-        Số phòng đã được booking.
-      */
-
-      const bookedQuantity = Math.max(
-        0,
-        bookedByRoom[
-          Number(room.id)
-        ] ?? 0
-      );
-
-      /*
-        Không bao giờ cho available âm.
-      */
-
-      const availableQuantity =
-        Math.max(
-          totalQuantity -
-            bookedQuantity,
-          0
-        );
-
-      /*
-        Giá phòng.
-      */
-
-      const rawBasePrice = Number(
-        stayType === "month"
-          ? room.base_price_monthly
-          : room.base_price_daily
-      );
-
-      const basePrice =
-        Number.isFinite(rawBasePrice) &&
-        rawBasePrice >= 0
-          ? rawBasePrice
-          : 0;
-
+    const results = await Promise.all(rooms.map(async (room) => {
+      const totalQuantity = room.quantity;
+      const { active, complete } = sourceConfiguration(sourceByRoom.get(room.id) ?? [], totalQuantity);
+      let availableQuantity: number | null = totalQuantity === 0 ? 0 : null;
+      if (totalQuantity > 0 && completeReads && complete) {
+        try {
+          const calendars = await Promise.all(active.map((source) => loadCalendar(source)));
+          const goHostFree = countFreeUnits(calendars, { start, end });
+          const internal = bookedByRoom.get(room.id);
+          if (goHostFree === 0) {
+            availableQuantity = 0;
+          } else if (covered && (!internal || goHostFree === totalQuantity)) {
+            // Internal bookings have no feed UID or physical-unit assignment.
+            // With overlapping occupancy in both systems, the same booking
+            // may appear twice. Leave the result unverified in that case.
+            let peak = 0;
+            let concurrent = 0;
+            if (internal) {
+              for (const [, change] of [...internal.changes].sort(([a], [b]) => a.localeCompare(b))) {
+                concurrent += change;
+                peak = Math.max(peak, concurrent);
+              }
+            }
+            const minimum = Math.max(0, goHostFree - (internal?.total ?? 0));
+            const maximum = Math.min(goHostFree, Math.max(0, totalQuantity - peak));
+            if (minimum === maximum) availableQuantity = minimum;
+          }
+        } catch {
+          // Unreachable, stale, or unsupported feeds cannot establish availability.
+        }
+      }
       return {
-        roomId: Number(room.id),
-
+        roomId: room.id,
         roomSlug: room.slug,
-
-        hotelId: Number(hotel.id),
-
-        hotelSlug: hotel.slug,
-
+        hotelId: room.hotel_id,
+        hotelSlug: hotelSlugs.get(room.hotel_id),
         nameVi: room.name_vi,
-
         nameEn: room.name_en,
-
-        basePrice,
-
+        basePrice: Number(monthly ? room.base_price_monthly : room.base_price_daily) || 0,
         basePriceDaily: Number(room.base_price_daily) || 0,
-
         basePriceMonthly: Number(room.base_price_monthly) || 0,
-
         totalQuantity,
-
-        bookedQuantity,
-
+        bookedQuantity: availableQuantity === null ? null : totalQuantity - availableQuantity,
         availableQuantity,
+        availabilityStatus: availableQuantity === null ? "unverified" : availableQuantity > 0 ? "available" : "sold_out",
       };
-    });
+    }));
 
-    /*
-      ==========================================
-      8. TRẢ KẾT QUẢ
-      ==========================================
-    */
-
-    return NextResponse.json(
-      {
-        hotel: {
-          id: Number(hotel.id),
-          slug: hotel.slug,
-        },
-
-        checkIn,
-        checkOut,
-
-        rooms: result,
-      },
-      {
-        status: 200,
-      }
-    );
-  } catch (error) {
-    console.error(
-      "Availability API error:",
-      error
-    );
-
-    return NextResponse.json(
-      {
-        error:
-          "Không thể kiểm tra tình trạng phòng.",
-      },
-      { status: 500 }
-    );
+    return reply({ hotel: hotelRows.length === 1 ? hotelRows[0] : null, checkIn: start, checkOut: end, rooms: results });
+  } catch {
+    return reply({ error: "Không thể xác minh tình trạng phòng." }, 503);
   }
 }
