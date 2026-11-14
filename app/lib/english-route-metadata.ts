@@ -3,7 +3,7 @@ import { englishPage } from "./english-data";
 import { canonicalSeoPath } from "./room-seo-slugs";
 import { localizedHref } from "./localized-path";
 
-const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://huyenhotels.com").replace(/\/$/, "");
+const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://huyenhotels.com").replace(/\/+$/, "");
 
 export async function englishRouteMetadata(parts: string[]): Promise<Metadata> {
   const data = await englishPage(parts);
@@ -12,8 +12,7 @@ export async function englishRouteMetadata(parts: string[]): Promise<Metadata> {
   const englishPath = localizedHref(path, "en");
   const enUrl = base + englishPath;
   const viUrl = base + (path === "/" ? "" : path);
-  const title = data.kind === "article" ? (data.post?.title_en || data.title) : data.title;
-  const description = data.kind === "article" ? (data.post?.excerpt_en || data.description) : data.description;
+  const { title, description } = data;
   return {
     title: title + " | Huyen's Hotels & Stays",
     description,

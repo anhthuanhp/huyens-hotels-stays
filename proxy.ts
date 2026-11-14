@@ -2,7 +2,6 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
   canonicalRoomSlug,
-  legacyRoomSlug,
 } from "./app/lib/room-seo-slugs";
 
 export function proxy(request: NextRequest) {
@@ -34,17 +33,6 @@ export function proxy(request: NextRequest) {
       hotel + "/phong/" + canonical;
 
     return NextResponse.redirect(url, 308);
-  }
-
-  const legacy = legacyRoomSlug(hotel, slug);
-
-  if (legacy !== slug) {
-    url.pathname =
-      "/" + prefix + "khach-san/" +
-      hotel + "/phong/" +
-      encodeURIComponent(legacy);
-
-    return NextResponse.rewrite(url);
   }
 
   return NextResponse.next();

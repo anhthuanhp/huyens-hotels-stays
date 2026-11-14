@@ -6,7 +6,7 @@ import { useLanguage } from "@/app/lib/use-language";
 import Image from "next/image";
 import CityTravelGuide from "../../components/CityTravelGuide";
 import { CITY_GUIDE_SLUG } from "../../data/city-guide";
-import { parseBlogContent, splitBlogLinks } from "../../lib/blog-content";
+import { englishBlogHref, parseBlogContent, splitBlogLinks } from "../../lib/blog-content";
 import Link from "@/app/components/LocalizedLink";
 
 type BlogPost = {
@@ -30,10 +30,14 @@ type BlogPost = {
 
 type Props = {
   post: BlogPost;
+  translatedPaths: readonly string[];
+  siteUrl: string;
 };
 
 export default function BlogDetailClient({
   post,
+  translatedPaths,
+  siteUrl,
 }: Props) {
   const language = useLanguage();
 
@@ -131,7 +135,7 @@ export default function BlogDetailClient({
 ) : (
   <p key={post.id + "-" + index} className="whitespace-pre-line text-lg leading-9 text-slate-700">
     {splitBlogLinks(block.text).map((part, partIndex) => part.href ? (
-      <span key={partIndex}><a href={part.href} className="break-words font-medium text-sky-800 underline underline-offset-4">{part.text}</a>{part.suffix}</span>
+      <span key={partIndex}><a href={isVi ? part.href : englishBlogHref(part.href, translatedPaths, siteUrl)} className="break-words font-medium text-sky-800 underline underline-offset-4">{part.text}</a>{part.suffix}</span>
     ) : <span key={partIndex}>{part.text}</span>)}
   </p>
 ))

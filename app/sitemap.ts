@@ -1,5 +1,4 @@
-import { englishInventory, englishPaths } from "./lib/english-data";
-import { canonicalRoomSlug, canonicalSeoPath } from "./lib/room-seo-slugs";
+import { canonicalRoomSlug } from "./lib/room-seo-slugs";
 import { languageAlternates, localizedHref } from "./lib/localized-path";
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
@@ -15,12 +14,16 @@ const siteUrl = baseUrl.replace(/\/+$/, "");
 
 type HotelRow = {
   id: number;
+  name_en: string | null;
+  description_en: string | null;
   slug: string;
   updated_at: string | null;
 };
 
 type RoomRow = {
   hotel_id: number;
+  name_en: string | null;
+  description_en: string | null;
   slug: string;
   updated_at: string | null;
 };
@@ -28,6 +31,8 @@ type RoomRow = {
 type BlogPostRow = {
   slug: string;
   date: string | null;
+  title_en: string | null;
+  content_en: string | null;
   updated_at: string | null;
 };
 
@@ -144,17 +149,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ] = await Promise.all([
       supabase
         .from("hotels")
-        .select("id, slug")
+        .select("id, slug, name_en, description_en")
         .eq("status", "active"),
 
       supabase
         .from("rooms")
-        .select("hotel_id, slug")
+        .select("hotel_id, slug, name_en, description_en")
         .eq("status", "active"),
 
       supabase
         .from("blog_posts")
-        .select("slug, date, updated_at")
+        .select("slug, date, updated_at, title_en, content_en")
         .eq("status", "active")
         .order("date", {
           ascending: false,
@@ -255,18 +260,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       }));
 
-  const english = englishPaths(await englishInventory())
-    .map(parts => parts.length ? "/" + parts.map(encodeURIComponent).join("/") : "/")
-    .map(canonicalSeoPath)
-    .filter((url, index, urls) => urls.indexOf(url) === index);
-  const paired = new Set(english);
+  // Build both language sets from the same inventory used for Vietnamese URLs.
+  const paired = new Set(["/", "/phong", "/blog"]);
+  const translatedHotelIds = new Set<number>();
+  for (const hotel of activeHotels) {
+    if (!hotel.slug?.trim() || !hotel.name_en?.trim() || !hotel.description_en?.trim()) continue;
+    translatedHotelIds.add(hotel.id);
+    paired.add("/khach-san/" + encodeURIComponent(hotel.slug));
+  }
+  for (const room of activeRooms) {
+    if (!translatedHotelIds.has(room.hotel_id) || !room.slug?.trim() || !room.name_en?.trim() || !room.description_en?.trim()) continue;
+    const hotelSlug = hotelSlugById.get(room.hotel_id)!;
+    paired.add("/khach-san/" + encodeURIComponent(hotelSlug) + "/phong/" + encodeURIComponent(canonicalRoomSlug(hotelSlug, room.slug)));
+  }
+  for (const post of activeBlogPosts) {
+    if (post.slug?.trim() && post.title_en?.trim() && post.content_en?.trim()) {
+      paired.add("/blog/" + encodeURIComponent(post.slug));
+    }
+  }
   const vietnamese = [...staticUrls, ...hotelUrls, ...roomUrls, ...blogUrls].map(entry => {
     const path = new URL(entry.url).pathname;
     return paired.has(path) ? { ...entry, alternates: { languages: languageAlternates(path, siteUrl).languages } } : entry;
   });
   return uniqueSitemap([
     ...vietnamese,
-    ...english.map(path => ({
+    ...[...paired].map(path => ({
       url: siteUrl + localizedHref(path, "en"),
       changeFrequency: "weekly" as const,
       priority: 0.7,
