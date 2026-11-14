@@ -151,8 +151,8 @@ const HOTEL_LOCAL_SEO: Record<
   },
 
   huyenhomestay: {
-    vi: "Huyen Homestay tại Nguyễn Thị Minh Khai là lựa chọn chỗ ở dài ngày ở trung tâm TP.HCM cho khách đi học, làm việc hoặc tham gia sự kiện. So sánh phòng theo số người và nhu cầu sinh hoạt; khi thuê tháng, cần xác nhận thời hạn thuê, tiền cọc, điện nước, lịch vệ sinh và dịch vụ đi kèm trước khi đặt.",
-    en: "Looking for long stay accommodation in Saigon? Huyen Homestay on Nguyen Thi Minh Khai Street offers room options for study, work and longer visits to central Ho Chi Minh City. Compare room capacity and monthly rates, then confirm the rental period, deposit, utilities, cleaning schedule and included services with the property.",
+    vi: "Huyen Homestay tại Nguyễn Thị Minh Khai cung cấp các lựa chọn phòng nghỉ theo ngày ở trung tâm TP.HCM. Xem loại phòng, sức chứa và giá theo đêm để chọn chỗ ở phù hợp cho chuyến du lịch hoặc công tác.",
+    en: "Huyen Homestay on Nguyen Thi Minh Khai Street offers rooms for nightly stays in central Ho Chi Minh City. Compare room types and guest capacity, then check nightly rates for your travel dates.",
   },
 };
 
@@ -179,8 +179,8 @@ const HOTEL_H1_SEO: Record<
   },
 
   huyenhomestay: {
-    vi: "Huyen Homestay – Lưu trú dài ngày tại Nguyễn Thị Minh Khai",
-    en: "Huyen Homestay – Long stays on Nguyen Thi Minh Khai",
+    vi: "Huyen Homestay – Phòng nghỉ theo ngày tại Nguyễn Thị Minh Khai",
+    en: "Huyen Homestay – Nightly stays on Nguyen Thi Minh Khai",
   },
 };
 

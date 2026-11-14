@@ -33,11 +33,13 @@ export default function EnglishSite({ data }: { data: EnglishData }) {
     "anh-kim-hotel": "Anh Kim Hotel – Central Saigon, Near Bui Vien | Huyen's",
     "ae-guesthouse": "A&E Guesthouse – Near Bui Vien Street, Saigon | Huyen's",
     "huyen-house": "Huyen House – Near US Consulate | Huyen's",
-    "huyenhomestay": "Huyen Homestay – Monthly Stays | Huyen's",
+    "huyenhomestay": "Huyen Homestay – Rooms by Night in Saigon | Huyen's",
   };
   const englishHotelDescriptions: Record<string, string> = {
     "ae-guesthouse": "Stay near Bui Vien Street and Pham Ngu Lao at A&E Guesthouse in central Saigon. Explore rooms, check nightly rates and book directly.",
-    "anh-kim-hotel": "Stay in central Saigon at Anh Kim Hotel on Co Bac Street, near Bui Vien. Explore double and family rooms, check nightly rates and book directly.",
+    "anh-kim-hotel": "Stay at Anh Kim Hotel on Co Bac Street near Bui Vien and Ben Thanh Market. Explore double and family rooms, check nightly rates and book directly.",
+    "huyen-house": "Stay at Huyen House on Nguyen Thi Minh Khai Street near the US Consulate. Explore rooms and nightly rates for a short city visit or business trip.",
+    "huyenhomestay": "Huyen Homestay on Nguyen Thi Minh Khai Street offers rooms for nightly stays in central Ho Chi Minh City. Compare room types and plan your visit.",
   };
   const articleDescription = data.kind === "article" ? data.post?.excerpt_en || data.description : data.description;
   const metaDescription =
