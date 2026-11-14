@@ -13,11 +13,19 @@ export async function englishRouteMetadata(parts: string[]): Promise<Metadata> {
   const enUrl = base + englishPath;
   const viUrl = base + (path === "/" ? "" : path);
   const { title, description } = data;
+  // Property-specific sharing image for English hotel pages.
+  const rawImage = data.kind === "hotel" ? data.hotel?.image?.trim() : undefined;
+  const image = rawImage
+    ? /^https?:\/\//i.test(rawImage)
+      ? rawImage
+      : new URL(rawImage.startsWith("/") ? rawImage : `/${rawImage}`, base).toString()
+    : undefined;
   return {
     title: title + " | Huyen's Hotels & Stays",
     description,
     alternates: { canonical: enUrl, languages: { en: enUrl, "vi-VN": viUrl, "x-default": viUrl } },
-    openGraph: { title, description, url: enUrl, locale: "en_US", siteName: "Huyen's Hotels & Stays" },
+    openGraph: { title, description, url: enUrl, locale: "en_US", siteName: "Huyen's Hotels & Stays", ...(image ? { images: [{ url: image, alt: data.hotel?.name_en || title }] } : {}) },
+    twitter: { card: "summary_large_image", title, description, ...(image ? { images: [image] } : {}) },
     robots: { index: true, follow: true },
   };
 }
