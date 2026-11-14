@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Lang, RoomsClientProps } from './types';
 import { copy, pick } from './copy';
 import { RoomsHero } from './RoomsHero';
-import { RoomCard, type PriceMode } from './RoomCard';
+import { RoomCard } from './RoomCard';
 import { RoomsEmptyState } from './RoomsEmptyState';
 import { RoomsFinalCta } from './RoomsFinalCta';
 
@@ -10,7 +10,6 @@ type HotelTab = 'all' | number;
 
 export default function RoomsClient({ rooms, roomCovers, lang = 'vi' }: RoomsClientProps) {
   const [hotelTab, setHotelTab] = useState<HotelTab>('all');
-  const [priceMode, setPriceMode] = useState<PriceMode>('daily');
 
   const hotels = useMemo(() => {
     const map = new Map<number, { id: number; name: string }>();
@@ -51,14 +50,7 @@ export default function RoomsClient({ rooms, roomCovers, lang = 'vi' }: RoomsCli
                 ))}
               </div>
 
-              <div className="flex w-fit rounded-full border border-pine/15 bg-white p-1" role="group" aria-label={lang === 'vi' ? 'Ch\u1EBF \u0111\u1ED9 xem gi\u00E1' : 'Price view'}>
-                <PriceToggle active={priceMode === 'daily'} onClick={() => setPriceMode('daily')}>
-                  {pick(copy.filters.daily, lang)}
-                </PriceToggle>
-                <PriceToggle active={priceMode === 'monthly'} onClick={() => setPriceMode('monthly')}>
-                  {pick(copy.filters.monthly, lang)}
-                </PriceToggle>
-              </div>
+
             </div>
 
             {filtered.length === 0 ? (
@@ -74,7 +66,6 @@ export default function RoomsClient({ rooms, roomCovers, lang = 'vi' }: RoomsCli
                       key={room.id}
                       data={{ room, hotel }}
                       cover={roomCovers[room.id]}
-                      priceMode={priceMode}
                       lang={lang}
                     />
                   ))}
@@ -109,17 +100,3 @@ function FilterPill({ active, onClick, children }: { active: boolean; onClick: (
   );
 }
 
-function PriceToggle({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
-        active ? 'bg-pine text-cream' : 'text-mist hover:text-ink'
-      }`}
-      aria-pressed={active}
-    >
-      {children}
-    </button>
-  );
-}

@@ -3,8 +3,6 @@ import { LayoutTemplate, MapPin, Users, Maximize, BedDouble, Sparkles } from 'lu
 import type { Lang, RoomWithHotel } from './types';
 import { copy, pick } from './copy';
 
-export type PriceMode = 'daily' | 'monthly';
-
 export function roomDetailPath(room: RoomWithHotel): string {
   return `/khach-san/${encodeURIComponent(room.hotel.slug)}/phong/${encodeURIComponent(canonicalRoomSlug(room.hotel.slug, room.room.slug))}`;
 }
@@ -33,11 +31,10 @@ export function getAmenities(raw: unknown): string[] {
 type Props = {
   data: RoomWithHotel;
   cover?: string;
-  priceMode: PriceMode;
   lang: Lang;
 };
 
-export function RoomCard({ data, cover, priceMode, lang }: Props) {
+export function RoomCard({ data, cover, lang }: Props) {
   const { room, hotel } = data;
   const name = lang === 'vi' ? room.name_vi : room.name_en || room.name_vi;
   const hotelName = lang === 'vi' ? hotel.name_vi : hotel.name_en || hotel.name_vi;
@@ -46,10 +43,6 @@ export function RoomCard({ data, cover, priceMode, lang }: Props) {
   const beds = (lang === 'vi' ? room.beds_vi : room.beds_en ?? room.beds_vi) || null;
 
   const daily = room.base_price_daily && room.base_price_daily > 0 ? room.base_price_daily : null;
-  const monthly = room.base_price_monthly && room.base_price_monthly > 0 ? room.base_price_monthly : null;
-  const price = priceMode === 'daily' ? daily : monthly;
-  const otherPrice = priceMode === 'daily' ? monthly : daily;
-  const otherLabel = priceMode === 'daily' ? pick(copy.card.perMonth, lang) : pick(copy.card.perNight, lang);
 
   const amenities = getAmenities(room.amenities).slice(0, 4);
   
@@ -129,19 +122,14 @@ export function RoomCard({ data, cover, priceMode, lang }: Props) {
 
         <div className="mt-auto space-y-3 border-t border-pine/10 pt-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            {price ? (
+            {daily ? (
               <>
                 <p className="font-serif text-xl font-semibold text-pine">
-                  {formatVnd(price)}
+                  {formatVnd(daily)}
                   <span className="ml-1 font-sans text-xs font-normal text-mist">
-                    {priceMode === 'daily' ? pick(copy.card.perNight, lang) : pick(copy.card.perMonth, lang)}
+                    {pick(copy.card.perNight, lang)}
                   </span>
                 </p>
-                {otherPrice ? (
-                  <p className="text-xs text-mist">
-                    {formatVnd(otherPrice)} {otherLabel}
-                  </p>
-                ) : null}
               </>
             ) : (
               <div>
