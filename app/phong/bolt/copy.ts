@@ -3,10 +3,10 @@ import type { Lang } from './types';
 export const copy = {
   hero: {
     eyebrow: { vi: 'Huyen\u2019s Hotels & Stays', en: 'Huyen\u2019s Hotels & Stays' },
-    title: { vi: 'T\u00ECm kh\u00F4ng gian d\u00E0nh ri\u00EAng cho b\u1EA1n.', en: 'Find a space that feels like yours.' },
+    title: { vi: 'T\u00ECm kh\u00F4ng gian d\u00E0nh ri\u00EAng cho b\u1EA1n.', en: 'Hotels, Guesthouses & Rooms in Ho Chi Minh City' },
     description: {
       vi: 'Khám phá bộ sưu tập phòng tại hệ thống Huyen’s Hotels & Stays, từ những căn phòng ấm cúng, tiện nghi đến các không gian lưu trú phù hợp cho cả kỳ nghỉ ngắn ngày và dài hạn. Mỗi loại phòng mang một nét riêng, giúp bạn dễ dàng so sánh và lựa chọn không gian phù hợp với nhu cầu của mình.',
-      en: 'Explore the room collection at Huyen’s Hotels & Stays, from cosy, comfortable rooms to spaces suited for both short visits and extended stays. Each room type has its own character, making it easy to compare options and find the space that suits your needs.',
+      en: 'Find a space that feels like yours. Compare rooms and rates for short visits and longer stays.',
     },
     cta: { vi: 'Kh\u00E1m ph\u00E1 c\u00E1c lo\u1EA1i ph\u00F2ng', en: 'Explore our rooms' },
     imageNote: { vi: '\u1EA2nh minh h\u1ECDa', en: 'Illustration' },

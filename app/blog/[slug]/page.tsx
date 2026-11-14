@@ -1,4 +1,6 @@
 import { languageAlternates } from "@/app/lib/localized-path";
+import { englishInventory, englishPaths } from "@/app/lib/english-data";
+import { canonicalSeoPath } from "@/app/lib/room-seo-slugs";
 import { BLOG_SEO, seoDescription } from "../../lib/seo";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -174,12 +176,12 @@ function truncateDescription(
 ========================================================= */
 
 function createBreadcrumbStructuredData(
-  post: BlogPost,
-  siteUrl: string
+  title: string,
+  siteUrl: string,
+  blogUrl: string,
+  canonicalUrl: string,
+  english: boolean
 ) {
-  const canonicalUrl =
-    `${siteUrl}/blog/${post.slug}`;
-
   return {
     "@context":
       "https://schema.org",
@@ -196,7 +198,7 @@ function createBreadcrumbStructuredData(
           "ListItem",
         position: 1,
         name:
-          "Trang chủ",
+          english ? "Home" : "Trang chủ",
         item:
           siteUrl,
       },
@@ -205,16 +207,16 @@ function createBreadcrumbStructuredData(
           "ListItem",
         position: 2,
         name:
-          "Blog",
+          english ? "Travel guides" : "Blog",
         item:
-          `${siteUrl}/blog`,
+          blogUrl,
       },
       {
         "@type":
           "ListItem",
         position: 3,
         name:
-          post.title_vi,
+          title,
         item:
           canonicalUrl,
       },
@@ -409,16 +411,22 @@ export async function generateMetadata({
    PAGE
 ========================================================= */
 
-export default async function BlogDetailPage({
+export default function BlogDetailPage(props: Props) {
+  return <BlogArticle {...props} language="vi" />;
+}
+
+export async function BlogArticle({
   params,
-}: Props) {
+  language,
+}: Props & { language: "vi" | "en" }) {
   const { slug } =
     await params;
 
   const post =
     await getPost(slug);
 
-  if (!post) {
+  const english = language === "en";
+  if (!post || (english && (!post.title_en?.trim() || !post.content_en?.trim()))) {
     notFound();
   }
 
@@ -432,8 +440,13 @@ export default async function BlogDetailPage({
       ""
     );
 
-  const canonicalUrl =
-    `${cleanSiteUrl}/blog/${post.slug}`;
+  const homeUrl = cleanSiteUrl + (english ? "/en" : "");
+  const blogUrl = homeUrl + "/blog";
+  const canonicalUrl = blogUrl + "/" + encodeURIComponent(post.slug);
+  const category = english ? post.category_en : post.category_vi;
+  const translatedPaths = english
+    ? englishPaths(await englishInventory()).map(parts => canonicalSeoPath("/" + parts.map(encodeURIComponent).join("/")))
+    : [];
 
   const imageUrl =
     getImageUrl(
@@ -443,10 +456,12 @@ export default async function BlogDetailPage({
 
   const title =
     cleanText(
-      post.title_vi
+      english ? post.title_en : post.title_vi
     );
 
-  const description =
+  const description = english
+    ? seoDescription(post.excerpt_en?.trim() || cleanText(post.content_en ?? ""))
+    :
     truncateDescription(
       cleanText(
         post.excerpt_vi ||
@@ -481,20 +496,20 @@ export default async function BlogDetailPage({
         post.updated_at,
 
       inLanguage:
-        "vi-VN",
+        english ? "en" : "vi-VN",
 
       isPartOf: {
         "@type":
           "Blog",
 
         "@id":
-          `${cleanSiteUrl}/blog#blog`,
+          blogUrl + "#blog",
 
         name:
           "Huyen's Hotels & Stays",
 
         url:
-          `${cleanSiteUrl}/blog`,
+          blogUrl,
       },
 
       author: {
@@ -535,10 +550,10 @@ export default async function BlogDetailPage({
           }
         : {}),
 
-      ...(post.category_vi
+      ...(category
         ? {
             articleSection:
-              post.category_vi,
+              category,
           }
         : {}),
 
@@ -560,8 +575,7 @@ export default async function BlogDetailPage({
 
   const breadcrumbStructuredData =
     createBreadcrumbStructuredData(
-      post,
-      cleanSiteUrl
+      title, homeUrl, blogUrl, canonicalUrl, english
     );
 
   return (
@@ -594,6 +608,8 @@ export default async function BlogDetailPage({
 
       <BlogDetailClient
         post={post}
+        translatedPaths={translatedPaths}
+        siteUrl={cleanSiteUrl}
       />
     </>
   );

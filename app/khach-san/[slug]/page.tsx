@@ -289,7 +289,8 @@ function hasConsistentCoordinates(hotel: Hotel): boolean {
 function createHotelStructuredData(
   hotel: Hotel,
   rooms: ClientRoom[],
-  faqs: HotelFaq[]
+  faqs: HotelFaq[],
+  language: "vi" | "en"
 ): Record<string, unknown> {
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -298,22 +299,23 @@ function createHotelStructuredData(
   const siteUrl =
     baseUrl.replace(/\/+$/, "");
 
+  const english = language === "en";
+  const homeUrl = siteUrl + (english ? "/en" : "");
   const hotelName =
-    hotel.name_vi ||
-    hotel.name_en ||
+    (english ? hotel.name_en : hotel.name_vi || hotel.name_en) ||
     "Huyen's Hotels & Stays";
 
   const seoConfig =
     HOTEL_SEO[hotel.slug];
 
   const hotelDescription =
-    createHotelMetaDescription(
+    english ? hotel.description_en : createHotelMetaDescription(
       hotel,
       seoConfig
     );
 
   const hotelUrl =
-    `${siteUrl}/khach-san/${hotel.slug}`;
+    `${homeUrl}/khach-san/${hotel.slug}`;
 
   const hotelImage =
     normalizeImageUrl(
@@ -324,21 +326,19 @@ function createHotelStructuredData(
   const roomStructuredData: StructuredRoom[] =
     rooms
       .filter((room) =>
-        isActiveStatus(room.status)
+        isActiveStatus(room.status) && (!english || Boolean(room.name_en?.trim() && room.description_en?.trim()))
       )
       .map((room) => {
         const roomName =
-          room.name_vi ||
-          room.name_en ||
+          (english ? room.name_en : room.name_vi || room.name_en) ||
           "Phòng lưu trú";
 
         const roomDescription =
-          room.description_vi ||
-          room.description_en ||
+          (english ? room.description_en : room.description_vi || room.description_en) ||
           undefined;
 
         const roomUrl =
-          `${siteUrl}/khach-san/${encodeURIComponent(hotel.slug)}/phong/${encodeURIComponent(canonicalRoomSlug(hotel.slug, room.slug))}`;
+          `${homeUrl}/khach-san/${encodeURIComponent(hotel.slug)}/phong/${encodeURIComponent(canonicalRoomSlug(hotel.slug, room.slug))}`;
 
         const roomId =
           `${roomUrl}#room`;
@@ -383,17 +383,13 @@ function createHotelStructuredData(
           };
         }
 
-        if (
-          room.beds_vi ||
-          room.beds_en
-        ) {
+        const beds = english ? room.beds_en : room.beds_vi || room.beds_en;
+        if (beds) {
           roomData.bed = {
             "@type":
               "BedDetails",
             typeOfBed:
-              room.beds_vi ||
-              room.beds_en ||
-              "Bed",
+              beds,
           };
         }
 
@@ -414,7 +410,7 @@ function createHotelStructuredData(
         }
 
         const amenities =
-          getRoomAmenities(room);
+          english ? [] : getRoomAmenities(room);
 
         if (amenities.length > 0) {
           roomData.amenityFeature =
@@ -486,8 +482,7 @@ function createHotelStructuredData(
     address: {
       "@type": "PostalAddress",
       streetAddress:
-        hotel.address_vi ||
-        hotel.address_en ||
+        (english ? hotel.address_en : hotel.address_vi || hotel.address_en) ||
         undefined,
       addressLocality: "Ho Chi Minh City",
       addressRegion: "Ho Chi Minh City",
@@ -557,15 +552,15 @@ function createHotelStructuredData(
       {
         "@type": "ListItem",
         position: 1,
-        name: "Trang chủ",
-        item: siteUrl,
+        name: english ? "Home" : "Trang chủ",
+        item: homeUrl,
       },
       {
         "@type": "ListItem",
         position: 2,
-        name: "Khách sạn",
+        name: english ? "Rooms" : "Khách sạn",
         item:
-          `${siteUrl}/phong`,
+          `${homeUrl}/phong`,
       },
       {
         "@type": "ListItem",
@@ -579,8 +574,8 @@ function createHotelStructuredData(
   const validFaqs =
     faqs.filter(
       (faq) =>
-        faq.question_vi?.trim() &&
-        faq.answer_vi?.trim()
+        (english ? faq.question_en : faq.question_vi)?.trim() &&
+        (english ? faq.answer_en : faq.answer_vi)?.trim()
     );
 
   if (validFaqs.length > 0) {
@@ -593,11 +588,11 @@ function createHotelStructuredData(
           (faq) => ({
             "@type": "Question",
             name:
-              faq.question_vi.trim(),
+              (english ? faq.question_en : faq.question_vi)?.trim(),
             acceptedAnswer: {
               "@type": "Answer",
               text:
-                faq.answer_vi.trim(),
+                (english ? faq.answer_en : faq.answer_vi)?.trim(),
             },
           })
         ),
@@ -741,9 +736,14 @@ export async function generateStaticParams() {
   );
 }
 
-export default async function HotelDetailPage({
+export default function HotelDetailPage(props: PageProps) {
+  return <HotelDetails {...props} language="vi" />;
+}
+
+export async function HotelDetails({
   params,
-}: PageProps) {
+  language,
+}: PageProps & { language: "vi" | "en" }) {
   const { slug } =
     await params;
 
@@ -856,7 +856,8 @@ export default async function HotelDetailPage({
     createHotelStructuredData(
       hotel,
       clientRooms,
-      syncedFaqs
+      syncedFaqs,
+      language
     );
 
   return (

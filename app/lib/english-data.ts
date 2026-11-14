@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Hotel, Room } from "../khach-san/[slug]/hotel-data";
 import { cleanSeoText, seoDescription } from "./seo";
+import { canonicalRoomSlug } from "./room-seo-slugs";
 
 export type EnglishPost = { slug: string; title_en: string; excerpt_en: string | null; content_en: string | null; image: string | null; date: string; updated_at: string | null };
 export type EnglishData = { kind: "home" | "rooms" | "blog" | "hotel" | "room" | "article"; path: string; title: string; description: string; hotels: Hotel[]; rooms: Room[]; posts: EnglishPost[]; hotel: Hotel | null; room: Room | null; post: EnglishPost | null };
@@ -52,6 +53,7 @@ export async function englishPage(segments: string[]): Promise<EnglishData | nul
   const rooms = inventory.rooms.filter(r => r.hotel_id === hotel.id);
   if (segments.length === 2) return { ...result, kind: "hotel", hotel, rooms, title: hotel.name_en + " – " + (hotelFocus[hotel.slug] || "Ho Chi Minh City"), description: seoDescription(hotel.description_en || "Compare rooms and rates for your stay in Ho Chi Minh City.") };
   if (segments.length !== 4 || segments[2] !== "phong") return null;
-  const room = rooms.find(r => r.slug === segments[3]);
+  const room = rooms.find(r => r.slug === segments[3])
+    ?? rooms.find(r => canonicalRoomSlug(hotel.slug, r.slug) === segments[3]);
   return room ? { ...result, kind: "room", hotel, room, rooms, title: cleanSeoText(room.name_en) + " – " + hotel.name_en, description: seoDescription(room.description_en || "View room details and check availability for your dates.") } : null;
 }

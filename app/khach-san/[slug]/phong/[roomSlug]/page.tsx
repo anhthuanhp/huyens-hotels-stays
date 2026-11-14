@@ -1,5 +1,5 @@
 import { languageAlternates } from "@/app/lib/localized-path";
-import { canonicalRoomSlug } from "@/app/lib/room-seo-slugs";
+import { canonicalRoomSlug, legacyRoomSlug } from "@/app/lib/room-seo-slugs";
 import { districtOnePlace } from "../../../../lib/local-schema";
 import { cleanSeoText, seoDescription, seoHotelName } from "../../../../lib/seo";
 import RoomDetailClient from "./RoomDetailClient";
@@ -89,11 +89,12 @@ export async function generateMetadata({
     };
   }
 
-  const { data: room } = await supabase
+  const { data: matchingRooms } = await supabase
     .from("rooms")
     .select(
       `
         id,
+        slug,
         name_vi,
         name_en,
         description_vi,
@@ -105,10 +106,10 @@ export async function generateMetadata({
       `
     )
     .eq("hotel_id", hotel.id)
-    .eq("slug", roomSlug)
-    .eq("status", "active")
-    .maybeSingle();
+    .in("slug", [roomSlug, legacyRoomSlug(slug, roomSlug)])
+    .eq("status", "active");
 
+  const room = matchingRooms?.find(row => row.slug === roomSlug) ?? matchingRooms?.[0];
   if (!room) {
     return {
       title: `${hotel.name_vi} — Phòng không tồn tại`,
@@ -485,9 +486,14 @@ export async function generateStaticParams() {
   });
 }
 
-export default async function RoomDetailPage({
+export default function RoomDetailPage(props: Props) {
+  return <RoomDetails {...props} language="vi" />;
+}
+
+export async function RoomDetails({
   params,
-}: Props) {
+  language,
+}: Props & { language: "en" | "vi" }) {
   const { slug, roomSlug } =
     await params;
 
@@ -523,15 +529,15 @@ export default async function RoomDetailPage({
 
     if (hotel) {
       const {
-        data: roomData,
+        data: matchingRooms,
         error: roomError,
       } = await supabase
         .from("rooms")
         .select(ROOM_SELECT)
         .eq("hotel_id", hotel.id)
-        .eq("slug", roomSlug)
-        .eq("status", "active")
-        .maybeSingle();
+        .in("slug", [roomSlug, legacyRoomSlug(slug, roomSlug)])
+        .eq("status", "active");
+      const roomData = matchingRooms?.find(row => row.slug === roomSlug) ?? matchingRooms?.[0];
 
       if (roomError) {
         console.error(
@@ -662,21 +668,21 @@ export default async function RoomDetailPage({
     | Record<string, unknown>
     | null = null;
 
+  const english = language === "en";
+  const homeUrl = siteUrl + (english ? "/en" : "");
   if (hotel && room) {
     const hotelName =
       cleanText(
-        hotel.name_vi ||
-          hotel.name_en
+        english ? hotel.name_en : hotel.name_vi || hotel.name_en
       );
 
     const roomName =
       cleanText(
-        room.name_vi ||
-          room.name_en
+        english ? room.name_en : room.name_vi || room.name_en
       );
 
     const roomUrl =
-      `${siteUrl}/khach-san/${encodeURIComponent(slug)}/phong/${encodeURIComponent(canonicalRoomSlug(slug, roomSlug))}`;
+      `${homeUrl}/khach-san/${encodeURIComponent(slug)}/phong/${encodeURIComponent(canonicalRoomSlug(slug, roomSlug))}`;
 
     const roomImage =
       media.length > 0
@@ -688,8 +694,7 @@ export default async function RoomDetailPage({
 
     const roomDescription =
       cleanText(
-        room.description_vi ||
-          room.description_en
+        english ? room.description_en : room.description_vi || room.description_en
       );
 
     const roomSchema: Record<
@@ -700,10 +705,10 @@ export default async function RoomDetailPage({
       "@id":
         roomUrl + "#room",
       name: roomName,
-      containedInPlace: { "@id": `${siteUrl}/khach-san/${slug}#hotel` },
+      containedInPlace: { "@id": `${homeUrl}/khach-san/${slug}#hotel` },
       description:
-        roomDescription ||
-        `${roomName} tại ${hotelName}.`,
+        roomDescription || (english ? roomName + " at " + hotelName :
+        `${roomName} tại ${hotelName}.`),
       url: roomUrl,
     };
 
@@ -744,17 +749,13 @@ export default async function RoomDetailPage({
       };
     }
 
-    if (
-      room.beds_vi ||
-      room.beds_en
-    ) {
+    const beds = english ? room.beds_en : room.beds_vi || room.beds_en;
+    if (beds) {
       roomSchema.bed = {
         "@type":
           "BedDetails",
         typeOfBed:
-          room.beds_vi ||
-          room.beds_en ||
-          "Bed",
+          beds,
       };
     }
 
@@ -774,11 +775,11 @@ export default async function RoomDetailPage({
         {
           "@type": "Hotel",
           "@id":
-            `${siteUrl}/khach-san/${slug}#hotel`,
+            `${homeUrl}/khach-san/${slug}#hotel`,
           name: hotelName,
           containedInPlace: districtOnePlace,
           url:
-            `${siteUrl}/khach-san/${slug}`,
+            `${homeUrl}/khach-san/${slug}`,
         },
         roomSchema,
         {
@@ -793,17 +794,17 @@ export default async function RoomDetailPage({
                 "ListItem",
               position: 1,
               name:
-                "Trang chủ",
-              item: siteUrl,
+                english ? "Home" : "Trang chủ",
+              item: homeUrl,
             },
             {
               "@type":
                 "ListItem",
               position: 2,
               name:
-                "Khách sạn",
+                english ? "Rooms" : "Khách sạn",
               item:
-                `${siteUrl}/phong`,
+                `${homeUrl}/phong`,
             },
             {
               "@type":
@@ -812,7 +813,7 @@ export default async function RoomDetailPage({
               name:
                 hotelName,
               item:
-                `${siteUrl}/khach-san/${slug}`,
+                `${homeUrl}/khach-san/${slug}`,
             },
             {
               "@type":
