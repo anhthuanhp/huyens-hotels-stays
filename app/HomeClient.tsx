@@ -349,7 +349,7 @@ export default function HomeClient({
           className="relative"
           aria-labelledby="hero-heading"
         >
-          <div className="relative h-[455px] overflow-hidden bg-[#222611] text-white max-sm:h-[445px]">
+          <div className="relative flex min-h-[455px] flex-col overflow-hidden bg-[#222611] pb-[45px] text-white max-sm:min-h-[445px]">
 
             {/* Slideshow Supabase */}
             <div className="absolute inset-0">
@@ -413,10 +413,10 @@ export default function HomeClient({
             <Header />
 
             {/* Noi dung ben trai theo Bolt */}
-            <div className="relative z-20 mx-auto w-[calc(100%-48px)] max-w-[1100px] pt-[115px] pb-[25px] text-white max-sm:w-[calc(100%-32px)] max-sm:pt-[150px]">
+            <div className="relative z-20 mx-auto w-[calc(100%-48px)] max-w-[1100px] flex-1 pt-[115px] pb-5 text-white max-sm:w-[calc(100%-32px)] max-sm:pt-[150px]">
               <div className="max-w-[560px]">
 
-                <div className="grid h-[230px] w-full max-w-[560px] overflow-hidden">
+                <div className="grid w-full max-w-[560px]">
                   {heroSlides.length > 0 ? (
                     heroSlides.map((slide, index) => {
                       const fallback =
@@ -510,36 +510,37 @@ export default function HomeClient({
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setStayMode("short")}
-                    aria-pressed={stayMode === "short"}
-                    className={`inline-flex items-center gap-[7px] rounded-[28px] border border-white px-[17px] py-2 text-sm font-semibold text-white transition-colors ${
-                      stayMode === "short"
-                        ? "bg-[#0b6c38]"
-                        : "bg-[rgba(16,31,22,.3)] hover:bg-[#0b6c38]"
-                    }`}
-                  >
-                    <Building2 size={16} aria-hidden="true" />
-                    {isVi ? "Lưu trú ngắn hạn" : "Short stay"}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setStayMode("long")}
-                    aria-pressed={stayMode === "long"}
-                    className={`inline-flex items-center gap-[7px] rounded-[28px] border border-white px-[17px] py-2 text-sm font-semibold text-white transition-colors ${
-                      stayMode === "long"
-                        ? "bg-[#0b6c38]"
-                        : "bg-[rgba(16,31,22,.3)] hover:bg-[#0b6c38]"
-                    }`}
-                  >
-                    <Building2 size={16} aria-hidden="true" />
-                    {isVi ? "Thuê dài hạn" : "Long stay"}
-                  </button>
-                </div>
               </div>
+            </div>
+
+            <div className="relative z-20 mx-auto flex w-[calc(100%-24px)] max-w-[972px] flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setStayMode("short")}
+                aria-pressed={stayMode === "short"}
+                className={`inline-flex items-center gap-[7px] rounded-[28px] border border-white px-[17px] py-2 text-sm font-semibold text-white transition-colors ${
+                  stayMode === "short"
+                    ? "bg-[#0b6c38]"
+                    : "bg-[rgba(16,31,22,.3)] hover:bg-[#0b6c38]"
+                }`}
+              >
+                <Building2 size={16} aria-hidden="true" />
+                {isVi ? "Lưu trú ngắn hạn" : "Short stay"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStayMode("long")}
+                aria-pressed={stayMode === "long"}
+                className={`inline-flex items-center gap-[7px] rounded-[28px] border border-white px-[17px] py-2 text-sm font-semibold text-white transition-colors ${
+                  stayMode === "long"
+                    ? "bg-[#0b6c38]"
+                    : "bg-[rgba(16,31,22,.3)] hover:bg-[#0b6c38]"
+                }`}
+              >
+                <Building2 size={16} aria-hidden="true" />
+                {isVi ? "Thuê dài hạn" : "Long stay"}
+              </button>
             </div>
 
             {heroCss && (
