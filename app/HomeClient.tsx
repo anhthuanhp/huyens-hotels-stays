@@ -513,7 +513,7 @@ export default function HomeClient({
               </div>
             </div>
 
-            <div className="relative z-20 mx-auto flex w-[calc(100%-24px)] max-w-[972px] flex-wrap gap-3">
+            <div className="relative z-20 mx-auto flex w-[calc(100%-24px)] max-w-[972px] flex-wrap justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setStayMode("short")}
