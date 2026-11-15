@@ -565,7 +565,7 @@ export default function HomeClient({
           className="bg-white px-4 pb-0 pt-[52px] sm:px-6 max-sm:pt-8"
           aria-labelledby="about-heading"
         >
-          <div className="mx-auto max-w-[1100px]">
+          <div className="mx-auto max-w-[1100px] lg:max-w-[1440px]">
             <div className="grid items-center gap-5 lg:grid-cols-[25fr_30fr_45fr] lg:gap-0">
 
               {/* Cot 1 - tieu de */}
@@ -647,7 +647,7 @@ export default function HomeClient({
           className="bg-white px-4 pb-[22px] pt-[36px] sm:px-6"
           aria-labelledby="stays-heading"
         >
-          <div className="mx-auto max-w-[1100px]">
+          <div className="mx-auto max-w-[1100px] lg:max-w-[1440px]">
 
             {/* Heading theo Bolt */}
             <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -795,7 +795,7 @@ export default function HomeClient({
               : "Booking channels and guest reviews"
           }
         >
-          <div className="mx-auto grid max-w-[1100px] gap-[18px] lg:grid-cols-[1fr_1.25fr]">
+          <div className="mx-auto grid max-w-[1100px] lg:max-w-[1440px] gap-[18px] lg:grid-cols-[1fr_1.25fr]">
 
             {/* OTA - COT TRAI */}
             <div
@@ -1138,7 +1138,7 @@ export default function HomeClient({
           className="bg-white px-4 pb-[42px] pt-[34px] sm:px-6"
           aria-labelledby="experience-heading"
         >
-          <div className="mx-auto max-w-[1100px]">
+          <div className="mx-auto max-w-[1100px] lg:max-w-[1440px]">
             <div className="mb-6 flex items-center justify-center gap-4">
               <span
                 aria-hidden="true"
@@ -1194,6 +1194,9 @@ export default function HomeClient({
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         </div>
+                        <p className="mt-2 text-sm font-medium leading-snug text-[#111613]">
+                          {title}
+                        </p>
                       </Link>
                     );
                   })}
