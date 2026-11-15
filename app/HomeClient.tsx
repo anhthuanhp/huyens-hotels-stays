@@ -530,16 +530,14 @@ export default function HomeClient({
 
               <button
                 type="button"
-                onClick={() => setStayMode("long")}
-                aria-pressed={stayMode === "long"}
-                className={`inline-flex items-center gap-[7px] rounded-[28px] border border-white px-[17px] py-2 text-sm font-semibold text-white transition-colors ${
-                  stayMode === "long"
-                    ? "bg-[#0b6c38]"
-                    : "bg-[rgba(16,31,22,.3)] hover:bg-[#0b6c38]"
-                }`}
+                disabled
+                className="inline-flex cursor-not-allowed items-center gap-[7px] rounded-[28px] border border-white/60 bg-black/40 px-[17px] py-2 text-sm font-semibold text-white/80"
               >
                 <Building2 size={16} aria-hidden="true" />
                 {isVi ? "Thuê dài hạn" : "Long stay"}
+                <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">
+                  {isVi ? "Sắp mở" : "Coming soon"}
+                </span>
               </button>
             </div>
 
