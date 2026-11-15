@@ -48,6 +48,16 @@ const inFlight = new Map<string, Promise<Calendar>>();
 const waiting: Array<() => void> = [];
 let activeDownloads = 0;
 
+export function calendarFailureReason(error: unknown) {
+  if (error instanceof Error) {
+    if (error.name === "TimeoutError" || error.name === "AbortError") return "feed_timeout";
+    if (/^(invalid_calendar|invalid_url|calendar_too_large|too_many_calendars|calendar_queue_timeout|stale_calendar|missing_calendar_body|feed_http_[45][0-9]{2})$/.test(error.message)) {
+      return error.message;
+    }
+  }
+  return "feed_transport_or_encoding_error";
+}
+
 async function fetchCalendar(url: string) {
   const response = await fetch(url, {
     redirect: "error",
@@ -55,10 +65,17 @@ async function fetchCalendar(url: string) {
     headers: { Accept: "text/calendar", "Cache-Control": "no-cache" },
     signal: AbortSignal.timeout(5_000),
   });
-  if (!response.ok || !response.body || Number(response.headers.get("content-length")) > MAX_BYTES ||
-      Number(response.headers.get("age")) > CACHE_TTL / 1000) {
+  const age = Number(response.headers.get("age")) || 0;
+  const responseDate = Date.parse(response.headers.get("date") ?? "");
+  const apparentAgeMs = Math.max(age * 1000, Number.isFinite(responseDate) ? Date.now() - responseDate : 0);
+  const responseProblem = !response.ok ? "feed_http_" + response.status
+    : !response.body ? "missing_calendar_body"
+    : Number(response.headers.get("content-length")) > MAX_BYTES ? "calendar_too_large"
+    : apparentAgeMs >= CACHE_TTL ? "stale_calendar"
+    : null;
+  if (responseProblem || !response.body) {
     if (response.body) void response.body.cancel().catch(() => {});
-    throw new Error("unavailable_calendar");
+    throw new Error(responseProblem ?? "missing_calendar_body");
   }
   const reader = response.body.getReader();
   const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -74,7 +91,7 @@ async function fetchCalendar(url: string) {
     }
     return {
       calendar: parseCalendar(text + decoder.decode()),
-      maxCacheMs: CACHE_TTL - (Number(response.headers.get("age")) || 0) * 1000,
+      maxCacheMs: CACHE_TTL - apparentAgeMs,
     };
   } finally {
     void reader.cancel().catch(() => {});

@@ -10,9 +10,6 @@ type Source = {
   enabled: boolean;
   last_success_at: string | null;
   last_error: string | null;
-  verified_from: string | null;
-  verified_before: string | null;
-  verified_blocked_dates: string[];
 };
 type SourceList = { quantity: number; sources: Source[]; active: number; duplicate: boolean; complete: boolean };
 type Draft = Pick<Source, "unit_code" | "feed_url" | "enabled">;
@@ -58,7 +55,6 @@ function SourceEditor({ roomId, quantity }: { roomId: number; quantity: number }
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editId, setEditId] = useState<number>();
   const [showDraft, setShowDraft] = useState(false);
-  const [verification, setVerification] = useState<{ id: number; from: string; before: string; blockedDates: string }>();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -128,26 +124,10 @@ function SourceEditor({ roomId, quantity }: { roomId: number; quantity: number }
                     ? source.last_error ? "Lỗi kết nối" : source.last_success_at ? "Đã kết nối" : "Chưa kiểm tra"
                     : "Đã tắt"}
                   {source.last_success_at && <p className="text-xs text-slate-600">Lần thành công gần nhất {dateTime.format(new Date(source.last_success_at))}</p>}
-                  <p className="text-xs text-slate-600">
-                    {source.verified_from && source.verified_before
-                      ? `Đã xác nhận từ ${source.verified_from} đến trước ${source.verified_before}`
-                      : "Chưa xác nhận phạm vi bán phòng"}
-                  </p>
                   {source.last_error && <p className="text-xs text-red-700">{source.last_error}</p>}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" className={button} disabled={busy} onClick={() => open(source)}>Sửa</button>
-                  <button type="button" className={button} disabled={busy || !source.enabled} onClick={() => setVerification({
-                    id: source.id, from: source.verified_from ?? "", before: source.verified_before ?? "",
-                    blockedDates: (source.verified_blocked_dates ?? []).join("\n"),
-                  })}>Xác nhận tồn theo ngày</button>
-                  {source.verified_from && <button type="button" className={button} disabled={busy} onClick={() => void run(async () => {
-                    await goHostAdminRequest(roomId, "POST", source.id, {
-                      action: "confirm-inventory", from: null, before: null,
-                    });
-                    setVerification(undefined);
-                    return "Đã bỏ xác nhận tồn phòng.";
-                  })}>Bỏ xác nhận</button>}
                   <button type="button" className={button} disabled={busy} onClick={() => void run(async () => {
                     await goHostAdminRequest(roomId, "PATCH", source.id, {
                       unit_code: source.unit_code, feed_url: source.feed_url, enabled: !source.enabled,
@@ -167,36 +147,6 @@ function SourceEditor({ roomId, quantity }: { roomId: number; quantity: number }
                   }}>Xóa</button>
                 </div>
               </div>
-              {verification?.id === source.id && <div className="mt-3 space-y-2 border-t border-slate-200 pt-3">
-                <p className="text-xs text-slate-600">
-                  Đối chiếu từng đêm trong phạm vi với lịch vận hành của phòng này trên GoHost.
-                  Ghi thêm mọi đêm bận chưa xuất hiện trên iCal. Ngày kết thúc là ngày trả phòng.
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <label className="text-xs">Từ ngày nhận
-                    <input type="date" className={input} value={verification.from}
-                      onChange={(event) => setVerification({ ...verification, from: event.target.value })} />
-                  </label>
-                  <label className="text-xs">Đến trước ngày trả
-                    <input type="date" className={input} value={verification.before}
-                      onChange={(event) => setVerification({ ...verification, before: event.target.value })} />
-                  </label>
-                </div>
-                <label className="block text-xs">Đêm bận bổ sung, mỗi dòng một ngày (YYYY-MM-DD)
-                  <textarea className={input} rows={2} value={verification.blockedDates}
-                    onChange={(event) => setVerification({ ...verification, blockedDates: event.target.value })} />
-                </label>
-                <button type="button" className={button}
-                  disabled={busy || !verification.from || verification.before <= verification.from}
-                  onClick={() => void run(async () => {
-                    await goHostAdminRequest(roomId, "POST", source.id, {
-                      action: "confirm-inventory", from: verification.from, before: verification.before,
-                      blockedDates: verification.blockedDates.split(/\s+/).filter(Boolean),
-                    });
-                    setVerification(undefined);
-                    return "Đã lưu phạm vi tồn phòng được đối chiếu.";
-                  })}>Xác nhận phạm vi này</button>
-              </div>}
             </li>
           ))}
         </ul>
