@@ -1,3 +1,4 @@
+import { goHostApiMapping, loadGoHostInventory } from "./gohost-public-api";
 import { legacyRoomSlug } from "./room-seo-slugs";
 import { countFreeUnits, MAX_REQUESTED_ROOMS, MAX_STAY_NIGHTS, stayIsCovered, todayInVietnam, validDate } from "./gohost-calendar";
 import { getServerSupabase, loadCalendar, sourceConfiguration, sourceFields, type GoHostSource } from "./gohost-server";
@@ -78,14 +79,15 @@ export async function checkAvailability(request: Request, forBooking = false) {
           .neq("bookings.status", "cancelled")
           .lt("bookings.check_in", end).gt("bookings.check_out", start).limit(501),
       ]);
-      completeReads = !sources.error && !bookings.error &&
-        sources.data.length <= MAX_SOURCES && bookings.data.length <= 500;
-      if (completeReads) {
-        for (const source of (sources.data ?? []) as GoHostSource[]) {
+      completeReads = !bookings.error && bookings.data.length <= 500;
+      if (!sources.error && sources.data.length <= MAX_SOURCES) {
+        for (const source of sources.data as GoHostSource[]) {
           const list = sourceByRoom.get(source.room_id) ?? [];
           list.push(source);
           sourceByRoom.set(source.room_id, list);
         }
+      }
+      if (completeReads) {
         for (const booking of bookings.data ?? []) {
           const quantity = Number(booking.quantity);
           const detail = Array.isArray(booking.bookings) ? booking.bookings[0] : booking.bookings;
@@ -103,18 +105,44 @@ export async function checkAvailability(request: Request, forBooking = false) {
       }
     }
 
+    const nights = (Date.parse(end) - Date.parse(start)) / 86_400_000;
+    const inventoryRequests = new Map<string, Promise<Map<string, number>>>();
     const results = await Promise.all(rooms.map(async (room) => {
       const totalQuantity = room.quantity;
       const { active, complete } = sourceConfiguration(sourceByRoom.get(room.id) ?? [], totalQuantity);
       let availableQuantity: number | null = totalQuantity === 0 ? 0 : null;
-      if (totalQuantity > 0 && completeReads && complete) {
+      if (totalQuantity > 0 && completeReads) {
         try {
-          const calendars = await Promise.all(active.map((source) => loadCalendar(source, forBooking)));
-          const goHostFree = countFreeUnits(calendars, { start, end });
+          const mapping = goHostApiMapping(hotelSlugs.get(room.hotel_id) ?? "");
+          const externalId = mapping && Object.hasOwn(mapping.roomTypes, room.slug)
+            ? mapping.roomTypes[room.slug].toLowerCase()
+            : undefined;
+          let goHostFree: number | undefined;
+          let verified = covered;
+          if (mapping && externalId && nights <= 30) {
+            let request = inventoryRequests.get(mapping.propertyId);
+            if (!request) {
+              request = loadGoHostInventory(mapping.propertyId, start, end);
+              inventoryRequests.set(mapping.propertyId, request);
+            }
+            const quantity = (await request).get(externalId);
+            if (quantity !== undefined && quantity <= totalQuantity) {
+              if (nights === 1 || quantity === 0 || mapping.continuousInventoryVerified) {
+                goHostFree = quantity;
+                verified = true;
+              } else if (covered && complete) {
+                const calendars = await Promise.all(active.map((source) => loadCalendar(source, forBooking)));
+                goHostFree = Math.min(quantity, countFreeUnits(calendars, { start, end }));
+              }
+            }
+          } else if (complete) {
+            const calendars = await Promise.all(active.map((source) => loadCalendar(source, forBooking)));
+            goHostFree = countFreeUnits(calendars, { start, end });
+          }
           const internal = bookedByRoom.get(room.id);
           if (goHostFree === 0) {
             availableQuantity = 0;
-          } else if (covered && (!internal || goHostFree === totalQuantity)) {
+          } else if (goHostFree !== undefined && verified && (!internal || goHostFree === totalQuantity)) {
             // Internal bookings have no feed UID or physical-unit assignment.
             // With overlapping occupancy in both systems, the same booking
             // may appear twice. Leave the result unverified in that case.

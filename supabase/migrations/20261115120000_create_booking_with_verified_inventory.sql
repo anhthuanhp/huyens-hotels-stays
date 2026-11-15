@@ -78,3 +78,12 @@ revoke all on function public.create_booking_with_verified_inventory(
 grant execute on function public.create_booking_with_verified_inventory(
   text, bigint, text, date, date, integer, integer, integer, text, text, text, text, jsonb, jsonb, date, date
 ) to service_role;
+
+-- The web server uses service_role. Browser roles must go through the
+-- server-side GoHost check instead of invoking the previous RPC directly.
+revoke execute on function public.create_booking_atomic_v2(
+  text, bigint, text, date, date, integer, integer, integer, text, text, text, text, jsonb
+) from public, anon, authenticated;
+grant execute on function public.create_booking_atomic_v2(
+  text, bigint, text, date, date, integer, integer, integer, text, text, text, text, jsonb
+) to service_role;

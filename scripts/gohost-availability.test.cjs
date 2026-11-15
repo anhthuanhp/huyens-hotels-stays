@@ -129,7 +129,7 @@ function database(rows) {
 }
 
 const room = { id: 11, hotel_id: 2, slug: "balcony", quantity: 2 };
-function availability({ sources = [source(1), source(2)], coverage = "90", fetchImpl, bookings = [] } = {}) {
+function availability({ sources = [source(1), source(2)], coverage = "90", fetchImpl, bookings = [], publicApi } = {}) {
   const { db, requests } = database((q) => ({
     hotels: [{ id: 2, slug: "ae-guesthouse" }],
     rooms: [room],
@@ -141,6 +141,7 @@ function availability({ sources = [source(1), source(2)], coverage = "90", fetch
     "./room-seo-slugs": roomSlugs,
     "./gohost-calendar": { ...calendar, todayInVietnam: () => "2026-11-13" },
     "./gohost-server": client,
+    "./gohost-public-api": publicApi ?? { goHostApiMapping: () => undefined },
   }, { process: { env: { GOHOST_ICAL_VERIFIED_COVERAGE_DAYS: coverage } } });
   function search(extra = {}) {
     return route.checkAvailability(new Request("http://localhost/api/availability", {
@@ -264,4 +265,34 @@ test("Admin panel renders its create-room instruction and existing-room controls
   assert.match(existingRoom, /Kiểm tra kết nối/);
   assert.match(existingRoom, /Thêm phòng vật lý/);
   assert.doesNotMatch(existingRoom, /platform\.gohost/);
+});
+
+test("GoHost search uses the mapped property and does not treat a nightly count as continuous inventory", async () => {
+  const propertyId = "01234567-0000-0000-0000-000000000000";
+  const roomId = "01234567-0000-0000-0000-000000000001";
+  const booking = { room_id: 11, quantity: 1, bookings: { check_in: stay.start, check_out: stay.end } };
+  const fetchImpl = async (url) => new Response(url === source(1).feed_url
+    ? ical(busy("20261116", "20261117"))
+    : ical(busy("20261117", "20261119")));
+  for (const [continuousInventoryVerified, coverage, checkOut, bookings, expected] of [
+    [false, "", stay.end, [], null],
+    [false, "90", stay.end, [], 0],
+    [false, "", "2026-11-17", [], 1],
+    [true, "", stay.end, [], 1],
+    [true, "", stay.end, [booking], null],
+  ]) {
+    const publicApi = {
+      goHostApiMapping(slug) {
+        assert.equal(slug, "ae-guesthouse");
+        return { propertyId, roomTypes: { balcony: roomId }, continuousInventoryVerified };
+      },
+      async loadGoHostInventory(...args) {
+        assert.deepEqual(args, [propertyId, stay.start, checkOut]);
+        return new Map([[roomId, 1]]);
+      },
+    };
+    const { rooms: [result] } = await (await availability({ coverage, fetchImpl, publicApi, bookings })
+      .search({ checkOut })).json();
+    assert.equal(result.availableQuantity, expected);
+  }
 });
