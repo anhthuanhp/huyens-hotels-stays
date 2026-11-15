@@ -36,9 +36,12 @@ const hotelDescriptions: Record<string, string> = {
   huyenhomestay: "Huyen Homestay on Nguyen Thi Minh Khai Street offers rooms for nightly stays in central Ho Chi Minh City. Compare room types and plan your visit.",
 };
 
+const hotelTitles: Record<string, string> = {
+  "anh-kim-hotel": "Anh Kim Hotel on Co Bac Street | Double & Family Rooms",
+  "ae-guesthouse": "A&E Guesthouse near Bui Vien & Pham Ngu Lao",
+};
+
 const hotelFocus: Record<string, string> = {
-  "anh-kim-hotel": "Co Bac hotel near Bui Vien",
-  "ae-guesthouse": "Guesthouse near Bui Vien and Pham Ngu Lao",
   "huyen-house": "Quiet stay near the US Consulate",
   huyenhomestay: "Rooms for nightly stays on Nguyen Thi Minh Khai",
 };
@@ -58,7 +61,7 @@ export async function englishPage(segments: string[]): Promise<EnglishData | nul
   const hotel = inventory.hotels.find(h => h.slug === segments[1]);
   if (!hotel) return null;
   const rooms = inventory.rooms.filter(r => r.hotel_id === hotel.id);
-  if (segments.length === 2) return { ...result, kind: "hotel", hotel, rooms, title: hotel.name_en + " – " + (hotelFocus[hotel.slug] || "Ho Chi Minh City"), description: seoDescription(hotelDescriptions[hotel.slug] || hotel.description_en || "Compare rooms and rates for your stay in Ho Chi Minh City.") };
+  if (segments.length === 2) return { ...result, kind: "hotel", hotel, rooms, title: hotelTitles[hotel.slug] || hotel.name_en + " – " + (hotelFocus[hotel.slug] || "Ho Chi Minh City"), description: seoDescription(hotelDescriptions[hotel.slug] || hotel.description_en || "Compare rooms and rates for your stay in Ho Chi Minh City.") };
   if (segments.length !== 4 || segments[2] !== "phong") return null;
   const room = rooms.find(r => r.slug === segments[3])
     ?? rooms.find(r => canonicalRoomSlug(hotel.slug, r.slug) === segments[3]);
