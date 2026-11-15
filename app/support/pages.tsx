@@ -95,6 +95,23 @@ export function BookingGuide({ language }: { language: Language }) {
 export function PaymentGuide({ language }: { language: Language }) {
   return (
     <SupportPage page="huong-dan-thanh-toan" language={language}>
+      <section className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6">
+        <h2 className="text-xl font-semibold">{localize(["Phương thức thanh toán", "Accepted payment methods"], language)}</h2>
+        <dl className="mt-3 space-y-3 leading-7 text-neutral-700">
+          <div>
+            <dt className="font-semibold">{localize(["Thẻ", "Cards"], language)}</dt>
+            <dd>{localize(["Chấp nhận thanh toán bằng thẻ tại cơ sở. Nếu dùng thẻ quốc tế, bạn có thể hỏi cơ sở trước để xác nhận loại thẻ của mình.", "Card payments are accepted at the property. If you use an international card, you can check with the property in advance that your card is supported."], language)}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold">{localize(["Chuyển khoản ngân hàng", "Bank transfer"], language)}</dt>
+            <dd>{localize(["Chuyển khoản theo thông tin người nhận và nội dung chuyển khoản do cơ sở xác nhận.", "Use the bank details and payment reference confirmed by the property."], language)}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold">{localize(["Tiền mặt", "Cash"], language)}</dt>
+            <dd>{localize(["Thanh toán bằng tiền mặt tại cơ sở theo điều kiện đặt phòng.", "You can pay in cash at the property in accordance with your booking terms."], language)}</dd>
+          </div>
+        </dl>
+      </section>
       <GuideSection language={language} title={["Khi đặt trực tiếp", "For direct bookings"]} steps={[
         ["Website không thu tiền khi bạn gửi yêu cầu đặt phòng. Kiểm tra xác nhận để biết tổng tiền, số tiền cần trả và hạn thanh toán.", "The website does not charge you when you submit a booking request. Check your confirmation for the total, amount due and payment deadline."],
         ["Nếu cần đặt cọc hoặc trả trước, xác nhận số tiền, phương thức và thông tin người nhận qua kênh chính thức của cơ sở. Khi chuyển khoản, ghi mã đặt phòng theo hướng dẫn và lưu biên nhận.", "If a deposit or advance payment is required, confirm the amount, payment method and recipient through the property’s official channel. If paying by bank transfer, use your booking reference as instructed and keep the receipt."],
