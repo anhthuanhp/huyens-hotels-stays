@@ -4,8 +4,15 @@ import { localizedHref } from "@/app/lib/localized-path";
 
 import { useLanguage } from "@/app/lib/use-language";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+const bookingResources = [
+  { path: "/huong-dan-dat-phong", vi: "Cách đặt phòng", en: "How to book your stay" },
+  { path: "/huong-dan-thanh-toan", vi: "Cách thanh toán", en: "How to pay for your booking" },
+  { path: "/cau-hoi-thuong-gap", vi: "Câu hỏi thường gặp", en: "Booking and check-in FAQs" },
+] as const;
 
 type Hotel = {
   id: number;
@@ -310,6 +317,24 @@ export default function HotelBookingSidebar({
               : "Search rooms"}
           </button>
         </div>
+
+        <nav
+          aria-label={language === "vi" ? "Hỗ trợ đặt phòng" : "Booking help"}
+          className="mt-4 border-t border-slate-200 pt-3"
+        >
+          <ul>
+            {bookingResources.map((resource) => (
+              <li key={resource.path}>
+                <Link
+                  href={localizedHref(resource.path, language)}
+                  className="inline-block py-1.5 text-sm font-medium text-sky-800 underline underline-offset-4"
+                >
+                  {resource[language]}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
     </aside>
   );
