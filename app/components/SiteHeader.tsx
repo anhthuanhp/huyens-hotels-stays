@@ -3,7 +3,8 @@ import { useLanguage, changeSiteLanguage } from "../lib/use-language";
 
 import Image from "next/image";
 import Link from "@/app/components/LocalizedLink";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { localizedHref, supportPaths } from "../lib/localized-path";
 
 type Language = "vi" | "en";
 type BackLink = { href: string; label: string };
@@ -87,7 +88,11 @@ function UKFlag() {
 
 export default function SiteHeader() {
   const pathname = usePathname() ?? "/";
-  const language = useLanguage();
+  const router = useRouter();
+  const savedLanguage = useLanguage();
+  const basePath = pathname.replace(/^\/en(?=\/|$)/, "") || "/";
+  const isSupportPage = supportPaths.includes(basePath);
+  const language = isSupportPage ? (pathname === basePath ? "vi" : "en") : savedLanguage;
 
   if (
     (pathname === "/" || pathname === "/en") ||
@@ -97,9 +102,14 @@ export default function SiteHeader() {
     return null;
   }
 
-  function changeLanguage(nextLanguage: Language) { changeSiteLanguage(nextLanguage); }
+  function changeLanguage(nextLanguage: Language) {
+    changeSiteLanguage(nextLanguage);
+    if (isSupportPage && nextLanguage !== language) {
+      router.push(localizedHref(basePath, nextLanguage));
+    }
+  }
 
-  const back = getBackLink(pathname.replace(/^\/en(?=\/|$)/, "") || "/", language);
+  const back = getBackLink(basePath, language);
 
   return (
     <header data-public-site className="relative z-40 border-b border-slate-200 bg-white">

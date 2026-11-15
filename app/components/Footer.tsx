@@ -1,6 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import NextLink from "next/link";
+import { usePathname } from "next/navigation";
+import { localizedHref, supportPaths } from "../lib/localized-path";
 import Link from "@/app/components/LocalizedLink";
 import { useLanguage } from "../lib/use-language";
 import SocialLinks from "./SocialLinks";
@@ -38,17 +41,17 @@ const policies = [
 
 const questions = [
   {
-    href: "/lien-he",
+    href: "/cau-hoi-thuong-gap",
     vi: "Câu hỏi thường gặp",
     en: "Frequently Asked Questions",
   },
   {
-    href: "/lien-he",
+    href: "/huong-dan-dat-phong",
     vi: "Hướng dẫn đặt phòng",
     en: "Booking Guide",
   },
   {
-    href: "/lien-he",
+    href: "/huong-dan-thanh-toan",
     vi: "Hướng dẫn thanh toán",
     en: "Payment Guide",
   },
@@ -57,6 +60,9 @@ const questions = [
 export default function Footer() {
   const language = useLanguage();
   const isVi = language === "vi";
+  const pathname = usePathname() ?? "/";
+  const isEnglishRoute = /^\/en(?:\/|$)/.test(pathname);
+  const questionLanguage = isEnglishRoute ? "en" : supportPaths.includes(pathname) ? "vi" : language;
 
   const heading =
     "mb-2 text-[12px] font-bold leading-snug text-white";
@@ -130,20 +136,20 @@ export default function Footer() {
           {/* 3. CAC CAU HOI */}
           <div className={column}>
             <h3 className={heading}>
-              {isVi ? "Các câu hỏi" : "Questions"}
+              {questionLanguage === "vi" ? "Các câu hỏi" : "Questions"}
             </h3>
 
             <nav
-              aria-label={isVi ? "Các câu hỏi" : "Questions"}
+              aria-label={questionLanguage === "vi" ? "Các câu hỏi" : "Questions"}
             >
               {questions.map((item) => (
-                <Link
+                <NextLink
                   key={item.vi}
-                  href={item.href}
+                  href={localizedHref(item.href, questionLanguage)}
                   className={linkStyle}
                 >
-                  {isVi ? item.vi : item.en}
-                </Link>
+                  {questionLanguage === "vi" ? item.vi : item.en}
+                </NextLink>
               ))}
             </nav>
           </div>
