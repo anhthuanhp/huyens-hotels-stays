@@ -1,3 +1,5 @@
+import { checkAvailability } from "../../lib/availability";
+import { legacyRoomSlug } from "../../lib/room-seo-slugs";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
@@ -220,10 +222,51 @@ export async function POST(request: Request) {
     }
     if (!hotel) return NextResponse.json({ error: "Không tìm thấy khách sạn." }, { status: 404 });
 
+    const normalizedRooms = rooms.map((room) => ({
+      ...room,
+      roomSlug: legacyRoomSlug(hotelSlug, room.roomSlug),
+    }));
+    if (new Set(normalizedRooms.map((room) => room.roomSlug)).size !== normalizedRooms.length) {
+      return NextResponse.json({ error: "Danh sách phòng bị trùng loại phòng." }, { status: 400 });
+    }
+    const availability = await checkAvailability(new Request(request.url, {
+      method: "POST",
+      body: JSON.stringify({ hotelSlug, stayType, checkIn, checkOut, months }),
+    }), true);
+    if (!availability.ok) {
+      return NextResponse.json({ error: "Chưa thể xác minh tình trạng phòng." }, { status: 503 });
+    }
+    const verified = await availability.json() as {
+      checkIn: string;
+      checkOut: string;
+      rooms: Array<{
+        roomSlug: string;
+        totalQuantity: number;
+        availableQuantity: number | null;
+        internalQuantity: number;
+      }>;
+    };
+    const inventory = [];
+    for (const room of normalizedRooms) {
+      const current = verified.rooms.find((result) => result.roomSlug === room.roomSlug);
+      if (!current) {
+        return NextResponse.json({ error: "Không tìm thấy loại phòng." }, { status: 404 });
+      }
+      if (current.availableQuantity === null) {
+        return NextResponse.json({ error: "Chưa thể xác minh tình trạng phòng." }, { status: 503 });
+      }
+      if (room.quantity > current.availableQuantity) {
+        return NextResponse.json({
+          error: `Kỳ lưu trú này chỉ còn ${current.availableQuantity} phòng thuộc hạng đã chọn.`,
+        }, { status: 409 });
+      }
+      inventory.push(current);
+    }
+
     const bookingCode = createBookingCode();
     // v2 handles both daily and monthly bookings. Monthly bookings are stored
     // by stay type, month count, and monthly room price; they have no dates.
-    const rpcName = "create_booking_atomic_v2";
+    const rpcName = "create_booking_with_verified_inventory";
     const rpcArgs = {
       p_booking_code: bookingCode,
       p_hotel_id: Number(hotel.id),
@@ -237,14 +280,17 @@ export async function POST(request: Request) {
       p_email: email || null,
       p_phone: phone,
       p_note: note || null,
-      p_rooms: rooms,
+      p_rooms: normalizedRooms,
+      p_inventory: inventory,
+      p_inventory_start: verified.checkIn,
+      p_inventory_end: verified.checkOut,
     };
     const { data, error: rpcError } = await supabase.rpc(rpcName, rpcArgs);
 
     if (rpcError) {
       const message = rpcError.message || "Không thể hoàn tất đặt phòng.";
       console.error(`${rpcName} failed:`, rpcError.message);
-      if (message.includes("chỉ còn")) {
+      if (rpcError.code === "PT409" || message.includes("chỉ còn")) {
         return NextResponse.json({ error: message }, { status: 409 });
       }
       if (message.includes("phù hợp tối đa")) {

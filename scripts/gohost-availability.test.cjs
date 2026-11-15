@@ -137,13 +137,13 @@ function availability({ sources = [source(1), source(2)], coverage = "90", fetch
     booking_rooms: bookings,
   })[q.table]);
   const client = server(fetchImpl ?? (async () => new Response(ical())), db);
-  const route = load("app/api/availability/route.ts", {
-    "../../lib/room-seo-slugs": roomSlugs,
-    "../../lib/gohost-calendar": { ...calendar, todayInVietnam: () => "2026-11-13" },
-    "../../lib/gohost-server": client,
+  const route = load("app/lib/availability.ts", {
+    "./room-seo-slugs": roomSlugs,
+    "./gohost-calendar": { ...calendar, todayInVietnam: () => "2026-11-13" },
+    "./gohost-server": client,
   }, { process: { env: { GOHOST_ICAL_VERIFIED_COVERAGE_DAYS: coverage } } });
   function search(extra = {}) {
-    return route.POST(new Request("http://localhost/api/availability", {
+    return route.checkAvailability(new Request("http://localhost/api/availability", {
       method: "POST", body: JSON.stringify({ hotelSlug: "ae-guesthouse", roomSlug: "balcony",
         checkIn: stay.start, checkOut: stay.end, ...extra }),
     }));

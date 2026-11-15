@@ -1,5 +1,7 @@
 "use client";
 
+import { legacyRoomSlug } from "../lib/room-seo-slugs";
+
 
 import { trackEvent } from "../components/analytics";
 import { useLanguage } from "@/app/lib/use-language";
@@ -306,6 +308,44 @@ function BookingPageContent() {
 
       return [];
     }, [roomsParam, oldRoomParam]);
+
+  const inventoryRequest = JSON.stringify({ hotelSlug, stayType, checkIn, checkOut, months });
+  const [inventory, setInventory] = useState<{
+    key: string;
+    quantities: Record<string, number | null>;
+  }>();
+  const selectedInventory = inventory?.key === inventoryRequest ? inventory.quantities : undefined;
+  const selectionAvailable = selectedRooms.length > 0 && selectedRooms.every((room) =>
+    (selectedInventory?.[legacyRoomSlug(hotelSlug, room.roomSlug)] ?? 0) >= room.quantity
+  );
+
+  useEffect(() => {
+    if (!hotelSlug || !selectedRooms.length || (stayType === "day" && (!checkIn || checkOut <= checkIn))) return;
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await fetch("/api/availability", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: inventoryRequest,
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Availability request failed");
+        const data = await response.json() as {
+          rooms: Array<{ roomSlug: string; availableQuantity: number | null }>;
+        };
+        if (!controller.signal.aborted) {
+          setInventory({
+            key: inventoryRequest,
+            quantities: Object.fromEntries(data.rooms.map((room) => [room.roomSlug, room.availableQuantity])),
+          });
+        }
+      } catch {
+        if (!controller.signal.aborted) setInventory({ key: inventoryRequest, quantities: {} });
+      }
+    })();
+    return () => controller.abort();
+  }, [inventoryRequest, hotelSlug, selectedRooms.length, stayType, checkIn, checkOut]);
 
   useEffect(() => {
     let cancelled = false;
@@ -722,6 +762,7 @@ function BookingPageContent() {
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
+    if (!selectionAvailable || submitting) return;
 
     setError("");
     setPhoneError("");
@@ -1495,6 +1536,22 @@ function BookingPageContent() {
                 </div>
               </div>
 
+              <ul aria-live="polite" className="mt-4 space-y-1 text-sm text-slate-600">
+                {selectedRoomDetails.map((room) => {
+                  const quantity = selectedInventory?.[room.slug];
+                  const status = !selectedInventory
+                    ? (language === "vi" ? "Đang kiểm tra phòng trống..." : "Checking availability...")
+                    : quantity == null
+                    ? (language === "vi" ? "Chưa thể xác minh tình trạng phòng" : "Availability could not be verified")
+                    : quantity === 0
+                    ? (language === "vi" ? "Hết phòng" : "Sold out")
+                    : (language === "vi"
+                      ? `Còn ${quantity} phòng cho kỳ lưu trú này`
+                      : `${quantity} rooms available for this stay`);
+                  return <li key={room.slug}>{language === "vi" ? room.name_vi : room.name_en} · {status}</li>;
+                })}
+              </ul>
+
               {error ? (
                 <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700">
                   {error}
@@ -1504,7 +1561,7 @@ function BookingPageContent() {
               <button
                 type="submit"
                 disabled={
-                  submitting ||
+                  submitting || !selectionAvailable ||
                   selectedRoomDetails.length ===
                     0
                 }
