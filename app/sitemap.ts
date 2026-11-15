@@ -1,5 +1,5 @@
 import { canonicalRoomSlug } from "./lib/room-seo-slugs";
-import { languageAlternates, localizedHref } from "./lib/localized-path";
+import { languageAlternates, localizedHref, supportPaths } from "./lib/localized-path";
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 
@@ -70,6 +70,7 @@ function uniqueSitemap(
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticUrls: MetadataRoute.Sitemap = [
+    ...supportPaths.map(path => ({ url: siteUrl + path })),
     { url: `${siteUrl}/khach-san-quan-1-cu`, changeFrequency: "monthly", priority: 0.8 },
     {
       url: siteUrl,
@@ -261,7 +262,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }));
 
   // Build both language sets from the same inventory used for Vietnamese URLs.
-  const paired = new Set(["/", "/phong", "/blog"]);
+  const paired = new Set(["/", "/phong", "/blog", ...supportPaths]);
   const translatedHotelIds = new Set<number>();
   for (const hotel of activeHotels) {
     if (!hotel.slug?.trim() || !hotel.name_en?.trim() || !hotel.description_en?.trim()) continue;

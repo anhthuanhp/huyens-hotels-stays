@@ -1,5 +1,11 @@
+export const supportPaths = [
+  "/cau-hoi-thuong-gap",
+  "/huong-dan-dat-phong",
+  "/huong-dan-thanh-toan",
+];
+
 export function isLocalizedPath(pathname: string) {
-  return pathname === "/" || pathname === "/phong" || pathname === "/blog" || pathname === "/tim-phong" || pathname === "/dat-phong" || /^\/blog\/[^/]+$/.test(pathname) || /^\/khach-san\/[^/]+(?:\/phong\/[^/]+)?$/.test(pathname);
+  return supportPaths.includes(pathname) || pathname === "/" || pathname === "/phong" || pathname === "/blog" || pathname === "/tim-phong" || pathname === "/dat-phong" || /^\/blog\/[^/]+$/.test(pathname) || /^\/khach-san\/[^/]+(?:\/phong\/[^/]+)?$/.test(pathname);
 }
 export function localizedHref(href: string, language: "vi" | "en") {
   if (language !== "en" || !href.startsWith("/") || href.startsWith("//") || /^\/en(?:[/?#]|$)/.test(href)) return href;
