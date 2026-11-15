@@ -562,7 +562,7 @@ export default function HomeClient({
             GIOI THIEU - BOLT DESIGN
         ====================================================== */}
         <section
-          className="bg-white px-4 pb-0 pt-[52px] sm:px-6 max-sm:pt-8"
+          className="bg-white px-4 pb-0 pt-[52px] sm:px-6 max-sm:pt-8 lg:pb-8 lg:pt-[64px]"
           aria-labelledby="about-heading"
         >
           <div className="mx-auto max-w-[1100px] lg:max-w-[1200px]">
@@ -644,7 +644,7 @@ export default function HomeClient({
         ====================================================== */}
         <section
           id="hotels"
-          className="bg-white px-4 pb-[22px] pt-[36px] sm:px-6"
+          className="bg-white px-4 pb-[22px] pt-[36px] sm:px-6 lg:pb-8 lg:pt-12"
           aria-labelledby="stays-heading"
         >
           <div className="mx-auto max-w-[1100px] lg:max-w-[1200px]">
@@ -788,7 +788,7 @@ export default function HomeClient({
         ====================================================== */}
         <section
           id="bolt-ota-reviews"
-          className="bg-white px-4 pb-[22px] pt-[22px] sm:px-6"
+          className="bg-white px-4 pb-[22px] pt-[22px] sm:px-6 lg:py-9"
           aria-label={
             isVi
               ? "Đặt phòng và đánh giá khách lưu trú"
@@ -1135,7 +1135,7 @@ export default function HomeClient({
         ====================================================== */}
         <section
           id="stay-experiences"
-          className="bg-white px-4 pb-[42px] pt-[34px] sm:px-6"
+          className="bg-white px-4 pb-[42px] pt-[34px] sm:px-6 lg:pb-14 lg:pt-12"
           aria-labelledby="experience-heading"
         >
           <div className="mx-auto max-w-[1100px] lg:max-w-[1200px]">
