@@ -213,7 +213,7 @@ function TimPhongContent() {
   const [loading, setLoading] =
     useState(true);
 
-  const [loadingAvailability, setLoadingAvailability] =
+  const [fetchingAvailability, setLoadingAvailability] =
     useState(false);
 
   const [availabilityError, setAvailabilityError] =
@@ -541,6 +541,18 @@ function TimPhongContent() {
     checkOut,
   ]);
 
+  const inventoryKey = JSON.stringify([hotelSlug, roomToPreselect, stayType, checkIn, checkOut, monthsFromUrl]);
+  const [resolvedInventoryKey, setResolvedInventoryKey] = useState("");
+  const inventoryFiltersChanged = editHotel !== hotelSlug || editRoom !== roomToPreselect ||
+    editStayType !== stayType || (editStayType === "day"
+      ? editCheckIn !== checkIn || editCheckOut !== checkOut
+      : editMonths !== monthsFromUrl);
+  const inventoryFiltersReady = Boolean(editHotel && (editStayType === "month"
+    ? editMonths >= 1
+    : editCheckIn && editCheckOut && editCheckOut > editCheckIn && editCheckIn >= today));
+  const loadingAvailability = inventoryFiltersReady &&
+    (fetchingAvailability || inventoryFiltersChanged || resolvedInventoryKey !== inventoryKey);
+
   /*
     Kiểm tra availability cho cả ngày và tháng.
 
@@ -657,6 +669,7 @@ function TimPhongContent() {
         }
       } finally {
         if (!cancelled) {
+          setResolvedInventoryKey(inventoryKey);
           setLoadingAvailability(false);
         }
       }
@@ -675,6 +688,7 @@ function TimPhongContent() {
     roomToPreselect,
     requestedRooms,
     searchAttempt,
+    inventoryKey,
   ]);
 
   const roomCoverMap = useMemo(() => {
@@ -1156,6 +1170,10 @@ function TimPhongContent() {
   /*
     Khi đổi khách sạn.
   */
+  useEffect(() => {
+    if (inventoryFiltersChanged && inventoryFiltersReady) applyBookingChanges();
+  }, [applyBookingChanges, inventoryFiltersChanged, inventoryFiltersReady]);
+
   const handleHotelChange = (value: string) => {
     setEditHotel(value);
     setEditRoom("");
@@ -1688,7 +1706,7 @@ function TimPhongContent() {
                 onClick={
                   applyBookingChanges
                 }
-                disabled={loadingAvailability}
+                disabled={fetchingAvailability}
                 className="h-12 w-full rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 lg:min-w-[120px]"
               >
                 {language === "vi" ? "Tìm phòng" : "Find rooms"}
@@ -1839,7 +1857,7 @@ function TimPhongContent() {
               )}
 
             {!loading &&
-              !loadingAvailability &&
+              inventoryFiltersReady && !loadingAvailability &&
               availabilityError && (
                 <div
                   className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700"
@@ -1852,7 +1870,7 @@ function TimPhongContent() {
               )}
 
             {!loading &&
-              !loadingAvailability &&
+              inventoryFiltersReady && !loadingAvailability &&
               !availabilityError &&
               availableRooms.length ===
                 0 && (
@@ -1877,7 +1895,7 @@ function TimPhongContent() {
               )}
 
             {!loading &&
-              !loadingAvailability &&
+              inventoryFiltersReady && !loadingAvailability &&
               !availabilityError &&
               availableRooms.length >
                 0 && (
@@ -1953,7 +1971,7 @@ function TimPhongContent() {
                                   : room.availabilityStatus === "sold_out"
                                     ? language === "vi" ? "Hết phòng" : "Sold out"
                                     : language === "vi"
-                                      ? `Còn ${room.availableQuantity} phòng cho toàn bộ kỳ lưu trú`
+                                      ? `Còn ${room.availableQuantity} phòng cho kỳ lưu trú này`
                                       : `${room.availableQuantity} rooms available for the entire stay`}
                               </div>
                             </div>
@@ -2134,7 +2152,7 @@ function TimPhongContent() {
         )}
       </div>
 
-      {!loadingAvailability && !availabilityError && selectedRoomCount >
+      {inventoryFiltersReady && !loadingAvailability && !availabilityError && selectedRoomCount >
         0 && (
         <div className="sticky bottom-0 z-40 border-t border-neutral-200 bg-white/95 shadow-[0_-6px_20px_rgba(0,0,0,0.08)] backdrop-blur">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
