@@ -551,11 +551,13 @@ export default function HomeClient({
           </div>
 
           {/* Thanh tim phong noi tren mep Hero */}
-          <BookingSearch
-            hotels={bookingHotels}
-            stayMode={stayMode}
-            floating
-          />
+          <div id="find-a-room" className="scroll-mt-24">
+            <BookingSearch
+              hotels={bookingHotels}
+              stayMode={stayMode}
+              floating
+            />
+          </div>
         </section>
         {/* =====================================================
             GIOI THIEU - BOLT DESIGN
@@ -583,10 +585,7 @@ export default function HomeClient({
                       <span className="block">một trải nghiệm riêng</span>
                     </>
                   ) : (
-                    <>
-                      <span className="block">Every stay,</span>
-                      <span className="block">a personal experience</span>
-                    </>
+                    "Book your Saigon stay directly"
                   )}
                 </h2>
               </div>
@@ -596,14 +595,14 @@ export default function HomeClient({
                 <p className="mb-3 text-[13px] leading-[1.55] text-[#111613]">
                   {isVi
                     ? "Chúng tôi chuyên vận hành khách sạn, căn hộ dịch vụ tại TP. Hồ Chí Minh. Cam kết mang đến không gian sạch sẽ, thoải mái, riêng tư và tiện lợi cho mọi chuyến đi."
-                    : "We operate hotels and serviced apartments in Ho Chi Minh City. Clean, comfortable, private and convenient spaces for every journey."}
+                    : "Choose a hotel, guesthouse or homestay in central Ho Chi Minh City. Enter your travel dates to check room availability and nightly rates."}
                 </p>
 
                 <Link
-                  href="/kham-pha-huyens"
+                  href={isVi ? "/kham-pha-huyens" : "#find-a-room"}
                   className="flex items-center justify-end gap-2 text-[13px] font-bold text-[#075bd7] hover:underline"
                 >
-                  {isVi ? "Khám phá Huyen's" : "Discover Huyen's"}
+                  {isVi ? "Khám phá Huyen's" : "Check availability"}
                   <span aria-hidden="true" className="text-lg">→</span>
                 </Link>
               </div>
@@ -661,7 +660,7 @@ export default function HomeClient({
                 >
                   {isVi
                     ? "Khám phá hệ thống Huyen's"
-                    : "Explore Huyen's collection"}
+                    : "Compare our four Saigon stays"}
                 </h2>
               </div>
 
