@@ -76,55 +76,49 @@ async function sendTelegramNotification(data: {
   message: string;
   language: "vi" | "en";
 }) {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const chatIds = new Set(
+    [process.env.TELEGRAM_CHAT_ID, process.env.TELEGRAM_CHAT_ID_SECONDARY]
+      .map((chatId) => chatId?.trim())
+      .filter(Boolean)
+  );
 
-  if (!botToken || !chatId) {
-    console.error(
-      "Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID."
-    );
-
-    return false;
+  if (!botToken || chatIds.size === 0) {
+    console.error("Missing Telegram contact notification configuration.");
+    return;
   }
 
   const telegramMessage = formatTelegramText(data);
 
-  try {
-    const response = await fetch(
-      `https://api.telegram.org/bot${botToken}/sendMessage`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: telegramMessage,
-          parse_mode: "HTML",
-        }),
+  await Promise.all(
+    Array.from(chatIds, async (chatId) => {
+      try {
+        const response = await fetch(
+          `https://api.telegram.org/bot${botToken}/sendMessage`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: telegramMessage,
+              parse_mode: "HTML",
+            }),
+            signal: AbortSignal.timeout(8000),
+          }
+        );
+        const result = await response.json();
+
+        if (!response.ok || result?.ok !== true) {
+          console.error("Telegram contact notification rejected", {
+            chatId,
+            status: response.status,
+          });
+        }
+      } catch {
+        console.error("Telegram contact notification request failed", { chatId });
       }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok || !result.ok) {
-      console.error(
-        "Telegram API error:",
-        JSON.stringify(result)
-      );
-
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error(
-      "Telegram notification error:",
-      error
-    );
-
-    return false;
-  }
+    })
+  );
 }
 
 function validatePhone(value: string) {
