@@ -900,7 +900,7 @@ export default function HomeClient({
                           </span>
                         )}
 
-                        <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[#111613] lg:whitespace-normal lg:text-[13px]">
+                        <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[#111613] lg:overflow-visible lg:whitespace-normal lg:break-words lg:text-clip lg:text-[13px]">
                           {ota.name}
                         </span>
 
@@ -919,7 +919,7 @@ export default function HomeClient({
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[#e2e5e3] bg-white px-2 py-2 transition-colors lg:min-h-12 lg:px-3 hover:border-[#0a6b36] hover:bg-[#f4fbf5]"
+                        className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[#e2e5e3] bg-white px-2 py-2 transition-colors lg:min-h-12 hover:border-[#0a6b36] hover:bg-[#f4fbf5]"
                       >
                         {inner}
                       </a>
