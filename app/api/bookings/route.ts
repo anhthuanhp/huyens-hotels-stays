@@ -78,11 +78,13 @@ async function sendBookingTelegramNotification(data: {
   totalAmount: number;
 }): Promise<{ status: "sent" | "failed" | "not_configured" }> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
-  if (!botToken || !chatId) {
+  const chatIds = [...new Set([
+    process.env.TELEGRAM_CHAT_ID?.trim(),
+    process.env.TELEGRAM_CHAT_ID_SECONDARY?.trim(),
+  ].filter((id): id is string => Boolean(id)))];
+  if (!botToken || !chatIds.length) {
     console.error("Booking Telegram notification not configured:", {
-      bookingCode: data.bookingCode,
-      missing: [!botToken && "TELEGRAM_BOT_TOKEN", !chatId && "TELEGRAM_CHAT_ID"].filter(Boolean),
+      missing: !botToken ? "TELEGRAM_BOT_TOKEN" : "Telegram chat ID",
     });
     return { status: "not_configured" };
   }
@@ -112,34 +114,39 @@ async function sendBookingTelegramNotification(data: {
     `🔑 Mã đặt phòng: ${data.bookingCode}`,
   ].join("\n");
 
-  let lastError = "Unknown error";
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    try {
-      const response = await fetch("https://api.telegram.org/bot" + botToken + "/sendMessage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text: message.slice(0, 4096) }),
-        signal: AbortSignal.timeout(4000),
-      });
-      const result = await response.json() as { ok?: boolean; description?: string };
-      if (response.ok && result.ok) return { status: "sent" };
+  const results = await Promise.all(chatIds.map(async (chatId) => {
+    let failure = "transport_error";
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const response = await fetch("https://api.telegram.org/bot" + botToken + "/sendMessage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text: message.slice(0, 4096) }),
+          signal: AbortSignal.timeout(4000),
+        });
 
-      lastError = result.description ?? `HTTP ${response.status}`;
-      const retryable = response.status === 429 || response.status >= 500;
-      if (!retryable || attempt === 3) break;
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : "Unknown error";
-      if (attempt === 3) break;
+        if (response.ok) {
+          const result = await response.json() as { ok?: boolean };
+          if (result.ok === true) return true;
+          failure = "telegram_rejected";
+          break;
+        }
+
+        failure = `http_${response.status}`;
+        await response.body?.cancel().catch(() => {});
+        if (response.status !== 429 && response.status < 500) break;
+      } catch (error) {
+        failure = error instanceof Error && error.name === "TimeoutError" ? "timeout" : "transport_error";
+      }
+
+      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 700));
     }
 
-    await new Promise((resolve) => setTimeout(resolve, attempt * 700));
-  }
+    console.error("Booking Telegram notification failed:", { chatId, reason: failure });
+    return false;
+  }));
 
-  console.error("Booking Telegram notification failed:", {
-    bookingCode: data.bookingCode,
-    error: lastError,
-  });
-  return { status: "failed" };
+  return { status: results.every(Boolean) ? "sent" : "failed" };
 }
 
 export async function POST(request: Request) {
