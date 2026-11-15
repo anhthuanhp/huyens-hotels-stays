@@ -1,4 +1,3 @@
-import { goHostApiMapping, loadGoHostInventory } from "./gohost-public-api";
 import { legacyRoomSlug } from "./room-seo-slugs";
 import { countFreeUnits, MAX_REQUESTED_ROOMS, MAX_STAY_NIGHTS, stayIsCovered, todayInVietnam, validDate } from "./gohost-calendar";
 import { getServerSupabase, loadCalendar, sourceConfiguration, sourceFields, type GoHostSource } from "./gohost-server";
@@ -60,10 +59,6 @@ export async function checkAvailability(request: Request, forBooking = false) {
     if (roomError) return reply({ error: "Không thể đọc danh sách loại phòng." }, 503);
     if (rooms.length > MAX_ROOM_TYPES) return reply({ error: "Hãy thu hẹp phạm vi tìm kiếm." }, 400);
 
-    // The old 90-day snapshot was a processing window, not a GoHost export guarantee.
-    // Set only after verifying the window on all published feeds.
-    const coverageDays = Number(process.env.GOHOST_ICAL_VERIFIED_COVERAGE_DAYS);
-    const covered = stayIsCovered({ start, end }, coverageDays, today);
     const withinSearchWindow = stayIsCovered({ start, end }, MAX_STAY_NIGHTS, today);
     const roomIds = rooms.map((room) => room.id);
     const sourceByRoom = new Map<number, GoHostSource[]>();
@@ -79,15 +74,14 @@ export async function checkAvailability(request: Request, forBooking = false) {
           .neq("bookings.status", "cancelled")
           .lt("bookings.check_in", end).gt("bookings.check_out", start).limit(501),
       ]);
-      completeReads = !bookings.error && bookings.data.length <= 500;
-      if (!sources.error && sources.data.length <= MAX_SOURCES) {
-        for (const source of sources.data as GoHostSource[]) {
+      completeReads = !sources.error && !bookings.error &&
+        sources.data.length <= MAX_SOURCES && bookings.data.length <= 500;
+      if (completeReads) {
+        for (const source of (sources.data ?? []) as GoHostSource[]) {
           const list = sourceByRoom.get(source.room_id) ?? [];
           list.push(source);
           sourceByRoom.set(source.room_id, list);
         }
-      }
-      if (completeReads) {
         for (const booking of bookings.data ?? []) {
           const quantity = Number(booking.quantity);
           const detail = Array.isArray(booking.bookings) ? booking.bookings[0] : booking.bookings;
@@ -105,44 +99,26 @@ export async function checkAvailability(request: Request, forBooking = false) {
       }
     }
 
-    const nights = (Date.parse(end) - Date.parse(start)) / 86_400_000;
-    const inventoryRequests = new Map<string, Promise<Map<string, number>>>();
     const results = await Promise.all(rooms.map(async (room) => {
       const totalQuantity = room.quantity;
       const { active, complete } = sourceConfiguration(sourceByRoom.get(room.id) ?? [], totalQuantity);
+      const covered = active.every((source) => source.verified_from && source.verified_before &&
+        source.verified_from <= start && source.verified_before >= end);
       let availableQuantity: number | null = totalQuantity === 0 ? 0 : null;
-      if (totalQuantity > 0 && completeReads) {
+      if (totalQuantity > 0 && completeReads && complete) {
         try {
-          const mapping = goHostApiMapping(hotelSlugs.get(room.hotel_id) ?? "");
-          const externalId = mapping && Object.hasOwn(mapping.roomTypes, room.slug)
-            ? mapping.roomTypes[room.slug].toLowerCase()
-            : undefined;
-          let goHostFree: number | undefined;
-          let verified = covered;
-          if (mapping && externalId && nights <= 30) {
-            let request = inventoryRequests.get(mapping.propertyId);
-            if (!request) {
-              request = loadGoHostInventory(mapping.propertyId, start, end);
-              inventoryRequests.set(mapping.propertyId, request);
-            }
-            const quantity = (await request).get(externalId);
-            if (quantity !== undefined && quantity <= totalQuantity) {
-              if (nights === 1 || quantity === 0 || mapping.continuousInventoryVerified) {
-                goHostFree = quantity;
-                verified = true;
-              } else if (covered && complete) {
-                const calendars = await Promise.all(active.map((source) => loadCalendar(source, forBooking)));
-                goHostFree = Math.min(quantity, countFreeUnits(calendars, { start, end }));
-              }
-            }
-          } else if (complete) {
-            const calendars = await Promise.all(active.map((source) => loadCalendar(source, forBooking)));
-            goHostFree = countFreeUnits(calendars, { start, end });
-          }
+          const calendars = await Promise.all(active.map(async (source) => {
+            const calendar = await loadCalendar(source, forBooking);
+            const manualBlocks = (source.verified_blocked_dates ?? [])
+              .filter((date) => start <= date && date < end)
+              .map((date) => ({ start: date, end }));
+            return [...calendar, ...manualBlocks];
+          }));
+          const goHostFree = countFreeUnits(calendars, { start, end });
           const internal = bookedByRoom.get(room.id);
           if (goHostFree === 0) {
             availableQuantity = 0;
-          } else if (goHostFree !== undefined && verified && (!internal || goHostFree === totalQuantity)) {
+          } else if (covered && (!internal || goHostFree === totalQuantity)) {
             // Internal bookings have no feed UID or physical-unit assignment.
             // With overlapping occupancy in both systems, the same booking
             // may appear twice. Leave the result unverified in that case.
@@ -163,7 +139,11 @@ export async function checkAvailability(request: Request, forBooking = false) {
         }
       }
       return {
-        ...(forBooking ? { internalQuantity: bookedByRoom.get(room.id)?.total ?? 0 } : {}),
+        ...(forBooking ? {
+          internalQuantity: bookedByRoom.get(room.id)?.total ?? 0,
+          sourceCoverage: active.sort((a, b) => a.id - b.id)
+            .map((source) => [source.id, source.verified_from, source.verified_before, source.verified_blocked_dates]),
+        } : {}),
         roomId: room.id,
         roomSlug: room.slug,
         hotelId: room.hotel_id,

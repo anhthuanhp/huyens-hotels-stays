@@ -31,6 +31,7 @@ const stay = { start: "2026-11-16", end: "2026-11-19" };
 const source = (id, roomId = 11) => ({
   id, room_id: roomId, unit_code: String(200 + id), feed_url: feedUrl.replace("synthetic", "unit-" + id),
   enabled: true, last_success_at: null, last_error: null,
+  verified_from: "2026-11-13", verified_before: "2026-11-20", verified_blocked_dates: [],
 });
 
 test("counts physical units for the entire stay, including checkout boundaries", () => {
@@ -129,10 +130,10 @@ function database(rows) {
 }
 
 const room = { id: 11, hotel_id: 2, slug: "balcony", quantity: 2 };
-function availability({ sources = [source(1), source(2)], coverage = "90", fetchImpl, bookings = [], publicApi } = {}) {
+function availability({ sources = [source(1), source(2)], fetchImpl, bookings = [], roomRow = room } = {}) {
   const { db, requests } = database((q) => ({
     hotels: [{ id: 2, slug: "ae-guesthouse" }],
-    rooms: [room],
+    rooms: [roomRow],
     gohost_ical_sources: sources,
     booking_rooms: bookings,
   })[q.table]);
@@ -141,8 +142,7 @@ function availability({ sources = [source(1), source(2)], coverage = "90", fetch
     "./room-seo-slugs": roomSlugs,
     "./gohost-calendar": { ...calendar, todayInVietnam: () => "2026-11-13" },
     "./gohost-server": client,
-    "./gohost-public-api": publicApi ?? { goHostApiMapping: () => undefined },
-  }, { process: { env: { GOHOST_ICAL_VERIFIED_COVERAGE_DAYS: coverage } } });
+  });
   function search(extra = {}) {
     return route.checkAvailability(new Request("http://localhost/api/availability", {
       method: "POST", body: JSON.stringify({ hotelSlug: "ae-guesthouse", roomSlug: "balcony",
@@ -194,7 +194,8 @@ test("public API distinguishes sold out from unverified and bounds searches", as
     [{ sources: [source(1), { ...source(2), enabled: false }] }, {}, "unverified", null],
     [{ fetchImpl: async () => { throw new DOMException("timed out", "TimeoutError"); } }, {}, "unverified", null],
     [{ fetchImpl: async () => new Response("not calendar") }, {}, "unverified", null],
-    [{ coverage: "" }, {}, "unverified", null],
+    [{ sources: [source(1), { ...source(2), verified_from: null, verified_before: null }] }, {}, "unverified", null],
+    [{ sources: [source(1), { ...source(2), verified_before: "2026-11-18" }] }, {}, "unverified", null],
     [{}, { checkOut: "2027-12-31" }, "unverified", null],
   ];
   for (const [options, input, status, count] of cases) {
@@ -267,32 +268,29 @@ test("Admin panel renders its create-room instruction and existing-room controls
   assert.doesNotMatch(existingRoom, /platform\.gohost/);
 });
 
-test("GoHost search uses the mapped property and does not treat a nightly count as continuous inventory", async () => {
-  const propertyId = "01234567-0000-0000-0000-000000000000";
-  const roomId = "01234567-0000-0000-0000-000000000001";
-  const booking = { room_id: 11, quantity: 1, bookings: { check_in: stay.start, check_out: stay.end } };
-  const fetchImpl = async (url) => new Response(url === source(1).feed_url
-    ? ical(busy("20261116", "20261117"))
-    : ical(busy("20261117", "20261119")));
-  for (const [continuousInventoryVerified, coverage, checkOut, bookings, expected] of [
-    [false, "", stay.end, [], null],
-    [false, "90", stay.end, [], 0],
-    [false, "", "2026-11-17", [], 1],
-    [true, "", stay.end, [], 1],
-    [true, "", stay.end, [booking], null],
+test("reproduces the A&E counts using five physical feeds and exact confirmed nights", async () => {
+  const family = availability({
+    roomRow: { ...room, slug: "family-room", quantity: 1 },
+    sources: [source(1)],
+  });
+  const deluxe = availability({
+    roomRow: { ...room, slug: "deluxe-windown", quantity: 4 },
+    sources: [source(2), source(3), source(4), { ...source(5), verified_blocked_dates: ["2026-11-16"] }],
+    fetchImpl: async (url) => new Response(url === source(2).feed_url
+      ? ical(busy("20261115", "20261118"))
+      : url === source(3).feed_url || url === source(5).feed_url
+        ? ical(busy("20261115", "20261117"))
+        : ical()),
+  });
+  for (const [fixture, roomSlug, checkIn, checkOut, expected] of [
+    [family, "family-room", "2026-11-15", "2026-11-17", 1],
+    [deluxe, "deluxe-windown", "2026-11-15", "2026-11-17", 1],
+    [deluxe, "deluxe-windown", "2026-11-17", "2026-11-18", 3],
   ]) {
-    const publicApi = {
-      goHostApiMapping(slug) {
-        assert.equal(slug, "ae-guesthouse");
-        return { propertyId, roomTypes: { balcony: roomId }, continuousInventoryVerified };
-      },
-      async loadGoHostInventory(...args) {
-        assert.deepEqual(args, [propertyId, stay.start, checkOut]);
-        return new Map([[roomId, 1]]);
-      },
-    };
-    const { rooms: [result] } = await (await availability({ coverage, fetchImpl, publicApi, bookings })
-      .search({ checkOut })).json();
+    const { rooms: [result] } = await (await fixture.search({ roomSlug, checkIn, checkOut })).json();
     assert.equal(result.availableQuantity, expected);
   }
+  const manual = availability({ sources: [source(1), { ...source(2), verified_blocked_dates: ["2026-11-17"] }] });
+  const { rooms: [result] } = await (await manual.search()).json();
+  assert.equal(result.availableQuantity, 1);
 });

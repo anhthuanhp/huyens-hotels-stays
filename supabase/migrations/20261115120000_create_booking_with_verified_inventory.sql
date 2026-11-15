@@ -1,3 +1,32 @@
+alter table public.gohost_ical_sources
+  add column verified_from date,
+  add column verified_before date,
+  add column verified_blocked_dates date[] not null default '{}',
+  add constraint gohost_verified_inventory_range check (
+    (verified_from is null and verified_before is null)
+    or (verified_from is not null and verified_before is not null
+      and verified_before > verified_from and verified_before - verified_from <= 90)
+  );
+
+create function public.reset_gohost_verified_inventory() returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if (new.room_id, new.unit_code, new.feed_url, new.enabled)
+    is distinct from (old.room_id, old.unit_code, old.feed_url, old.enabled) then
+    new.verified_from := null;
+    new.verified_before := null;
+    new.verified_blocked_dates := '{}';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger reset_gohost_verified_inventory
+  before update of room_id, unit_code, feed_url, enabled on public.gohost_ical_sources
+  for each row execute function public.reset_gohost_verified_inventory();
+
 create function public.create_booking_with_verified_inventory(
   p_booking_code text, p_hotel_id bigint, p_stay_type text,
   p_check_in date, p_check_out date, p_months integer,
@@ -18,6 +47,7 @@ declare
   v_room_id bigint;
   v_capacity integer;
   v_internal bigint;
+  v_source_coverage jsonb;
 begin
   if p_stay_type = 'month' then
     v_start := current_date;
@@ -51,6 +81,17 @@ begin
       or v_capacity is distinct from (v_verified->>'totalQuantity')::integer
       or coalesce((v_verified->>'availableQuantity')::integer, 0) < (v_room->>'quantity')::integer then
       raise sqlstate 'PT409' using message = 'Tồn phòng đã thay đổi. Vui lòng tìm phòng lại.';
+    end if;
+
+    perform 1 from public.gohost_ical_sources
+      where room_id = v_room_id order by id for share;
+    select jsonb_agg(jsonb_build_array(id, verified_from, verified_before, verified_blocked_dates) order by id)
+      into v_source_coverage
+      from public.gohost_ical_sources
+      where room_id = v_room_id and enabled;
+
+    if v_source_coverage is distinct from v_verified->'sourceCoverage' then
+      raise sqlstate 'PT409' using message = 'Phạm vi tồn phòng đã thay đổi. Vui lòng tìm phòng lại.';
     end if;
 
     select coalesce(sum(br.quantity), 0) into v_internal

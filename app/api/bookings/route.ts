@@ -244,6 +244,7 @@ export async function POST(request: Request) {
         totalQuantity: number;
         availableQuantity: number | null;
         internalQuantity: number;
+        sourceCoverage: Array<[number, string | null, string | null, string[]]>;
       }>;
     };
     const inventory = [];

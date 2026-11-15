@@ -3,7 +3,7 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeFeedUrl, parseCalendar, type Calendar } from "./gohost-calendar";
 
-export const sourceFields = "id,room_id,unit_code,feed_url,enabled,last_success_at,last_error";
+export const sourceFields = "id,room_id,unit_code,feed_url,enabled,last_success_at,last_error,verified_from,verified_before,verified_blocked_dates";
 export type GoHostSource = {
   id: number;
   room_id: number;
@@ -12,6 +12,9 @@ export type GoHostSource = {
   enabled: boolean;
   last_success_at: string | null;
   last_error: string | null;
+  verified_from: string | null;
+  verified_before: string | null;
+  verified_blocked_dates: string[];
 };
 
 export function getServerSupabase() {
