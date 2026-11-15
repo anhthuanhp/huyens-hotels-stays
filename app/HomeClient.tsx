@@ -724,7 +724,7 @@ export default function HomeClient({
                         }
                         className="block"
                       >
-                        <div className="relative h-[140px] overflow-hidden bg-neutral-100 max-sm:h-[170px]">
+                        <div className="relative h-[140px] overflow-hidden bg-neutral-100 max-sm:h-[170px] lg:h-[210px]">
                           {image ? (
                             <Image
                               src={image}
@@ -741,8 +741,8 @@ export default function HomeClient({
                           )}
                         </div>
 
-                        <div className="relative min-h-[78px] px-[14px] pb-[10px] pt-[7px]">
-                          <h3 className="mb-1 pr-7 text-[14px] font-bold leading-snug text-[#111613]">
+                        <div className="relative min-h-[78px] px-[14px] pb-[10px] pt-[7px] lg:min-h-[140px] lg:px-[18px] lg:pb-4 lg:pt-3">
+                          <h3 className="mb-1 pr-7 text-[14px] font-bold leading-snug lg:mb-2 lg:pr-0 lg:text-[17px] text-[#111613]">
                             {name}
                           </h3>
 
@@ -758,18 +758,20 @@ export default function HomeClient({
                              </span>
                            )}
 
-                          <p className="mt-[6px] flex items-center gap-1 text-[10px] text-[#5b625d]">
-                            <MapPin size={13} aria-hidden="true" />
-                            {(isVi
-          ? hotel.address_vi || hotel.address_en
-          : hotel.address_en || hotel.address_vi
-        )?.normalize("NFC") ||
-          (isVi ? "TP. Hồ Chí Minh" : "Ho Chi Minh City")}
+                          <p className="mt-[6px] flex items-center gap-1 text-[10px] text-[#5b625d] lg:mt-2 lg:items-start lg:gap-1.5 lg:pr-9 lg:text-[13px] lg:leading-snug">
+                            <MapPin size={13} aria-hidden="true" className="lg:mt-0.5 lg:shrink-0" />
+                            <span className="min-w-0">
+                              {(isVi
+                                ? hotel.address_vi || hotel.address_en
+                                : hotel.address_en || hotel.address_vi
+                              )?.normalize("NFC") ||
+                                (isVi ? "TP. Hồ Chí Minh" : "Ho Chi Minh City")}
+                            </span>
                           </p>
 
                           <span
                             aria-hidden="true"
-                            className="absolute bottom-[10px] right-[10px] grid h-[28px] w-[28px] place-items-center rounded-full border border-[#e1e4e1] bg-white text-[#111613] shadow-sm transition-colors group-hover:bg-[#d8f2dc]"
+                            className="absolute bottom-[10px] right-[10px] grid h-[28px] w-[28px] place-items-center rounded-full border border-[#e1e4e1] bg-white text-[#111613] shadow-sm transition-colors group-hover:bg-[#d8f2dc] lg:bottom-4 lg:right-4"
                           >
                             <span className="text-[18px] leading-none">→</span>
                           </span>
@@ -800,7 +802,7 @@ export default function HomeClient({
             {/* OTA - COT TRAI */}
             <div
               id="ota-booking"
-              className="min-w-0 rounded-[13px] border border-[#e0e4e1] bg-white px-[14px] py-3 shadow-[0_2px_4px_rgba(0,0,0,.04)]"
+              className="min-w-0 rounded-[13px] border border-[#e0e4e1] bg-white px-[14px] py-3 shadow-[0_2px_4px_rgba(0,0,0,.04)] lg:px-5 lg:py-5"
             >
               <div className="flex items-start gap-2">
                 <div className="mt-0.5 text-[#12652f]">
@@ -819,12 +821,12 @@ export default function HomeClient({
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-[14px] font-bold text-[#111613]">
+                  <h2 className="text-[14px] font-bold text-[#111613] lg:text-[17px]">
                     {isVi
                       ? "Đặt phòng qua các nền tảng (OTA)"
                       : "Book through OTA platforms"}
                   </h2>
-                  <p className="text-[11px] leading-[1.5] text-[#515b54]">
+                  <p className="text-[11px] leading-[1.5] text-[#515b54] lg:mt-1 lg:text-[13px]">
                     {isVi
                       ? "Chọn cơ sở và đặt phòng nhanh chóng, an toàn."
                       : "Choose a property and book quickly, safely."}
@@ -833,7 +835,7 @@ export default function HomeClient({
               </div>
 
               {/* Chon co so tu Supabase */}
-              <div className="relative mt-3 w-full max-w-[320px]">
+              <div className="relative mt-3 w-full max-w-[320px] lg:mt-5 lg:max-w-[420px]">
                 <select
                   aria-label={
                     isVi ? "Chọn cơ sở lưu trú" : "Choose a property"
@@ -843,7 +845,7 @@ export default function HomeClient({
                     setPickedHotelId(Number(event.target.value))
                   }
                   disabled={!hasAnyOTA}
-                  className="w-full appearance-none rounded-[10px] border border-[#dfe3e0] bg-white py-2 pl-3 pr-9 text-[12px] font-semibold text-[#111613] outline-none focus:border-[#0a6b36] disabled:opacity-50"
+                  className="w-full appearance-none rounded-[10px] border border-[#dfe3e0] bg-white py-2 pl-3 pr-9 text-[12px] font-semibold text-[#111613] outline-none focus:border-[#0a6b36] disabled:opacity-50 lg:min-h-12 lg:text-[14px]"
                 >
                   {hotels.length === 0 && (
                     <option value="">
@@ -870,7 +872,7 @@ export default function HomeClient({
               </div>
 
               {/* Link OTA that, khong dung du lieu mau */}
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:mt-4">
                 {selectedOTAs.length === 0 ? (
                   <p className="col-span-full py-3 text-[12px] text-neutral-500">
                     {isVi
@@ -898,7 +900,7 @@ export default function HomeClient({
                           </span>
                         )}
 
-                        <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[#111613]">
+                        <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[#111613] lg:whitespace-normal lg:text-[13px]">
                           {ota.name}
                         </span>
 
@@ -917,7 +919,7 @@ export default function HomeClient({
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[#e2e5e3] bg-white px-2 py-2 transition-colors hover:border-[#0a6b36] hover:bg-[#f4fbf5]"
+                        className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[#e2e5e3] bg-white px-2 py-2 transition-colors lg:min-h-12 lg:px-3 hover:border-[#0a6b36] hover:bg-[#f4fbf5]"
                       >
                         {inner}
                       </a>
@@ -936,7 +938,7 @@ export default function HomeClient({
 
             {/* REVIEWS - COT PHAI */}
             <div
-              className="min-w-0 rounded-[13px] border border-[#e0e4e1] bg-white px-[14px] py-3 shadow-[0_2px_4px_rgba(0,0,0,.04)]"
+              className="min-w-0 rounded-[13px] border border-[#e0e4e1] bg-white px-[14px] py-3 shadow-[0_2px_4px_rgba(0,0,0,.04)] lg:px-5 lg:py-5"
               aria-labelledby="reviews-heading"
             >
               <div className="flex flex-wrap items-center gap-2">
@@ -955,7 +957,7 @@ export default function HomeClient({
 
                 <h2
                   id="reviews-heading"
-                  className="text-[14px] font-bold text-[#111613]"
+                  className="text-[14px] font-bold text-[#111613] lg:text-[17px]"
                 >
                   {isVi
                     ? "Đánh giá từ khách lưu trú"
@@ -1033,7 +1035,7 @@ export default function HomeClient({
                           return (
                             <article
                               key={review.id}
-                              className="flex min-w-0 flex-col rounded-[12px] border border-[#e7e9e7] px-3 py-2 shadow-[0_2px_5px_rgba(0,0,0,.04)]"
+                              className="flex min-w-0 flex-col rounded-[12px] border border-[#e7e9e7] px-3 py-2 shadow-[0_2px_5px_rgba(0,0,0,.04)] lg:px-4 lg:py-3"
                             >
                               <div
                                 className="text-[14px] tracking-[1px] text-[#f2bd00]"
@@ -1043,14 +1045,14 @@ export default function HomeClient({
                               </div>
 
                               <p
-                                className={`mt-1 text-[11px] leading-[1.4] text-[#111613] ${
-                                  reviewExpanded ? "" : "line-clamp-2"
+                                className={`mt-1 text-[11px] leading-[1.4] text-[#111613] lg:text-[13px] lg:leading-[1.45] ${
+                                  reviewExpanded ? "" : "line-clamp-2 lg:line-clamp-5"
                                 }`}
                               >
                                 &ldquo;{content}&rdquo;
                               </p>
 
-                              <div className="mt-auto pt-1 text-[11px] font-semibold text-[#111613]">
+                              <div className="mt-auto pt-1 text-[11px] font-semibold text-[#111613] lg:pt-2 lg:text-[12px]">
                                 {review.guest_name}
                                 {review.guest_country
                                   ? ` – ${review.guest_country}`
@@ -1063,7 +1065,7 @@ export default function HomeClient({
                                   onClick={() =>
                                     setReviewExpanded((value) => !value)
                                   }
-                                  className="mt-1 self-start text-[10px] font-semibold text-[#075bd7]"
+                                  className="mt-1 self-start text-[10px] font-semibold text-[#075bd7] lg:text-[12px]"
                                 >
                                   {reviewExpanded
                                     ? isVi ? "Thu gọn" : "Show less"
