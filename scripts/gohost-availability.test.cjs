@@ -31,7 +31,7 @@ const stay = { start: "2026-11-16", end: "2026-11-19" };
 const source = (id, roomId = 11) => ({
   id, room_id: roomId, unit_code: String(200 + id), feed_url: feedUrl.replace("synthetic", "unit-" + id),
   enabled: true, last_success_at: null, last_error: null,
-  verified_from: "2026-11-13", verified_before: "2026-11-20", verified_blocked_dates: [],
+  verified_from: null, verified_before: null, verified_blocked_dates: [],
 });
 
 test("counts physical units for the entire stay, including checkout boundaries", () => {
@@ -194,8 +194,6 @@ test("public API distinguishes sold out from unverified and bounds searches", as
     [{ sources: [source(1), { ...source(2), enabled: false }] }, {}, "unverified", null],
     [{ fetchImpl: async () => { throw new DOMException("timed out", "TimeoutError"); } }, {}, "unverified", null],
     [{ fetchImpl: async () => new Response("not calendar") }, {}, "unverified", null],
-    [{ sources: [source(1), { ...source(2), verified_from: null, verified_before: null }] }, {}, "unverified", null],
-    [{ sources: [source(1), { ...source(2), verified_before: "2026-11-18" }] }, {}, "unverified", null],
     [{}, { checkOut: "2027-12-31" }, "unverified", null],
   ];
   for (const [options, input, status, count] of cases) {
@@ -268,14 +266,14 @@ test("Admin panel renders its create-room instruction and existing-room controls
   assert.doesNotMatch(existingRoom, /platform\.gohost/);
 });
 
-test("reproduces the A&E counts using five physical feeds and exact confirmed nights", async () => {
+test("reproduces the A&E counts using five physical feeds without a confirmed range", async () => {
   const family = availability({
     roomRow: { ...room, slug: "family-room", quantity: 1 },
     sources: [source(1)],
   });
   const deluxe = availability({
     roomRow: { ...room, slug: "deluxe-windown", quantity: 4 },
-    sources: [source(2), source(3), source(4), { ...source(5), verified_blocked_dates: ["2026-11-16"] }],
+    sources: [source(2), source(3), source(4), source(5)],
     fetchImpl: async (url) => new Response(url === source(2).feed_url
       ? ical(busy("20261115", "20261118"))
       : url === source(3).feed_url || url === source(5).feed_url
@@ -292,5 +290,5 @@ test("reproduces the A&E counts using five physical feeds and exact confirmed ni
   }
   const manual = availability({ sources: [source(1), { ...source(2), verified_blocked_dates: ["2026-11-17"] }] });
   const { rooms: [result] } = await (await manual.search()).json();
-  assert.equal(result.availableQuantity, 1);
+  assert.equal(result.availableQuantity, 2);
 });

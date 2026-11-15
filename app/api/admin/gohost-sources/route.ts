@@ -1,5 +1,5 @@
 import { supabase } from "../../../lib/supabase";
-import { MAX_STAY_NIGHTS, normalizeFeedUrl, stayIsCovered, todayInVietnam, validDate } from "../../../lib/gohost-calendar";
+import { normalizeFeedUrl } from "../../../lib/gohost-calendar";
 import { getServerSupabase, loadCalendar, sourceConfiguration, sourceFields, type GoHostSource } from "../../../lib/gohost-server";
 
 const table = "gohost_ical_sources";
@@ -58,36 +58,6 @@ async function handle(request: Request) {
     if (!source || body.confirm !== true) return failure("Cần xác nhận xóa nguồn.", 400);
     const result = await db.from(table).delete().eq("id", source.id).eq("room_id", roomId).select("id");
     if (result.error) return failure("Không thể xóa nguồn GoHost.", 409);
-    if (!result.data?.length) return failure("Nguồn đã thay đổi. Hãy tải lại.", 409);
-    return reply({ ok: true });
-  }
-
-  if (request.method === "POST" && body.action === "confirm-inventory") {
-    if (!source?.enabled) return failure("Cần bật nguồn lịch của phòng này.", 400);
-    const from = body.from;
-    const before = body.before;
-    const clear = from === null && before === null;
-    if (!clear && (typeof from !== "string" || typeof before !== "string" ||
-        !stayIsCovered({ start: from, end: before }, MAX_STAY_NIGHTS, todayInVietnam()))) {
-      return failure("Chọn phạm vi ngày nhận và ngày trả hợp lệ.", 400);
-    }
-    const blockedDates: unknown = clear ? [] : body.blockedDates ?? [];
-    if (!Array.isArray(blockedDates) || blockedDates.length > MAX_STAY_NIGHTS ||
-        blockedDates.some((date) => typeof date !== "string" || !validDate(date) || date < from || date >= before)) {
-      return failure("Ngày bận phải nằm trong phạm vi đã chọn.", 400);
-    }
-    if (!clear) {
-      try {
-        await loadCalendar(source, true);
-      } catch {
-        return failure("Không đọc được lịch iCal. Chưa lưu xác nhận tồn phòng.", 503);
-      }
-    }
-    const result = await db.from(table).update({ verified_from: from, verified_before: before,
-      verified_blocked_dates: [...new Set(blockedDates)].sort() })
-      .eq("id", source.id).eq("room_id", roomId).eq("enabled", true)
-      .eq("feed_url", source.feed_url).eq("unit_code", source.unit_code).select("id");
-    if (result.error) return failure("Không thể lưu phạm vi xác nhận.", 503);
     if (!result.data?.length) return failure("Nguồn đã thay đổi. Hãy tải lại.", 409);
     return reply({ ok: true });
   }

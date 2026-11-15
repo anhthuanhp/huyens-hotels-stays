@@ -1,6 +1,6 @@
 import { legacyRoomSlug } from "./room-seo-slugs";
 import { countFreeUnits, MAX_REQUESTED_ROOMS, MAX_STAY_NIGHTS, stayIsCovered, todayInVietnam, validDate } from "./gohost-calendar";
-import { getServerSupabase, loadCalendar, sourceConfiguration, sourceFields, type GoHostSource } from "./gohost-server";
+import { calendarFailureReason, getServerSupabase, loadCalendar, sourceConfiguration, sourceFields, type GoHostSource } from "./gohost-server";
 
 const MAX_HOTELS = 5;
 const MAX_ROOM_TYPES = 30;
@@ -102,23 +102,25 @@ export async function checkAvailability(request: Request, forBooking = false) {
     const results = await Promise.all(rooms.map(async (room) => {
       const totalQuantity = room.quantity;
       const { active, complete } = sourceConfiguration(sourceByRoom.get(room.id) ?? [], totalQuantity);
-      const covered = active.every((source) => source.verified_from && source.verified_before &&
-        source.verified_from <= start && source.verified_before >= end);
       let availableQuantity: number | null = totalQuantity === 0 ? 0 : null;
       if (totalQuantity > 0 && completeReads && complete) {
         try {
           const calendars = await Promise.all(active.map(async (source) => {
-            const calendar = await loadCalendar(source, forBooking);
-            const manualBlocks = (source.verified_blocked_dates ?? [])
-              .filter((date) => start <= date && date < end)
-              .map((date) => ({ start: date, end }));
-            return [...calendar, ...manualBlocks];
+            try {
+              return await loadCalendar(source, forBooking);
+            } catch (error) {
+              console.warn("GoHost iCal unavailable", {
+                roomId: room.id, sourceId: source.id, reason: calendarFailureReason(error),
+              });
+              return null;
+            }
           }));
-          const goHostFree = countFreeUnits(calendars, { start, end });
+          if (calendars.some((calendar) => calendar === null)) throw new Error("incomplete_feeds");
+          const goHostFree = countFreeUnits(calendars.filter((calendar) => calendar !== null), { start, end });
           const internal = bookedByRoom.get(room.id);
           if (goHostFree === 0) {
             availableQuantity = 0;
-          } else if (covered && (!internal || goHostFree === totalQuantity)) {
+          } else if (!internal || goHostFree === totalQuantity) {
             // Internal bookings have no feed UID or physical-unit assignment.
             // With overlapping occupancy in both systems, the same booking
             // may appear twice. Leave the result unverified in that case.
@@ -137,6 +139,15 @@ export async function checkAvailability(request: Request, forBooking = false) {
         } catch {
           // Unreachable, stale, or unsupported feeds cannot establish availability.
         }
+      }
+      if (availableQuantity === null) {
+        const reason = !withinSearchWindow ? "outside_search_window"
+          : !completeReads ? "incomplete_database_reads"
+          : !complete ? "incomplete_or_duplicate_feed_mapping"
+          : "feed_failure_or_unreconciled_internal_occupancy";
+        console.warn("Room inventory unverified", {
+          roomId: room.id, start, end, reason, expectedFeeds: totalQuantity, activeFeeds: active.length,
+        });
       }
       return {
         ...(forBooking ? {
