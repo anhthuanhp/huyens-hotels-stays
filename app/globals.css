@@ -153,5 +153,5 @@ body {
    accented glyphs render with broken positioning on some Windows clients.
    Scope narrowly to the blog so other site typography stays unchanged. */
 main:has(#blog-cta-title) .font-serif {
-  font-family: "Times New Roman", "Noto Serif", serif;
+  font-family: Arial, Helvetica, sans-serif;
 }
