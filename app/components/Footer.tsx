@@ -79,11 +79,11 @@ export default function Footer() {
   return (
     <footer
       id="footer"
-      className="bg-[#092f20] text-white"
+      className="bg-teal-950 text-white"
     >
       <div className="mx-auto max-w-[1100px] px-4 sm:px-6 xl:px-0">
         <div
-          className="grid grid-cols-1 gap-4 py-6
+          className="grid grid-cols-1 gap-6 py-8
                      sm:grid-cols-2
                      lg:grid-cols-[1.45fr_1fr_1fr_1.1fr_1.05fr]
                      lg:gap-[23px]"

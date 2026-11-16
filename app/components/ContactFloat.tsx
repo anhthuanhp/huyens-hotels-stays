@@ -3,17 +3,29 @@
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useLanguage } from "../lib/use-language";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bot,
   CircleHelp,
+  Phone,
   X,
 } from "lucide-react";
 
 export default function ContactFloat({ inline = false }: { inline?: boolean }) {
   const pathname = usePathname();
   const isRoomSearch = pathname === "/tim-phong" || pathname === "/en/tim-phong";
+  const isHome = pathname === "/" || pathname === "/en";
   const language = useLanguage();
+  const [bookingVisible, setBookingVisible] = useState(true);
+
+  useEffect(() => {
+    if (!isHome) return;
+    const booking = document.getElementById("find-a-room");
+    if (!booking) return;
+    const observer = new IntersectionObserver(([entry]) => setBookingVisible(entry.isIntersecting));
+    observer.observe(booking);
+    return () => observer.disconnect();
+  }, [isHome]);
   const [isOpen, setIsOpen] = useState(false);
 
   function openAI() {
@@ -27,9 +39,10 @@ export default function ContactFloat({ inline = false }: { inline?: boolean }) {
   return (
     <div className={inline
       ? "relative z-40 mb-4 ml-auto w-fit md:hidden"
-      : `fixed bottom-5 right-5 z-[9998] ${isRoomSearch ? "hidden md:block" : ""}`}>
+      : `fixed bottom-5 right-5 z-[9998] ${isRoomSearch || (isHome && bookingVisible) ? "hidden md:block" : ""}`}>
       {/* Các nút con */}
       <div
+        inert={!isOpen}
         className={`absolute right-0 flex flex-col items-end gap-2 transition-all duration-200 ${inline ? "top-14" : "bottom-14"} ${
           isOpen
             ? "pointer-events-auto translate-y-0 opacity-100"
@@ -51,6 +64,11 @@ export default function ContactFloat({ inline = false }: { inline?: boolean }) {
             <Bot size={21} />
           </span>
         </button>
+
+        <a href="tel:+84902095669" className="group flex items-center gap-2">
+          <span className="rounded bg-white px-2 py-1 text-sm text-slate-700 shadow-sm">{language === "vi" ? "Gọi điện" : "Call"}</span>
+          <span className="grid size-11 place-items-center rounded-full bg-teal-700 text-white shadow-lg"><Phone size={20} aria-hidden="true" /></span>
+        </a>
 
         {/* Zalo */}
         <a

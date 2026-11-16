@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { useLanguage } from "../lib/use-language";
 import Link from "next/link";
 import { FACEBOOK_PAGE_URL } from "../lib/social";
@@ -25,6 +25,7 @@ message: "",
 export default function LienHePage() {
 const language = useLanguage();
 const [form, setForm] = useState<FormData>(initialForm);
+const submitLock = useRef(false);
 const [sending, setSending] = useState(false);
 const [success, setSuccess] = useState("");
 const [error, setError] = useState("");
@@ -40,6 +41,7 @@ setForm((prev) => ({
 
 const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 event.preventDefault();
+if (submitLock.current) return;
 
 setSuccess("");
 setError("");
@@ -53,6 +55,7 @@ if (!form.name.trim() || !form.phone.trim() || !form.message.trim()) {
   return;
 }
 
+submitLock.current = true;
 setSending(true);
 
 try {
@@ -99,6 +102,7 @@ try {
         : "Unable to send your message. Please try again."
   );
 } finally {
+  submitLock.current = false;
   setSending(false);
 }
 
@@ -112,7 +116,7 @@ return (
 
       <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-teal-600">
             Huyen&apos;s Hotels &amp; Stays
           </p>
 
@@ -134,8 +138,8 @@ return (
 
   <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
     <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-      <div className="rounded-3xl border border-sky-100 bg-sky-50 p-7 shadow-sm sm:p-9">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-600">
+      <div className="rounded-2xl border border-teal-100 bg-teal-50 p-7 shadow-sm sm:p-9">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-600">
           {isVi ? "Thông tin liên hệ" : "Contact information"}
         </p>
 
@@ -152,13 +156,13 @@ return (
         </p>
 
         <div className="mt-8 space-y-4">
-          <a href={FACEBOOK_PAGE_URL} target="_blank" rel="noopener noreferrer" className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md">
+          <a href={FACEBOOK_PAGE_URL} target="_blank" rel="noopener noreferrer" className="block rounded-2xl border border-teal-100 bg-white p-4 shadow-sm transition hover:border-teal-300 hover:shadow-md">
             <div className="text-sm text-neutral-500">Facebook</div>
             <div className="mt-1 text-lg font-semibold text-neutral-900">{isVi ? "Theo dõi Huyen’s Hotels & Stays" : "Follow Huyen’s Hotels & Stays"}</div>
           </a>
           <a
             href="tel:0902095669"
-            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
+            className="block rounded-2xl border border-teal-100 bg-white p-4 shadow-sm transition hover:border-teal-300 hover:shadow-md"
           >
             <div className="text-sm text-neutral-500">Hotline</div>
             <div className="mt-1 text-lg font-semibold text-neutral-900">
@@ -170,7 +174,7 @@ return (
             href="https://zalo.me/0902095669"
             target="_blank"
             rel="noopener noreferrer"
-            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
+            className="block rounded-2xl border border-teal-100 bg-white p-4 shadow-sm transition hover:border-teal-300 hover:shadow-md"
           >
             <div className="text-sm text-neutral-500">Zalo</div>
             <div className="mt-1 text-lg font-semibold text-neutral-900">
@@ -182,7 +186,7 @@ return (
             href="https://wa.me/84902095669"
             target="_blank"
             rel="noopener noreferrer"
-            className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md"
+            className="block rounded-2xl border border-teal-100 bg-white p-4 shadow-sm transition hover:border-teal-300 hover:shadow-md"
           >
             <div className="text-sm text-neutral-500">WhatsApp</div>
             <div className="mt-1 text-lg font-semibold text-neutral-900">
@@ -190,20 +194,24 @@ return (
             </div>
           </a>
 
-          <EmailLink address="buihongnhung83@gmail.com" className="block rounded-2xl border border-sky-100 bg-white p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md" label="Email" />
+          <a href="https://www.google.com/maps/search/?api=1&query=18A%2F139%20Nguy%E1%BB%85n%20Th%E1%BB%8B%20Minh%20Khai%2C%20TP.HCM" target="_blank" rel="noopener noreferrer" className="block rounded-2xl border border-teal-100 bg-white p-4 shadow-sm hover:border-teal-300">
+            <span className="block text-sm text-teal-800">{isVi ? "Mở bản đồ" : "Open map"}</span>
+            <span className="mt-1 block font-semibold">18A/139 Nguyễn Thị Minh Khai, TP.HCM</span>
+          </a>
+          <EmailLink address="buihongnhung83@gmail.com" className="block rounded-2xl border border-teal-100 bg-white p-4 shadow-sm transition hover:border-teal-300 hover:shadow-md" label="Email" />
         </div>
 
         <div className="mt-8">
           <Link
             href="/tim-phong"
-            className="inline-flex w-full items-center justify-center rounded-xl bg-sky-500 px-5 py-3.5 font-semibold text-white transition hover:bg-sky-600"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-teal-700 px-5 py-3.5 font-semibold text-white transition hover:bg-teal-800"
           >
             {isVi ? "Đặt phòng trực tiếp" : "Book directly"}
           </Link>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-sm sm:p-9">
+      <div className="rounded-2xl border border-neutral-200 bg-white p-7 shadow-sm sm:p-9">
         <h2 className="text-2xl font-bold text-neutral-900">
           {isVi ? "Gửi yêu cầu cho chúng tôi" : "Send us a message"}
         </h2>
@@ -214,70 +222,77 @@ return (
             : "Fill in the form below and the Huyen's Hotels & Stays team will get back to you."}
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-7 space-y-5">
+        <form aria-busy={sending} onSubmit={handleSubmit} className="mt-7 space-y-5">
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-800">
+            <label htmlFor="contact-name" className="mb-2 block text-sm font-semibold text-neutral-800">
               {isVi ? "Họ và tên" : "Full name"}{" "}
               <span className="text-red-500">*</span>
             </label>
 
             <input
               type="text"
+              id="contact-name"
+              required
               value={form.name}
               onChange={(event) =>
                 updateField("name", event.target.value)
               }
               placeholder={isVi ? "Nhập họ và tên" : "Your full name"}
-              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
             />
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-800">
+              <label htmlFor="contact-phone" className="mb-2 block text-sm font-semibold text-neutral-800">
                 {isVi ? "Số điện thoại" : "Phone number"}{" "}
                 <span className="text-red-500">*</span>
               </label>
 
               <input
                 type="tel"
-                value={form.phone}
+                id="contact-phone"
+              required
+              value={form.phone}
                 onChange={(event) =>
                   updateField("phone", event.target.value)
                 }
                 placeholder={
                   isVi ? "Nhập số điện thoại" : "Your phone number"
                 }
-                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-800">
+              <label htmlFor="contact-email" className="mb-2 block text-sm font-semibold text-neutral-800">
                 Email
               </label>
 
               <input
                 type="email"
-                value={form.email}
+                id="contact-email"
+              value={form.email}
                 onChange={(event) =>
                   updateField("email", event.target.value)
                 }
                 placeholder={
                   isVi ? "Email của bạn" : "Your email address"
                 }
-                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-800">
+            <label htmlFor="contact-message" className="mb-2 block text-sm font-semibold text-neutral-800">
               {isVi ? "Nội dung cần hỗ trợ" : "Message"}{" "}
               <span className="text-red-500">*</span>
             </label>
 
             <textarea
+              id="contact-message"
+              required
               value={form.message}
               onChange={(event) =>
                 updateField("message", event.target.value)
@@ -288,18 +303,18 @@ return (
                   ? "Ví dụ: Tôi muốn hỏi về phòng, giá phòng hoặc đặt phòng..."
                   : "For example: I would like to ask about rooms, rates or booking..."
               }
-              className="w-full resize-y rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              className="w-full resize-y rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-neutral-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
             />
           </div>
 
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm leading-6 text-green-700">
+            <div role="status" className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm leading-6 text-green-700">
               {success}
             </div>
           )}
@@ -307,7 +322,7 @@ return (
           <button
             type="submit"
             disabled={sending}
-            className="w-full rounded-xl bg-sky-500 px-5 py-3.5 font-semibold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-teal-500 px-5 py-3.5 font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {sending
               ? isVi
