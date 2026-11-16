@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useLanguage } from "../lib/use-language";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bot,
   CircleHelp,
@@ -14,7 +14,18 @@ import {
 export default function ContactFloat({ inline = false }: { inline?: boolean }) {
   const pathname = usePathname();
   const isRoomSearch = pathname === "/tim-phong" || pathname === "/en/tim-phong";
+  const isHome = pathname === "/" || pathname === "/en";
   const language = useLanguage();
+  const [bookingVisible, setBookingVisible] = useState(true);
+
+  useEffect(() => {
+    if (!isHome) return;
+    const booking = document.getElementById("find-a-room");
+    if (!booking) return;
+    const observer = new IntersectionObserver(([entry]) => setBookingVisible(entry.isIntersecting));
+    observer.observe(booking);
+    return () => observer.disconnect();
+  }, [isHome]);
   const [isOpen, setIsOpen] = useState(false);
 
   function openAI() {
@@ -28,7 +39,7 @@ export default function ContactFloat({ inline = false }: { inline?: boolean }) {
   return (
     <div className={inline
       ? "relative z-40 mb-4 ml-auto w-fit md:hidden"
-      : `fixed bottom-5 right-5 z-[9998] ${isRoomSearch ? "hidden md:block" : ""}`}>
+      : `fixed bottom-5 right-5 z-[9998] ${isRoomSearch || (isHome && bookingVisible) ? "hidden md:block" : ""}`}>
       {/* Các nút con */}
       <div
         inert={!isOpen}

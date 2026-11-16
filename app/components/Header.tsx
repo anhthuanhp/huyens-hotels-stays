@@ -130,7 +130,7 @@ export default function Header() {
         <Link
           href="/"
           onClick={() => setMenuOpen(false)}
-          className="flex shrink-0 items-center"
+          className="flex shrink-0 items-center rounded-lg bg-white px-2 py-1"
           aria-label="Huyen's Hotels & Stays"
         >
           <Image
