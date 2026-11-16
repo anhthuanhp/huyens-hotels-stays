@@ -1,3 +1,4 @@
+import { Inter, Playfair_Display } from "next/font/google";
 import { FACEBOOK_PAGE_URL, INSTAGRAM_PAGE_URL, THREADS_PAGE_URL } from "./lib/social";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
@@ -12,6 +13,9 @@ import DocumentLanguage from "./components/DocumentLanguage";
 import SiteHeader from "./components/SiteHeader";
 import Footer from "./components/Footer";
 import { DEFAULT_SHARE_IMAGE } from "./lib/seo";
+
+const inter = Inter({ subsets: ["latin", "vietnamese"], variable: "--huyen-inter", display: "swap" });
+const playfair = Playfair_Display({ subsets: ["latin", "vietnamese"], variable: "--huyen-playfair", display: "swap" });
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -80,7 +84,7 @@ export default async function RootLayout({ children }: LayoutProps) {
   return (
     <html
       lang={language}
-      className="h-full antialiased"
+      className={`h-full antialiased ${inter.variable} ${playfair.variable}`}
     >
       <body className="min-h-full flex flex-col bg-white text-neutral-900 font-sans">
         {/* === Schema Organization — Nhận diện thương hiệu Huyen's Hotels & Stays === */}

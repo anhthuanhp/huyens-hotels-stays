@@ -18,8 +18,22 @@ export default function PrivacyPolicyPage() {
           </p>
         </header>
 
+        <nav aria-label="Mục lục" className="mb-8 rounded-2xl border border-teal-100 bg-teal-50 p-6">
+          <p className="font-semibold text-slate-900">Mục lục</p>
+          <ol className="mt-4 grid gap-2 sm:grid-cols-2">
+            <li><a className="inline-block text-teal-800 underline underline-offset-4" href="#thu-thap">1. Thông tin chúng tôi thu thập</a></li>
+            <li><a className="inline-block text-teal-800 underline underline-offset-4" href="#su-dung">2. Mục đích sử dụng thông tin</a></li>
+            <li><a className="inline-block text-teal-800 underline underline-offset-4" href="#bao-ve">3. Bảo vệ thông tin khách hàng</a></li>
+            <li><a className="inline-block text-teal-800 underline underline-offset-4" href="#chia-se">4. Chia sẻ thông tin với bên thứ ba</a></li>
+            <li><a className="inline-block text-teal-800 underline underline-offset-4" href="#cookie">5. Cookie và dữ liệu kỹ thuật</a></li>
+            <li><a className="inline-block text-teal-800 underline underline-offset-4" href="#luu-tru">6. Lưu trữ thông tin</a></li>
+            <li><a className="inline-block text-teal-800 underline underline-offset-4" href="#quyen">7. Quyền của khách hàng</a></li>
+            <li><a className="inline-block text-teal-800 underline underline-offset-4" href="#lien-he-bao-mat">8. Liên hệ về chính sách bảo mật</a></li>
+            <li><a className="inline-block text-teal-800 underline underline-offset-4" href="#thay-doi">9. Thay đổi chính sách</a></li>
+          </ol>
+        </nav>
         <div className="space-y-10 text-[15px] leading-7">
-          <section>
+          <section id="thu-thap">
             <h2 className="text-xl font-semibold text-neutral-900">
               1. Thông tin chúng tôi thu thập
             </h2>
@@ -48,7 +62,7 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
-          <section>
+          <section id="su-dung">
             <h2 className="text-xl font-semibold text-neutral-900">
               2. Mục đích sử dụng thông tin
             </h2>
@@ -75,7 +89,7 @@ export default function PrivacyPolicyPage() {
             </ul>
           </section>
 
-          <section>
+          <section id="bao-ve">
             <h2 className="text-xl font-semibold text-neutral-900">
               3. Bảo vệ thông tin khách hàng
             </h2>
@@ -95,7 +109,7 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
-          <section>
+          <section id="chia-se">
             <h2 className="text-xl font-semibold text-neutral-900">
               4. Chia sẻ thông tin với bên thứ ba
             </h2>
@@ -121,7 +135,7 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
-          <section>
+          <section id="cookie">
             <h2 className="text-xl font-semibold text-neutral-900">
               5. Cookie và dữ liệu kỹ thuật
             </h2>
@@ -139,7 +153,7 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
-          <section>
+          <section id="luu-tru">
             <h2 className="text-xl font-semibold text-neutral-900">
               6. Lưu trữ thông tin
             </h2>
@@ -158,7 +172,7 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
-          <section>
+          <section id="quyen">
             <h2 className="text-xl font-semibold text-neutral-900">
               7. Quyền của khách hàng
             </h2>
@@ -181,7 +195,7 @@ export default function PrivacyPolicyPage() {
             </ul>
           </section>
 
-          <section>
+          <section id="lien-he-bao-mat">
             <h2 className="text-xl font-semibold text-neutral-900">
               8. Liên hệ về chính sách bảo mật
             </h2>
@@ -205,7 +219,7 @@ export default function PrivacyPolicyPage() {
             </div>
           </section>
 
-          <section>
+          <section id="thay-doi">
             <h2 className="text-xl font-semibold text-neutral-900">
               9. Thay đổi chính sách
             </h2>

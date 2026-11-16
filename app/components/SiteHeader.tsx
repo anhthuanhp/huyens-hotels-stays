@@ -112,7 +112,7 @@ export default function SiteHeader() {
   const back = getBackLink(basePath, language);
 
   return (
-    <header data-public-site className="relative z-40 border-b border-slate-200 bg-white">
+    <header data-public-site className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
       <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
         <Link
           href="/"

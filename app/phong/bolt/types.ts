@@ -35,6 +35,7 @@ export type Lang = 'vi' | 'en';
 export type RoomsClientProps = {
   rooms: RoomWithHotel[];
   roomCovers: Record<number, string>;
+  roomPhotos?: Record<number, string[]>;
   /** Optional: when the global VI/EN switcher is wired in Next.js, pass the active language here. Defaults to 'vi'. */
   lang?: Lang;
 };

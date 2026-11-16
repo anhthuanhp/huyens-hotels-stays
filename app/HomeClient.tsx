@@ -5,9 +5,10 @@ import { useLanguage } from "@/app/lib/use-language";
 import Link from "@/app/components/LocalizedLink";
 import EmailLink from "./components/EmailLink";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Building2,
+  ChevronLeft,
   ChevronRight,
   MapPin,
 } from "lucide-react";
@@ -84,8 +85,6 @@ declare global {
   }
 }
 
-const SLIDE_DURATION = 20;
-
 const heroFallbackTexts = [
   {
     titleVi: "Khách sạn, guesthouse & homestay Quận 1 TP.HCM",
@@ -117,51 +116,6 @@ const heroFallbackTexts = [
   },
 ];
 
-function buildHeroCss(count: number) {
-  if (count <= 1) {
-    return "";
-  }
-
-  const visible = 100 / count;
-  const fade = Math.min(4, visible / 5);
-
-  const pct = (value: number) =>
-    `${Math.max(0, Math.min(100, value)).toFixed(2)}%`;
-
-  return `
-    @keyframes huyenHeroFade {
-      0% {
-        opacity: 0;
-      }
-
-      ${pct(fade)} {
-        opacity: 1;
-      }
-
-      ${pct(visible - fade)} {
-        opacity: 1;
-      }
-
-      ${pct(visible)} {
-        opacity: 0;
-      }
-
-      100% {
-        opacity: 0;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .huyen-hero-slide {
-        animation: none !important;
-      }
-
-      .huyen-hero-slide:not([data-first="true"]) {
-        opacity: 0 !important;
-      }
-    }
-  `;
-}
 
 export default function HomeClient({
   heroSlides,
@@ -176,6 +130,7 @@ export default function HomeClient({
    * có cùng HTML, tránh hydration mismatch.
    */
   const language = useLanguage();
+  const [heroIndex, setHeroIndex] = useState(0);
   const [galleryPage, setGalleryPage] = useState(0);
   const [stayMode, setStayMode] = useState<"short" | "long">("short");
   const [pickedHotelId, setPickedHotelId] =
@@ -323,16 +278,14 @@ export default function HomeClient({
     currentGalleryPage * 4 + 4
   );
   const slideCount = heroSlides.length;
+  const slide = heroSlides[heroIndex];
+  const fallback = heroFallbackTexts[heroIndex % heroFallbackTexts.length];
+  const heroTitle = (isVi ? slide?.title_vi : slide?.title_en)?.trim() || (isVi ? fallback.titleVi : fallback.titleEn);
+  const heroDescription = (isVi ? slide?.description_vi : slide?.description_en)?.trim() || (isVi ? fallback.descriptionVi : fallback.descriptionEn);
 
-  const perSlide =
-    slideCount > 0
-      ? SLIDE_DURATION / slideCount
-      : SLIDE_DURATION;
-
-  const heroCss = useMemo(
-    () => buildHeroCss(slideCount),
-    [slideCount]
-  );
+  function changeSlide(offset: number) {
+    setHeroIndex(index => (index + offset + slideCount) % slideCount);
+  }
 
   return (
     <>
@@ -342,167 +295,27 @@ export default function HomeClient({
           className="relative"
           aria-labelledby="hero-heading"
         >
-          <div className="relative flex min-h-[455px] flex-col overflow-hidden bg-[#222611] pb-[45px] text-white max-sm:min-h-[445px]">
+          <div className="relative flex min-h-[455px] flex-col overflow-hidden bg-slate-900 pb-[45px] text-white max-sm:min-h-[445px]">
 
-            {/* Slideshow Supabase */}
-            <div className="absolute inset-0">
-              {heroSlides.map((slide, index) => {
-                const isFirst = index === 0;
-                const fallback =
-                  heroFallbackTexts[
-                    index % heroFallbackTexts.length
-                  ];
-
-                const alt =
-                  (isVi ? slide.title_vi : slide.title_en)?.trim() ||
-                  (isVi ? fallback.titleVi : fallback.titleEn);
-
-                const animationDelay = isFirst
-                  ? "0s"
-                  : `${index * perSlide - SLIDE_DURATION}s`;
-
-                return (
-                  <div
-                    key={slide.id}
-                    data-first={isFirst ? "true" : "false"}
-                    aria-hidden="true"
-                    className="huyen-hero-slide absolute inset-0"
-                    style={
-                      slideCount > 1
-                        ? {
-                            opacity: isFirst ? 1 : 0,
-                            animation: `huyenHeroFade ${SLIDE_DURATION}s linear ${animationDelay} infinite`,
-                          }
-                        : { opacity: 1 }
-                    }
-                  >
-                    {slide.image_url && (
-                      <Image
-                        src={slide.image_url}
-                        alt={alt}
-                        fill
-                        preload={isFirst}
-                        loading={isFirst ? "eager" : "lazy"}
-                        quality={75}
-                        sizes="100vw"
-                        className="object-cover"
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Gradient goc cua Bolt */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 z-10"
-              style={{
-                background:
-                  "linear-gradient(90deg, rgba(34,38,17,.78) 0%, rgba(34,38,17,.34) 42%, rgba(0,0,0,.05) 75%)",
-              }}
-            />
-
+            {slide?.image_url && (
+              <Image key={slide.id} src={slide.image_url} alt="" fill preload={heroIndex === 0} sizes="100vw" className="object-cover" />
+            )}
+            <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/60 to-slate-950/35" />
             <Header />
 
-            {/* Noi dung ben trai theo Bolt */}
-            <div className="relative z-20 mx-auto w-[calc(100%-48px)] max-w-[1100px] flex-1 pt-[115px] pb-5 text-white max-sm:w-[calc(100%-32px)] max-sm:pt-[150px]">
-              <div className="max-w-[560px]">
-
-                <div className="grid w-full max-w-[560px]">
-                  {heroSlides.length > 0 ? (
-                    heroSlides.map((slide, index) => {
-                      const fallback =
-                        heroFallbackTexts[
-                          index % heroFallbackTexts.length
-                        ];
-
-                      const title = isVi
-                        ? slide.title_vi?.trim() || fallback.titleVi
-                        : slide.title_en?.trim() || fallback.titleEn;
-
-                      const description = isVi
-                        ? slide.description_vi?.trim() || fallback.descriptionVi
-                        : slide.description_en?.trim() || fallback.descriptionEn;
-
-                      const isFirst = index === 0;
-
-                      const animationDelay = isFirst
-                        ? "0s"
-                        : `${index * perSlide - SLIDE_DURATION}s`;
-
-                      return (
-                        <div
-                          key={slide.id}
-                          data-first={isFirst ? "true" : "false"}
-                          aria-hidden={!isFirst}
-                          className="huyen-hero-slide col-start-1 row-start-1"
-                          style={
-                            slideCount > 1
-                              ? {
-                                  opacity: isFirst ? 1 : 0,
-                                  animation: `huyenHeroFade ${SLIDE_DURATION}s linear ${animationDelay} infinite`,
-                                }
-                              : { opacity: 1 }
-                          }
-                        >
-                          <p className="mb-[5px] text-[12px] font-bold tracking-[1.7px] text-[#e8eee0]">
-                            HUYEN&apos;S HOTELS &amp; STAYS
-                          </p>
-
-                          {isFirst ? (
-                            <h1
-                              id="hero-heading"
-                              className="mb-[14px] text-[clamp(34px,4.5vw,60px)] leading-[1.04] tracking-[-0.8px] text-white"
-                              style={{
-                                fontFamily: "'Playfair Display', Georgia, serif",
-                                fontWeight: 700,
-                              }}
-                            >
-                              {title}
-                            </h1>
-                          ) : (
-                            <p
-                              className="mb-[14px] text-[clamp(34px,4.5vw,60px)] leading-[1.04] tracking-[-0.8px] text-white"
-                              style={{
-                                fontFamily: "'Playfair Display', Georgia, serif",
-                                fontWeight: 700,
-                              }}
-                            >
-                              {title}
-                            </p>
-                          )}
-
-                          {description && (
-                            <p className="mb-[17px] whitespace-pre-line text-[14px] leading-[1.4] text-white">
-                              {description}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="col-start-1 row-start-1">
-                      <p className="mb-[5px] text-[12px] font-bold tracking-[1.7px] text-[#e8eee0]">
-                        HUYEN&apos;S HOTELS &amp; STAYS
-                      </p>
-
-                      <h1
-                        id="hero-heading"
-                        className="mb-[14px] text-[clamp(34px,4.5vw,60px)] leading-[1.04] text-white"
-                        style={{
-                          fontFamily: "'Playfair Display', Georgia, serif",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {isVi
-                          ? "Lưu trú theo cách của bạn"
-                          : "Stay your own way"}
-                      </h1>
-                    </div>
-                  )}
-                </div>
-
+            <div className="relative z-20 mx-auto flex w-[calc(100%-32px)] max-w-[1100px] flex-1 flex-col items-start justify-end gap-4 pb-8 pt-32 sm:w-[calc(100%-48px)]">
+              <div aria-live="polite" className="max-w-2xl">
+                <h1 id="hero-heading" className="font-serif text-4xl font-bold leading-tight text-white sm:text-6xl">{heroTitle}</h1>
+                <p className="mt-4 max-w-xl text-base leading-relaxed text-white/90">{heroDescription}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <a href="#find-a-room" className="inline-flex rounded-full bg-teal-700 px-6 py-3 font-semibold text-white hover:bg-teal-800">{isVi ? "Tìm phòng" : "Find a room"}</a>
+                {slideCount > 1 && (
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => changeSlide(-1)} aria-label={isVi ? "Ảnh trước" : "Previous slide"} className="grid size-12 place-items-center rounded-full border border-white/60 bg-slate-950/40 hover:bg-slate-950/70"><ChevronLeft aria-hidden="true" size={20} /></button>
+                    <button type="button" onClick={() => changeSlide(1)} aria-label={isVi ? "Ảnh tiếp theo" : "Next slide"} className="grid size-12 place-items-center rounded-full border border-white/60 bg-slate-950/40 hover:bg-slate-950/70"><ChevronRight aria-hidden="true" size={20} /></button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -513,8 +326,8 @@ export default function HomeClient({
                 aria-pressed={stayMode === "short"}
                 className={`inline-flex items-center gap-[7px] rounded-[28px] border border-white px-[17px] py-2 text-sm font-semibold text-white transition-colors ${
                   stayMode === "short"
-                    ? "bg-[#0b6c38]"
-                    : "bg-[rgba(16,31,22,.3)] hover:bg-[#0b6c38]"
+                    ? "bg-[#0f766e]"
+                    : "bg-[rgba(16,31,22,.3)] hover:bg-[#0f766e]"
                 }`}
               >
                 <Building2 size={16} aria-hidden="true" />
@@ -534,13 +347,6 @@ export default function HomeClient({
               </button>
             </div>
 
-            {heroCss && (
-              <style
-                dangerouslySetInnerHTML={{
-                  __html: heroCss,
-                }}
-              />
-            )}
           </div>
 
           {/* Thanh tim phong noi tren mep Hero */}
@@ -1271,9 +1077,11 @@ export default function HomeClient({
             )}
           </div>
         </section>
+        <section className="bg-teal-950 px-4 py-12 text-center text-white sm:py-16">
+          <h2 className="font-serif text-3xl font-semibold sm:text-4xl">{isVi ? "Tìm chỗ nghỉ cho chuyến đi của bạn" : "Find a stay for your trip"}</h2>
+          <Link href="/phong" className="mt-6 inline-flex rounded-full bg-teal-50 px-6 py-3 font-semibold text-teal-950 hover:bg-teal-100">{isVi ? "Xem phòng và giá" : "Explore rooms and rates"}</Link>
+        </section>
       </div>
-
-
     </>
   );
 }

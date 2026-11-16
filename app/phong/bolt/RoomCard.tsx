@@ -1,3 +1,6 @@
+import { useId, useRef, useState } from "react";
+import Image from "next/image";
+import { localizedHref } from "@/app/lib/localized-path";
 import { canonicalRoomSlug } from "@/app/lib/room-seo-slugs";
 import { LayoutTemplate, MapPin, Users, Maximize, BedDouble, Sparkles } from 'lucide-react';
 import type { Lang, RoomWithHotel } from './types';
@@ -31,11 +34,17 @@ export function getAmenities(raw: unknown): string[] {
 type Props = {
   data: RoomWithHotel;
   cover?: string;
+  photos?: string[];
   lang: Lang;
 };
 
-export function RoomCard({ data, cover, lang }: Props) {
+export function RoomCard({ data, cover, photos = [], lang }: Props) {
   const { room, hotel } = data;
+  const gallery = useRef<HTMLDialogElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const name = lang === 'vi' ? room.name_vi : room.name_en || room.name_vi;
   const hotelName = lang === 'vi' ? hotel.name_vi : hotel.name_en || hotel.name_vi;
   const address = (lang === 'vi' ? hotel.address_vi : hotel.address_en ?? hotel.address_vi) || null;
@@ -44,18 +53,22 @@ export function RoomCard({ data, cover, lang }: Props) {
 
   const daily = room.base_price_daily && room.base_price_daily > 0 ? room.base_price_daily : null;
 
+  const details = localizedHref(roomDetailPath(data), lang);
+  const booking = localizedHref("/tim-phong?" + new URLSearchParams({ hotel: hotel.slug, room: room.slug }), lang);
   const amenities = getAmenities(room.amenities).slice(0, 4);
   
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-pine/10 bg-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover">
-      <div className="relative aspect-[4/3] overflow-hidden bg-sage">
+    <article className="group flex flex-col md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] overflow-hidden rounded-2xl border border-pine/10 bg-white shadow-card transition-all duration-300 motion-safe:hover:-translate-y-1 hover:shadow-card-hover">
+      <div className="relative aspect-[3/2] w-full md:m-4 md:w-auto md:self-center md:rounded-xl overflow-hidden bg-sage">
         {cover ? (
-          <img
+          <Image
             src={cover}
             alt={name}
+            fill
+            sizes="(max-width: 767px) 100vw, (max-width: 1023px) 40vw, 380px"
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-pine/40" aria-hidden="true">
@@ -65,6 +78,26 @@ export function RoomCard({ data, cover, lang }: Props) {
         )}
       </div>
 
+      {photos.length > 1 && (
+        <dialog ref={gallery} aria-labelledby={titleId} onClose={() => { setGalleryOpen(false); trigger.current?.focus(); }} className="fixed inset-0 m-auto max-h-[85dvh] w-[min(92vw,760px)] overflow-auto rounded-2xl bg-white p-4 shadow-xl backdrop:bg-slate-950/70">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2 id={titleId} className="text-xl font-semibold">{name}</h2>
+            <button type="button" onClick={() => gallery.current?.close()} className="rounded-lg border border-slate-300 px-4 py-2">{lang === "vi" ? "Đóng" : "Close"}</button>
+          </div>
+          {galleryOpen && (
+            <>
+              <div className="relative aspect-[3/2] overflow-hidden rounded-xl bg-slate-100">
+                <Image src={photos[photoIndex]} alt={name + " — " + (photoIndex + 1)} fill sizes="(max-width: 800px) 90vw, 720px" className="object-contain" />
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <button type="button" onClick={() => setPhotoIndex(index => (index + photos.length - 1) % photos.length)} className="rounded-lg border border-teal-200 px-3 py-2">{lang === "vi" ? "Ảnh trước" : "Previous"}</button>
+                <span role="status" className="text-sm">{photoIndex + 1} / {photos.length}</span>
+                <button type="button" onClick={() => setPhotoIndex(index => (index + 1) % photos.length)} className="rounded-lg border border-teal-200 px-3 py-2">{lang === "vi" ? "Ảnh tiếp" : "Next"}</button>
+              </div>
+            </>
+          )}
+        </dialog>
+      )}
       <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
         <header className="space-y-1.5">
           <div className="flex items-start gap-1.5 text-mist">
@@ -76,7 +109,7 @@ export function RoomCard({ data, cover, lang }: Props) {
           </div>
           <h3 className="font-serif text-xl font-semibold leading-tight text-ink sm:text-2xl">{name}</h3>
           {description ? (
-            <p className="line-clamp-2 text-sm leading-relaxed text-mist sm:line-clamp-3">{description}</p>
+            <p className="line-clamp-2 text-sm leading-relaxed text-mist">{description}</p>
           ) : null}
         </header>
 
@@ -138,12 +171,14 @@ export function RoomCard({ data, cover, lang }: Props) {
               </div>
             )}
           </div>
+          {photos.length > 1 && <button ref={trigger} type="button" onClick={() => { setPhotoIndex(0); setGalleryOpen(true); gallery.current?.showModal(); }} className="w-full rounded-full border border-teal-200 px-5 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50">{lang === "vi" ? "Xem ảnh phòng" : "View room photos"}</button>}
           <a
-            href={roomDetailPath(data)}
+            href={details}
             className="flex w-full items-center justify-center gap-2 rounded-full border border-pine/20 bg-cream px-5 py-2.5 text-sm font-medium text-pine transition-colors duration-200 hover:border-pine hover:bg-pine hover:text-cream"
           >
             {pick(copy.card.detail, lang)}
           </a>
+          <a href={booking} className="flex w-full items-center justify-center rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">{lang === "vi" ? "Đặt ngay" : "Book now"}</a>
         </div>
       </div>
     </article>

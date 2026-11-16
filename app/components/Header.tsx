@@ -118,8 +118,8 @@ export default function Header() {
   return (
     <header
       data-public-site
-      className="absolute inset-x-0 top-0 z-50
-                 h-[72px] bg-transparent
+      className="fixed inset-x-0 top-0 z-50
+                 h-[72px] bg-teal-950/95 shadow-sm backdrop-blur
                  text-white"
     >
       <div

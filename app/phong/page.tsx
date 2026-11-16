@@ -38,13 +38,14 @@ type RoomWithHotel = {
 async function getRoomsData(): Promise<{
   rooms: RoomWithHotel[];
   roomCovers: Record<number, string>;
+  roomPhotos: Record<number, string[]>;
 }> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !key) {
     console.error("Rooms page: Supabase environment variables are missing.");
-    return { rooms: [], roomCovers: {} };
+    return { rooms: [], roomCovers: {}, roomPhotos: {} };
   }
 
   try {
@@ -64,12 +65,12 @@ async function getRoomsData(): Promise<{
 
     if (hotelsError) {
       console.error("Rooms page: failed to load hotels:", hotelsError);
-      return { rooms: [], roomCovers: {} };
+      return { rooms: [], roomCovers: {}, roomPhotos: {} };
     }
 
     const activeHotels = (hotels ?? []) as Hotel[];
     if (activeHotels.length === 0) {
-      return { rooms: [], roomCovers: {} };
+      return { rooms: [], roomCovers: {}, roomPhotos: {} };
     }
 
     const hotelIds = activeHotels.map((hotel) => hotel.id);
@@ -83,7 +84,7 @@ async function getRoomsData(): Promise<{
 
     if (roomsError) {
       console.error("Rooms page: failed to load rooms:", roomsError);
-      return { rooms: [], roomCovers: {} };
+      return { rooms: [], roomCovers: {}, roomPhotos: {} };
     }
 
     const hotelsById = new Map(activeHotels.map((hotel) => [hotel.id, hotel]));
@@ -95,7 +96,7 @@ async function getRoomsData(): Promise<{
 
     const roomIds = activeRooms.map((room) => room.id);
     if (roomIds.length === 0) {
-      return { rooms, roomCovers: {} };
+      return { rooms, roomCovers: {}, roomPhotos: {} };
     }
 
     const { data: media, error: mediaError } = await supabase
@@ -109,24 +110,26 @@ async function getRoomsData(): Promise<{
 
     if (mediaError) {
       console.error("Rooms page: failed to load room images:", mediaError);
-      return { rooms, roomCovers: {} };
+      return { rooms, roomCovers: {}, roomPhotos: {} };
     }
 
     const roomCovers: Record<number, string> = {};
+    const roomPhotos: Record<number, string[]> = {};
     for (const item of media ?? []) {
-      if (item.entity_id && item.public_url && !roomCovers[item.entity_id]) {
-        roomCovers[item.entity_id] = item.public_url;
-      }
+      if (!item.entity_id || !item.public_url) continue;
+      roomCovers[item.entity_id] ??= item.public_url;
+      const photos = (roomPhotos[item.entity_id] ??= []);
+      if (photos.length < 8 && !photos.includes(item.public_url)) photos.push(item.public_url);
     }
 
-    return { rooms, roomCovers };
+    return { rooms, roomCovers, roomPhotos };
   } catch (error) {
     console.error("Rooms page: data request failed:", error);
-    return { rooms: [], roomCovers: {} };
+    return { rooms: [], roomCovers: {}, roomPhotos: {} };
   }
 }
 
 export default async function RoomsPage() {
-  const { rooms, roomCovers } = await getRoomsData();
-  return <RoomsClient rooms={rooms} roomCovers={roomCovers} />;
+  const { rooms, roomCovers, roomPhotos } = await getRoomsData();
+  return <RoomsClient rooms={rooms} roomCovers={roomCovers} roomPhotos={roomPhotos} />;
 }

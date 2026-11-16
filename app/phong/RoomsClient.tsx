@@ -6,7 +6,8 @@ import type { RoomsClientProps } from "./bolt/types";
 
 export default function RoomsClient({
   rooms,
-  roomCovers
+  roomCovers,
+  roomPhotos
 }: RoomsClientProps) {
   const lang = useLanguage();
 
@@ -14,6 +15,7 @@ export default function RoomsClient({
     <BoltRoomsClient
       rooms={rooms}
       roomCovers={roomCovers}
+      roomPhotos={roomPhotos}
       lang={lang}
     />
   );
