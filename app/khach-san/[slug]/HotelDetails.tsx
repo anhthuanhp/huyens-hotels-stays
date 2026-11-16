@@ -1,7 +1,7 @@
 import { languageAlternates } from "@/app/lib/localized-path";
 import { canonicalRoomSlug } from "@/app/lib/room-seo-slugs";
 import { districtOnePlace } from "../../lib/local-schema";
-import { cleanSeoText, hotelSeo } from "../../lib/seo";
+import { cleanSeoText, DEFAULT_SHARE_IMAGE, hotelSeo } from "../../lib/seo";
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -698,27 +698,14 @@ export async function generateMetadata({
         "Huyen's Hotels & Stays",
       title,
       description,
-      ...(image
-        ? {
-            images: [
-              {
-                url: image,
-                alt: hotelName,
-              },
-            ],
-          }
-        : {}),
+      images: image ? [{ url: image, alt: hotelName }] : [DEFAULT_SHARE_IMAGE],
     },
 
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      ...(image
-        ? {
-            images: [image],
-          }
-        : {}),
+      images: [image || DEFAULT_SHARE_IMAGE],
     },
   };
 }

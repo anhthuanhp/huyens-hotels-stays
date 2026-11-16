@@ -1,5 +1,5 @@
 import { FACEBOOK_PAGE_URL, INSTAGRAM_PAGE_URL, THREADS_PAGE_URL } from "./lib/social";
-import { staticMetadata } from "./lib/seo";
+import { DEFAULT_SHARE_IMAGE, staticMetadata } from "./lib/seo";
 import type { Metadata } from "next";
 import { cache } from "react";
 import {
@@ -23,7 +23,7 @@ const SEO_TITLE = (homeMetadata.title as { absolute: string }).absolute;
 const SEO_DESCRIPTION = homeMetadata.description!;
 
 const FALLBACK_OG_IMAGE =
-  `${SITE_URL}/images/huyens-hotels-stays-logo.webp`;
+  `${SITE_URL}${DEFAULT_SHARE_IMAGE}`;
 
 type Hotel = {
   id: number;

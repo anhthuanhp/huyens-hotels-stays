@@ -186,13 +186,6 @@ export default function HomeClient({
 
   const isVi = language === "vi";
 
-  /*
-   * Đồng bộ ngôn ngữ với Header và <html lang>.
-   */
-  useEffect(() => {
-    document.documentElement.lang = language;
-  }, [language]);
-
   const t = useCallback(
     <T,>(
       viValue: T | null | undefined,

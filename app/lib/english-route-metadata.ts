@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { englishPage } from "./english-data";
 import { canonicalSeoPath } from "./room-seo-slugs";
 import { localizedHref } from "./localized-path";
+import { DEFAULT_SHARE_IMAGE, SITE_NAME } from "./seo";
 
 const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://huyenhotels.com").replace(/\/+$/, "");
 
@@ -12,20 +13,16 @@ export async function englishRouteMetadata(parts: string[]): Promise<Metadata> {
   const englishPath = localizedHref(path, "en");
   const enUrl = base + englishPath;
   const viUrl = base + (path === "/" ? "" : path);
-  const { title, description } = data;
-  // Property-specific sharing image for English hotel pages.
-  const rawImage = data.kind === "hotel" ? data.hotel?.image?.trim() : undefined;
-  const image = rawImage
-    ? /^https?:\/\//i.test(rawImage)
-      ? rawImage
-      : new URL(rawImage.startsWith("/") ? rawImage : `/${rawImage}`, base).toString()
-    : undefined;
+  const { description } = data;
+  const title = data.title;
+  const image = data.post?.image?.trim() || data.room?.image?.trim() || data.hotel?.image?.trim() || DEFAULT_SHARE_IMAGE;
+  const social = { title, description, url: enUrl, locale: "en_US", siteName: SITE_NAME, images: [{ url: new URL(image, base).href, alt: data.title }] };
   return {
-    title: title + " | Huyen's Hotels & Stays",
+    title,
     description,
     alternates: { canonical: enUrl, languages: { en: enUrl, "vi-VN": viUrl, "x-default": viUrl } },
-    openGraph: { title, description, url: enUrl, locale: "en_US", siteName: "Huyen's Hotels & Stays", ...(image ? { images: [{ url: image, alt: data.hotel?.name_en || title }] } : {}) },
-    twitter: { card: "summary_large_image", title, description, ...(image ? { images: [image] } : {}) },
+    openGraph: data.kind === "article" ? { ...social, type: "article" } : { ...social, type: "website" },
+    twitter: { card: "summary_large_image", title, description, images: social.images },
     robots: { index: true, follow: true },
   };
 }

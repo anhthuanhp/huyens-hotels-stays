@@ -3,6 +3,7 @@ import { languageAlternates } from "./localized-path";
 
 export const SITE_NAME = "Huyen's Hotels & Stays";
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://huyenhotels.com").replace(/\/+$/, "");
+export const DEFAULT_SHARE_IMAGE = "/images/huyens-hotels-stays-logo.png";
 
 export function cleanSeoText(value: string | null | undefined): string {
   return (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
@@ -21,7 +22,7 @@ export const STATIC_SEO: Record<string, { title: string; description: string }> 
   "/khach-san-quan-1-cu": { title: "Khách sạn Quận 1 cũ Sài Gòn", description: "Tìm hiểu cách chọn khách sạn Quận 1 cũ, trung tâm Sài Gòn cùng Huyen's. So sánh vị trí, loại phòng và chính sách trước khi gửi yêu cầu đặt phòng." },
   "/": { title: "Huyen's Hotels & Stays \| Khách sạn, homestay TP.HCM", description: "Khám phá khách sạn và homestay Huyen’s tại Quận 1 cũ, trung tâm Sài Gòn. Xem cơ sở ở Cô Bắc, Đỗ Quang Đẩu, Nguyễn Thị Minh Khai và đặt phòng trực tiếp." },
   "/phong": { title: "Phòng và giá lưu trú tại TP.HCM", description: "So sánh phòng theo giá mỗi đêm, diện tích, sức chứa và tiện nghi tại Huyen's Hotels & Stays ở TP.HCM. Chọn ngày lưu trú và xem thông tin đặt phòng." },
-  "/kham-pha-huyens": { title: "Về Huyen's Hotels & Stays", description: "Tìm hiểu Huyen's Hotels & Stays và các cơ sở lưu trú tại TP.HCM. Khám phá phong cách từng khách sạn, guesthouse, homestay và cách liên hệ đặt phòng." },
+  "/kham-pha-huyens": { title: "Khám phá Huyen's Hotels & Stays tại TP.HCM", description: "Tìm hiểu Huyen's Hotels & Stays và các cơ sở lưu trú tại TP.HCM. Khám phá phong cách từng khách sạn, guesthouse, homestay và cách liên hệ đặt phòng." },
   "/trai-nghiem": { title: "Trải nghiệm và khám phá TP.HCM", description: "Khám phá hoạt động, ẩm thực và những góc phố tại TP.HCM cùng Huyen's Hotels & Stays. Tham khảo ý tưởng trải nghiệm để lên kế hoạch cho kỳ lưu trú." },
   "/blog": { title: "Blog và kinh nghiệm du lịch TP.HCM", description: "Đọc kinh nghiệm chọn khách sạn, khám phá ẩm thực và lịch trình du lịch TP.HCM trên blog Huyen's Hotels & Stays để chuẩn bị cho chuyến đi của bạn." },
   "/lien-he": { title: "Liên hệ và hỗ trợ đặt phòng", description: "Liên hệ Huyen's Hotels & Stays để hỏi phòng, giá và điều kiện lưu trú tại TP.HCM. Xem số điện thoại, email và gửi yêu cầu hỗ trợ qua website." },
@@ -36,7 +37,7 @@ export const STATIC_SEO: Record<string, { title: string; description: string }> 
 export function staticMetadata(path: string): Metadata {
   const copy = STATIC_SEO[path];
   if (!copy) throw new Error(`Missing SEO copy: ${path}`);
-  const title = path === "/" ? copy.title + " | Huyen’s" : path === "/kham-pha-huyens" ? copy.title : `${copy.title} | ${SITE_NAME}`;
+  const title = path === "/" || path === "/kham-pha-huyens" ? copy.title : `${copy.title} | Huyen's`;
   const description = seoDescription(copy.description);
   const url = path === "/" ? SITE_URL : SITE_URL + path;
   const index = path !== "/tim-phong" && path !== "/dat-phong";
@@ -44,8 +45,8 @@ export function staticMetadata(path: string): Metadata {
     title: { absolute: title }, description,
     alternates: ["/", "/phong", "/blog"].includes(path) ? languageAlternates(path, SITE_URL) : { canonical: url },
     robots: { index, follow: true, googleBot: { index, follow: true, "max-image-preview": "large" } },
-    openGraph: { type: "website", locale: "vi_VN", siteName: SITE_NAME, title, description, url },
-    twitter: { card: "summary", title, description },
+    openGraph: { type: "website", locale: "vi_VN", siteName: SITE_NAME, title, description, url, images: [DEFAULT_SHARE_IMAGE] },
+    twitter: { card: "summary_large_image", title, description, images: [DEFAULT_SHARE_IMAGE] },
   };
 }
 
@@ -64,10 +65,10 @@ export function hotelSeo(hotel: HotelSeoData) {
   const name = cleanSeoText(hotel.name_vi || hotel.name_en) || "Cơ sở lưu trú";
   const address = cleanSeoText(hotel.address_vi || hotel.address_en);
   const positioning: Record<string, { title: string; description: string }> = {
-    "anh-kim-hotel": { title: "Anh Kim Hotel – Khách sạn Cô Bắc, gần Bùi Viện", description: "Anh Kim Hotel tại Cô Bắc, thuận tiện đến Bùi Viện và chợ Bến Thành. Xem phòng đôi, phòng gia đình, giá theo đêm và đặt phòng trực tiếp." },
-    "ae-guesthouse": { title: "A&E Guesthouse – Phòng nghỉ gần Bùi Viện, TP.HCM", description: "A&E Guesthouse tại Đỗ Quang Đẩu, gần Bùi Viện và Phạm Ngũ Lão. Xem các loại phòng, giá theo đêm và lựa chọn phù hợp cho chuyến du lịch Sài Gòn." },
-    "huyen-house": { title: "Huyen House – Phòng nghỉ Nguyễn Thị Minh Khai", description: "Huyen House tại Nguyễn Thị Minh Khai, gần Tổng Lãnh sự quán Mỹ. Xem phòng nghỉ theo ngày cho khách du lịch, công tác và các chuyến đi ngắn." },
-    "huyenhomestay": { title: "Huyen Homestay – Phòng nghỉ theo ngày tại TP.HCM", description: "Huyen Homestay tại Nguyễn Thị Minh Khai, trung tâm TP.HCM. Khám phá các loại phòng, xem giá theo đêm và đặt phòng trực tiếp cho chuyến đi của bạn." },
+    "anh-kim-hotel": { title: "Anh Kim Hotel – Cô Bắc, gần Bùi Viện", description: "Anh Kim Hotel tại Cô Bắc, thuận tiện đến Bùi Viện và chợ Bến Thành. Xem phòng đôi, phòng gia đình, giá theo đêm và đặt phòng trực tiếp." },
+    "ae-guesthouse": { title: "A&E Guesthouse – Gần Bùi Viện", description: "A&E Guesthouse tại Đỗ Quang Đẩu, gần Bùi Viện và Phạm Ngũ Lão. Xem các loại phòng, giá theo đêm và lựa chọn phù hợp cho chuyến du lịch Sài Gòn." },
+    "huyen-house": { title: "Huyen House – Gần Lãnh sự quán Mỹ", description: "Huyen House tại Nguyễn Thị Minh Khai, gần Tổng Lãnh sự quán Mỹ. Xem phòng nghỉ theo ngày cho khách du lịch, công tác và các chuyến đi ngắn." },
+    "huyenhomestay": { title: "Huyen Homestay – Minh Khai, TP.HCM", description: "Huyen Homestay tại Nguyễn Thị Minh Khai, trung tâm TP.HCM. Khám phá các loại phòng, xem giá theo đêm và đặt phòng trực tiếp cho chuyến đi của bạn." },
   };
   const copy = hotel.slug ? positioning[hotel.slug] : undefined;
   if (copy) return { title: copy.title + " | Huyen's", description: seoDescription(copy.description) };
@@ -75,6 +76,7 @@ export function hotelSeo(hotel: HotelSeoData) {
 }
 
 export const BLOG_SEO: Record<string, { title: string; description: string }> = {
+  "huyen-homestay-luu-tru-dai-ngay-nguyen-thi-minh-khai": { title: "Chọn phòng nghỉ tại Huyen Homestay, Sài Gòn", description: "Xem các loại phòng tại Huyen Homestay trên đường Nguyễn Thị Minh Khai và chọn chỗ ở theo số khách, vị trí và nhu cầu lưu trú tại Sài Gòn." },
   "kinh-nghiem-chon-khach-san-o-quan-1": { title: "Cách chọn khách sạn Quận 1 TP.HCM", description: "Kinh nghiệm chọn khách sạn ở khu vực Quận 1 TP.HCM cho người lần đầu đến Sài Gòn: cân nhắc vị trí, loại phòng và điều kiện đặt phòng trước chuyến đi." },
   "khach-san-gan-cho-ben-thanh": { title: "Cách chọn khách sạn gần chợ Bến Thành", description: "Tìm hiểu cách chọn khách sạn gần chợ Bến Thành khi du lịch TP.HCM. Cân nhắc vị trí, nhu cầu lưu trú và thông tin phòng để chọn nơi nghỉ phù hợp." },
   "kinh-nghiem-khi-luu-tru-tai-sai-gon": { title: "Kinh nghiệm lưu trú tại Sài Gòn", description: "Tham khảo kinh nghiệm lưu trú tại Sài Gòn để chuẩn bị chuyến đi TP.HCM. Tìm hiểu việc chọn nơi nghỉ và những thông tin cần kiểm tra trước khi đặt phòng." },

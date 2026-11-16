@@ -9,15 +9,15 @@ export function parseBlogContent(content: string): BlogBlock[] {
   }));
 }
 export function splitBlogLinks(text: string) {
-  return text.split(/(https?:\/\/[^\s<>]+|(?<![\w/:])\/[a-z][\w%-]*(?:[/?#][^\s<>]*)?)/gi).filter(Boolean).map(part => {
-    if (!/^https?:\/\/|^\/[a-z]/i.test(part)) return { text: part };
+  return text.split(/(https?:\/\/[^\s<>]+|(?<![\p{L}\p{M}\p{N}_/:])\/[a-z][\w%-]*(?:[/?#][^\s<>]*)?(?![\p{L}\p{M}\p{N}_%-]))/giu).map((part, index) => {
+    if (index % 2 === 0) return { text: part };
     const href = part.replace(/[.,;!?)]*$/, "");
     if (href.startsWith("/")) return { text: href, href, suffix: part.slice(href.length) };
     try { const url = new URL(href);
       if (url.protocol !== "https:" && url.protocol !== "http:") return { text: part };
       return { text: href, href, suffix: part.slice(href.length) };
     } catch { return { text: part }; }
-  });
+  }).filter(part => part.text);
 }
 
 export function englishBlogHref(href: string, translatedPaths: readonly string[], siteUrl: string) {
