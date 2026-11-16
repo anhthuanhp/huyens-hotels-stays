@@ -135,8 +135,7 @@ export default function SiteHeader() {
             className="inline-flex min-h-12 items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-900 sm:gap-2 sm:text-sm"
           >
             <span aria-hidden="true">←</span>
-            <span className="sm:hidden">{language === "vi" ? "Quay lại" : "Back"}</span>
-            <span className="hidden sm:inline">{back.label}</span>
+            <span>{back.label}</span>
           </Link>
 
           <nav
