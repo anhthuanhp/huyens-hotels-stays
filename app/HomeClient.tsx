@@ -11,8 +11,9 @@ import {
   ChevronRight,
   MapPin,
 } from "lucide-react";
-import BookingSearch from "./components/BookingSearch";
+import BookingSearch, { type BookingDraft } from "./components/BookingSearch";
 import Header from "./components/Header";
+import HomeRoomCollection, { homeCardFrame, homeCardGrid, homeCardImage, type HomeRoomData } from "./components/HomeRoomCollection";
 
 import { HOME_FAQ_GROUPS } from "./data/home-faq";
 
@@ -70,6 +71,7 @@ type LatestPost = {
   image: string | null;
 };
 type HomeClientProps = {
+  roomCollection: HomeRoomData;
   latestPosts?: LatestPost[];
   heroSlides: HeroSlide[];
   hotels: Hotel[];
@@ -118,7 +120,7 @@ const heroFallbackTexts = [
 ];
 
 function buildHeroCss(count: number) {
-  if (count <= 1) {
+  if (count === 0) {
     return "";
   }
 
@@ -129,6 +131,13 @@ function buildHeroCss(count: number) {
     `${Math.max(0, Math.min(100, value)).toFixed(2)}%`;
 
   return `
+    @keyframes huyenHeroImageZoom {
+      0% { transform: scale(1); }
+      ${pct(visible / 2)} { transform: scale(1.08); }
+      ${pct(visible)} { transform: scale(1); }
+      100% { transform: scale(1); }
+    }
+
     @keyframes huyenHeroFade {
       0% {
         opacity: 0;
@@ -152,7 +161,8 @@ function buildHeroCss(count: number) {
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .huyen-hero-slide {
+      .huyen-hero-slide,
+      .huyen-hero-image {
         animation: none !important;
       }
 
@@ -164,6 +174,7 @@ function buildHeroCss(count: number) {
 }
 
 export default function HomeClient({
+  roomCollection,
   heroSlides,
   hotels,
   hotelCovers,
@@ -176,6 +187,7 @@ export default function HomeClient({
    * có cùng HTML, tránh hydration mismatch.
    */
   const language = useLanguage();
+  const [bookingDraft, setBookingDraft] = useState<BookingDraft>();
   const [galleryPage, setGalleryPage] = useState(0);
   const [stayMode, setStayMode] = useState<"short" | "long">("short");
   const [pickedHotelId, setPickedHotelId] =
@@ -385,7 +397,10 @@ export default function HomeClient({
                         loading={isFirst ? "eager" : "lazy"}
                         quality={75}
                         sizes="100vw"
-                        className="object-cover"
+                        className="huyen-hero-image object-cover"
+                        style={{
+                          animation: `huyenHeroImageZoom ${SLIDE_DURATION}s ease-in-out ${animationDelay} ${slideCount > 1 ? "infinite" : "1"}`,
+                        }}
                       />
                     )}
                   </div>
@@ -547,6 +562,7 @@ export default function HomeClient({
           <div id="find-a-room" className="scroll-mt-24">
             <BookingSearch
               hotels={bookingHotels}
+              onDraftChange={setBookingDraft}
               stayMode={stayMode}
               floating
             />
@@ -630,6 +646,8 @@ export default function HomeClient({
             </div>
           </div>
         </section>
+        <HomeRoomCollection rooms={roomCollection.rooms} roomCovers={roomCollection.roomCovers} lang={language} bookingDraft={bookingDraft} />
+
         {/* =====================================================
             DANH SÁCH LƯU TRÚ - BOLT FEATURED CARDS
         ====================================================== */}
@@ -674,7 +692,7 @@ export default function HomeClient({
                   : "No active properties available."}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-4 max-lg:gap-3">
+              <div className={homeCardGrid}>
                 {hotels.map((hotel) => {
                   const image = hotelCovers[hotel.id];
 
@@ -704,7 +722,7 @@ export default function HomeClient({
                   return (
                     <article
                       key={hotel.id}
-                      className="group relative overflow-hidden rounded-[13px] border border-[#e1e4e1] bg-white shadow-[0_2px_5px_rgba(0,0,0,.06)] transition-all hover:-translate-y-1 hover:shadow-[0_10px_22px_rgba(0,0,0,.1)]"
+                      className={homeCardFrame}
                     >
                       <Link
                         href={href}
@@ -715,7 +733,7 @@ export default function HomeClient({
                         }
                         className="block"
                       >
-                        <div className="relative h-[140px] overflow-hidden bg-neutral-100 max-sm:h-[170px] lg:h-[210px]">
+                        <div data-home-card-image className={homeCardImage}>
                           {image ? (
                             <Image
                               src={image}

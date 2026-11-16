@@ -1,7 +1,7 @@
 "use client";
 import RoomChoiceGuide from "@/app/components/RoomChoiceGuide";
 import HotelAreaAdvice from "@/app/components/HotelAreaAdvice";
-import { localizedHref } from "@/app/lib/localized-path";
+import { bookingDetailsHref } from "@/app/lib/booking-query";
 
 import { useLanguage } from "@/app/lib/use-language";
 
@@ -798,63 +798,11 @@ export default function RoomDetailClient({
         return;
       }
 
-      const rooms =
-        JSON.stringify([
-          {
-            roomSlug: room.slug,
-            quantity:
-              effectiveRoomQuantity,
-          },
-        ]);
-
-      const params =
-        new URLSearchParams();
-
-      params.set(
-        "hotel",
-        hotel.slug
-      );
-
-      params.set(
-        "stayType",
-        stayType
-      );
-
-      if (stayType === "day") {
-        params.set(
-          "checkIn",
-          checkIn
-        );
-
-        params.set(
-          "checkOut",
-          checkOut
-        );
-      } else {
-        params.set(
-          "months",
-          String(months)
-        );
-      }
-
-      params.set(
-        "adults",
-        String(adults)
-      );
-
-      params.set(
-        "children",
-        String(children)
-      );
-
-      params.set(
-        "rooms",
-        rooms
-      );
-
-      router.push(
-        localizedHref(`/dat-phong?${params.toString()}`, language)
-      );
+      router.push(bookingDetailsHref({
+        hotel: hotel.slug,
+        rooms: [{ roomSlug: room.slug, quantity: effectiveRoomQuantity }],
+        stayType, checkIn, checkOut, months, adults, children, language,
+      }));
     }, [
       room,
       hotel,

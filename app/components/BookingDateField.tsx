@@ -30,10 +30,11 @@ type BookingDateFieldProps = {
   onChange: (value: string) => void;
   isVi: boolean;
   compact?: boolean;
+  externalLabel?: boolean;
 };
 
 export default function BookingDateField({
-  label, value, min, onChange, isVi, compact,
+  label, value, min, onChange, isVi, compact, externalLabel,
 }: BookingDateFieldProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -60,6 +61,7 @@ export default function BookingDateField({
         }
       }}
     >
+      {externalLabel && <label htmlFor={id} className="mb-2 block h-4 text-xs font-semibold uppercase leading-4 tracking-wide text-neutral-500">{label}</label>}
       <button
         id={id}
         type="button"
@@ -67,7 +69,7 @@ export default function BookingDateField({
         aria-controls={open ? id + "-calendar" : undefined}
         className={compact
           ? "flex min-h-12 w-full items-center gap-2 rounded-lg border border-[#e2e5e2] px-3 text-left lg:rounded-none lg:border-0 lg:border-r lg:px-0 lg:pr-3"
-          : "flex min-h-12 w-full items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 text-left"}
+          : `flex ${externalLabel ? "h-12" : "min-h-12"} w-full items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 text-left`}
         onClick={() => {
           if (!open) setMonth(fromKey(value >= min ? value : min));
           setOpen(!open);
@@ -75,7 +77,7 @@ export default function BookingDateField({
       >
         <CalendarDays size={20} className="shrink-0" aria-hidden="true" />
         <span>
-          <span className="block text-xs font-medium text-neutral-600">{label}</span>
+          {!externalLabel && <span className="block text-xs font-medium text-neutral-600">{label}</span>}
           <span className="block text-sm font-semibold text-slate-900">
             {value ? value.split("-").reverse().join("/") : "dd/mm/yyyy"}
           </span>

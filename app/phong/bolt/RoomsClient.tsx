@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import type { Lang, RoomsClientProps } from './types';
+import type { RoomsClientProps } from './types';
 import { copy, pick } from './copy';
 import { RoomsHero } from './RoomsHero';
 import { RoomCard } from './RoomCard';
 import { RoomsEmptyState } from './RoomsEmptyState';
 import { RoomsFinalCta } from './RoomsFinalCta';
+import { filterRooms } from '../room-filters';
 
 type HotelTab = 'all' | number;
 
@@ -21,7 +22,7 @@ export default function RoomsClient({ rooms, roomCovers, lang = 'vi' }: RoomsCli
     return [...map.values()];
   }, [rooms, lang]);
 
-  const filtered = hotelTab === 'all' ? rooms : rooms.filter(({ hotel }) => hotel.id === hotelTab);
+  const filtered = filterRooms(rooms, hotelTab);
 
   return (
     <div className="bg-cream">

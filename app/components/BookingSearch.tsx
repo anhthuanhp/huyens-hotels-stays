@@ -30,13 +30,17 @@ type BookingSearchProps = {
   initialHotelSlug?: string;
   stayMode?: "short" | "long";
   floating?: boolean;
+  onDraftChange?: (draft: BookingDraft) => void;
 };
+
+export type BookingDraft = { checkIn: string; checkOut: string; adults: number; children: number; guestsEdited: boolean };
 
 export default function BookingSearch({
   hotels,
   initialHotelSlug = "",
   stayMode = "short",
   floating = false,
+  onDraftChange,
 }: BookingSearchProps) {
   const router = useRouter();
   const language = useLanguage();
@@ -66,9 +70,14 @@ export default function BookingSearch({
   const [checkOut, setCheckOut] = useState("");
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
+  const [guestsEdited, setGuestsEdited] = useState(false);
   const [guestsOpen, setGuestsOpen] = useState(false);
   const guestsRef = useRef<HTMLDivElement>(null);
   const today = localToday();
+
+  useEffect(() => {
+    onDraftChange?.({ checkIn, checkOut, adults, children, guestsEdited });
+  }, [checkIn, checkOut, adults, children, guestsEdited, onDraftChange]);
 
   useEffect(() => {
     if (!guestsOpen) return;
@@ -297,14 +306,14 @@ export default function BookingSearch({
                   title: isVi ? "Người lớn" : "Adults",
                   value: adults,
                   min: 1,
-                  onChange: setAdults,
+                  onChange: (change: (value: number) => number) => { setGuestsEdited(true); setAdults(change); },
                 },
                 {
                   key: "children",
                   title: isVi ? "Trẻ em" : "Children",
                   value: children,
                   min: 0,
-                  onChange: setChildren,
+                  onChange: (change: (value: number) => number) => { setGuestsEdited(true); setChildren(change); },
                 },
               ].map((item) => (
                 <div

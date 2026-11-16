@@ -8,6 +8,7 @@ import {
 } from "@supabase/supabase-js";
 
 import HomeClient from "./HomeClient";
+import { getRoomsData } from "./phong/rooms-data";
 
 export const revalidate = 60;
 
@@ -713,6 +714,7 @@ function toSafeJsonLd(
 ========================================================= */
 
 export default async function HomePage() {
+  const [home, roomCollection] = await Promise.all([getHomepageData(), getRoomsData()]);
   const {
     heroSlides,
     hotels,
@@ -720,7 +722,7 @@ export default async function HomePage() {
     hotelOTAs,
     customerReviews,
     latestPosts,
-  } = await getHomepageData();
+  } = home;
 
   return (
     <>
@@ -738,6 +740,7 @@ export default async function HomePage() {
       />
 
       <HomeClient
+        roomCollection={roomCollection}
         heroSlides={heroSlides}
         hotels={hotels}
         hotelCovers={hotelCovers}
