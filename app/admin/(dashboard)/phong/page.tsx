@@ -29,6 +29,7 @@ type Room = {
   amenities_vi: string[];
   amenities_en: string[];
   status: "active" | "inactive";
+  is_featured?: boolean;
 };
 
 type RoomForm = {
@@ -48,6 +49,7 @@ type RoomForm = {
   amenities_vi: string;
   amenities_en: string;
   status: "active" | "inactive";
+  is_featured: boolean;
 };
 
 const emptyForm: RoomForm = {
@@ -67,6 +69,7 @@ const emptyForm: RoomForm = {
   amenities_vi: "",
   amenities_en: "",
   status: "active",
+  is_featured: false,
 };
 
 async function fetchData() {
@@ -105,6 +108,16 @@ export default function AdminRoomsPage() {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
 
   const [form, setForm] = useState<RoomForm>(emptyForm);
+  const [canFeature, setCanFeature] = useState(false);
+  const featuredRoom = rooms.find(room => String(room.hotel_id) === form.hotel_id && room.is_featured);
+  const replacingFeaturedRoom = featuredRoom && featuredRoom.id !== editingRoom?.id ? featuredRoom : undefined;
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setCanFeature(session?.user.app_metadata.role === "admin");
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const applyData = useCallback((result: Awaited<ReturnType<typeof fetchData>>) => {
 
@@ -227,6 +240,7 @@ export default function AdminRoomsPage() {
           ? room.amenities_en.join(", ")
           : "",
       status: room.status,
+      is_featured: Boolean(room.is_featured),
     });
 
     setShowForm(true);
@@ -340,6 +354,20 @@ export default function AdminRoomsPage() {
       return;
     }
 
+    const shouldFeature = form.status === "active" && form.is_featured;
+    const featuredChanged = Boolean(editingRoom) && (
+      shouldFeature !== Boolean(editingRoom?.is_featured) ||
+      (shouldFeature && String(editingRoom?.hotel_id) !== form.hotel_id)
+    );
+    if (featuredChanged && !canFeature) {
+      window.alert("Chỉ quản trị viên được thay đổi phòng tiêu biểu.");
+      return;
+    }
+    if (featuredChanged && shouldFeature && replacingFeaturedRoom &&
+      !window.confirm(`Thay “${replacingFeaturedRoom.name_vi}” bằng “${form.name_vi.trim()}” làm phòng tiêu biểu của cơ sở này?`)) {
+      return;
+    }
+
     setSaving(true);
 
     const payload = {
@@ -381,12 +409,17 @@ export default function AdminRoomsPage() {
           return;
         }
       }
-      const result = await supabase
-        .from("rooms")
-        .update(payload)
-        .eq("id", editingRoom.id);
+      const result = featuredChanged
+        ? await supabase.rpc("save_room_featured_selection", {
+            p_room_id: editingRoom.id,
+            p_changes: payload,
+            p_featured: shouldFeature,
+            p_expected_featured_id: featuredRoom?.id ?? null,
+          })
+        : await supabase.from("rooms").update(payload).eq("id", editingRoom.id);
 
       error = result.error;
+      if (error?.code === "40001" && featuredChanged) await loadData();
     } else if (payload.status === "active") {
       const result = await supabase.from("rooms").insert(payload).select("*").single();
       error = result.error;
@@ -751,6 +784,7 @@ export default function AdminRoomsPage() {
                           ? "Đang bán"
                           : "Ngừng bán"}
                       </button>
+                      {room.is_featured && <span className="mt-1 block text-xs font-semibold text-sky-700">Phòng tiêu biểu</span>}
                     </td>
 
                     <td className="px-5 py-4 text-right">
@@ -1178,6 +1212,26 @@ export default function AdminRoomsPage() {
                     </option>
                   </select>
                 </Field>
+                {editingRoom && (
+                  <div className="mt-4 rounded-xl border border-slate-200 p-4">
+                    <label className="flex items-center gap-3 font-medium text-slate-900">
+                      <input type="checkbox" role="switch" className="peer sr-only" checked={form.status === "active" && form.is_featured}
+                        disabled={!canFeature || form.status !== "active" || saving}
+                        onChange={event => setForm(current => ({ ...current, is_featured: event.target.checked }))} />
+                      <span aria-hidden="true" className="relative h-6 w-11 shrink-0 rounded-full bg-slate-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:size-5 after:rounded-full after:bg-white after:transition-transform peer-checked:bg-sky-600 peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-sky-600 peer-disabled:opacity-50" />
+                      Phòng tiêu biểu
+                    </label>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {!canFeature
+                        ? "Chỉ quản trị viên được thay đổi phòng tiêu biểu."
+                        : form.status !== "active"
+                        ? "Chỉ phòng đang công khai mới có thể làm phòng tiêu biểu."
+                        : replacingFeaturedRoom
+                          ? `Phòng tiêu biểu hiện tại: ${replacingFeaturedRoom.name_vi}. Bật công tắc và lưu để thay thế phòng này.`
+                          : "Mỗi cơ sở có tối đa một phòng tiêu biểu trên trang chủ."}
+                    </p>
+                  </div>
+                )}
               </section>
             </div>
 

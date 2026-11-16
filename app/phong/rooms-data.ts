@@ -41,7 +41,7 @@ export async function getRoomsData(): Promise<{
     const hotelIds = activeHotels.map((hotel) => hotel.id);
     const { data: roomData, error: roomsError } = await supabase
       .from("rooms")
-      .select("id, hotel_id, slug, name_vi, name_en, description_vi, description_en, base_price_daily, base_price_monthly, size, max_guests, beds_vi, beds_en, amenities, quantity")
+      .select("id, hotel_id, slug, name_vi, name_en, description_vi, description_en, base_price_daily, base_price_monthly, size, max_guests, beds_vi, beds_en, amenities, quantity, is_featured")
       .in("hotel_id", hotelIds)
       .eq("status", "active")
       .order("hotel_id", { ascending: true })

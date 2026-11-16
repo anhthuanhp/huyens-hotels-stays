@@ -23,6 +23,7 @@ export type Room = {
   beds_en: string | null;
   amenities: unknown;
   quantity: number | null;
+  is_featured: boolean;
 };
 
 export type RoomWithHotel = {

@@ -32,12 +32,15 @@ export default function HomeRoomCollection({ rooms, roomCovers, lang, bookingDra
   const bedLabels = new Set(rooms.map(({ room }) => roomBedKey(room, lang)).filter(Boolean));
   const activeBeds = bedLabels.has(beds) ? beds : "";
   const results = filterRooms(rooms, hotelId, activeBeds, priceBand, lang);
+  const featuredByProperty = new Map(rooms.filter(({ room }) => room.is_featured).map(({ hotel, room }) => [hotel.id, room.id]));
   const firstByProperty = new Map<number, RoomWithHotel>();
   for (const item of results) {
-    if (roomCovers[item.room.id] && !firstByProperty.has(item.hotel.id)) firstByProperty.set(item.hotel.id, item);
+    const featured = featuredByProperty.get(item.hotel.id);
+    if (!firstByProperty.has(item.hotel.id) && (featured === undefined ? Boolean(roomCovers[item.room.id]) : item.room.id === featured)) {
+      firstByProperty.set(item.hotel.id, item);
+    }
   }
-  const selected = new Set([...firstByProperty.values()].map(({ room }) => room.id));
-  const visibleRooms = [...firstByProperty.values(), ...results.filter(({ room }) => !selected.has(room.id))].slice(0, 4);
+  const visibleRooms = hotelId === "all" ? [...firstByProperty.values()].slice(0, 4) : results;
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
