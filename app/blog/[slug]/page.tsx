@@ -1,7 +1,7 @@
 import { languageAlternates } from "@/app/lib/localized-path";
 import { englishInventory, englishPaths } from "@/app/lib/english-data";
 import { canonicalSeoPath } from "@/app/lib/room-seo-slugs";
-import { BLOG_SEO, seoDescription } from "../../lib/seo";
+import { BLOG_SEO, DEFAULT_SHARE_IMAGE, seoDescription } from "../../lib/seo";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
@@ -293,7 +293,7 @@ export async function generateMetadata({
     getImageUrl(
       post.image,
       cleanSiteUrl
-    );
+    ) || new URL(DEFAULT_SHARE_IMAGE, cleanSiteUrl).href;
 
   const categoryVi =
     cleanText(

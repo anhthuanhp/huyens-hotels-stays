@@ -1083,7 +1083,7 @@ export default function RoomDetailClient({
                 {language ===
                 "vi"
                   ? room.name_vi
-                  : room.name_en}
+                  : `${room.name_en || room.name_vi} at ${hotel.name_en || hotel.name_vi}`}
               </h1>
 
               {(hotel.address_vi ||

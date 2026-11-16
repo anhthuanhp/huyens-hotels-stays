@@ -1,7 +1,7 @@
 import { languageAlternates } from "@/app/lib/localized-path";
 import { canonicalRoomSlug, legacyRoomSlug } from "@/app/lib/room-seo-slugs";
 import { districtOnePlace } from "../../../../lib/local-schema";
-import { cleanSeoText, seoDescription, seoHotelName } from "../../../../lib/seo";
+import { cleanSeoText, DEFAULT_SHARE_IMAGE, seoDescription, seoHotelName } from "../../../../lib/seo";
 import RoomDetailClient from "./RoomDetailClient";
 import { supabase } from "../../../../lib/supabase";
 import type { Metadata } from "next";
@@ -99,6 +99,7 @@ export async function generateMetadata({
         name_en,
         description_vi,
         description_en,
+        image,
         base_price_daily,
         base_price_monthly,
         size,
@@ -237,7 +238,7 @@ export async function generateMetadata({
 
   const roomImage =
     normalizeImageUrl(
-      imageResult.data?.public_url,
+      imageResult.data?.public_url || room.image || DEFAULT_SHARE_IMAGE,
       siteUrl
     );
 

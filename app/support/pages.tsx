@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DEFAULT_SHARE_IMAGE, SITE_NAME } from "../lib/seo";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { cache, type ReactNode } from "react";
@@ -39,7 +40,8 @@ export function supportMetadata(page: PageKey, language: Language): Metadata {
     title,
     description,
     alternates: { ...languageAlternates(path, origin), canonical },
-    openGraph: { title, description, url: canonical, locale: language === "vi" ? "vi_VN" : "en_US" },
+    openGraph: { type: "website", siteName: SITE_NAME, title, description, url: canonical, locale: language === "vi" ? "vi_VN" : "en_US", images: [DEFAULT_SHARE_IMAGE] },
+    twitter: { card: "summary_large_image", title, description, images: [DEFAULT_SHARE_IMAGE] },
   };
 }
 

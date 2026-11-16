@@ -1,13 +1,17 @@
 import { FACEBOOK_PAGE_URL, INSTAGRAM_PAGE_URL, THREADS_PAGE_URL } from "./lib/social";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { RouteLanguage } from "./lib/use-language";
 import "./globals.css";
 import VisitorTracker from "./components/VisitorTracker";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import BackToTopButton from "./components/BackToTopButton";
 import LazyWidgets from "./components/LazyWidgets";
 import { Suspense } from "react";
+import DocumentLanguage from "./components/DocumentLanguage";
 import SiteHeader from "./components/SiteHeader";
 import Footer from "./components/Footer";
+import { DEFAULT_SHARE_IMAGE } from "./lib/seo";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -45,9 +49,9 @@ export const metadata: Metadata = {
     url: siteUrl,
     images: [
       {
-        url: "/images/huyens-hotels-stays-logo.webp",
-        width: 1600,
-        height: 900,
+        url: DEFAULT_SHARE_IMAGE,
+        width: 1346,
+        height: 547,
         alt: "Huyen's Hotels — Khách sạn trung tâm Quận 1, gần Bến Thành",
       },
     ],
@@ -56,7 +60,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: defaultTitle,
     description: defaultDescription,
-    images: ["/images/huyens-hotels-stays-logo.webp"],
+    images: [DEFAULT_SHARE_IMAGE],
   },
   robots: {
     index: true,
@@ -71,10 +75,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps) {
+export default async function RootLayout({ children }: LayoutProps) {
+  const language = (await headers()).get("x-huyen-route-language") === "en" ? "en" : "vi";
   return (
     <html
-      lang="vi"
+      lang={language}
       className="h-full antialiased"
     >
       <body className="min-h-full flex flex-col bg-white text-neutral-900 font-sans">
@@ -96,17 +101,18 @@ export default function RootLayout({ children }: LayoutProps) {
           }}
         />
 
-        <GoogleAnalytics />
-        <VisitorTracker />
-        <BackToTopButton />
-        <Suspense fallback={null}>
-          <SiteHeader />
-        </Suspense>
-        <main className="flex-1">
-          {children}
-        </main>
-        <Footer />
-        <LazyWidgets />
+        <RouteLanguage language={language}>
+          <GoogleAnalytics />
+          <VisitorTracker />
+          <BackToTopButton />
+          <Suspense fallback={null}>
+            <DocumentLanguage />
+            <SiteHeader />
+          </Suspense>
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <LazyWidgets />
+        </RouteLanguage>
       </body>
     </html>
   );

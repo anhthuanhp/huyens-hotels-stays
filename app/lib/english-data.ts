@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Hotel, Room } from "../khach-san/[slug]/hotel-data";
-import { cleanSeoText, seoDescription } from "./seo";
+import { cleanSeoText, seoDescription, seoHotelName } from "./seo";
 import { canonicalRoomSlug } from "./room-seo-slugs";
 
 export type EnglishPost = { slug: string; title_en: string; excerpt_en: string | null; content_en: string | null; image: string | null; date: string; updated_at: string | null };
@@ -43,7 +43,7 @@ const hotelTitles: Record<string, string> = {
 
 const hotelFocus: Record<string, string> = {
   "huyen-house": "Quiet stay near the US Consulate",
-  huyenhomestay: "Rooms for nightly stays on Nguyen Thi Minh Khai",
+  huyenhomestay: "Rooms on Nguyen Thi Minh Khai",
 };
 
 export async function englishPage(segments: string[]): Promise<EnglishData | null> {
@@ -55,15 +55,15 @@ export async function englishPage(segments: string[]): Promise<EnglishData | nul
   if (segments.length === 1 && segments[0] === "blog") return { ...result, kind: "blog", title: "Ho Chi Minh City travel & accommodation guides", description: "Plan your visit to Saigon with Huyen's guides to neighbourhoods, choosing rooms, city breaks and business trips." };
   if (segments[0] === "blog" && segments.length === 2) {
     const post = inventory.posts.find(p => p.slug === segments[1]);
-    return post ? { ...result, kind: "article", post, title: post.title_en, description: seoDescription(post.excerpt_en || cleanSeoText(post.content_en)) } : null;
+    return post ? { ...result, kind: "article", post, title: post.slug === "kinh-nghiem-khi-luu-tru-tai-sai-gon" ? "Where to stay in Saigon: practical tips" : post.title_en, description: seoDescription(post.excerpt_en || cleanSeoText(post.content_en)) } : null;
   }
   if (segments[0] !== "khach-san") return null;
   const hotel = inventory.hotels.find(h => h.slug === segments[1]);
   if (!hotel) return null;
   const rooms = inventory.rooms.filter(r => r.hotel_id === hotel.id);
-  if (segments.length === 2) return { ...result, kind: "hotel", hotel, rooms, title: hotelTitles[hotel.slug] || hotel.name_en + " – " + (hotelFocus[hotel.slug] || "Ho Chi Minh City"), description: seoDescription(hotelDescriptions[hotel.slug] || hotel.description_en || "Compare rooms and rates for your stay in Ho Chi Minh City.") };
+  if (segments.length === 2) return { ...result, kind: "hotel", hotel, rooms, title: hotelTitles[hotel.slug] || seoHotelName(hotel.slug, hotel.name_en || hotel.name_vi || "") + " – " + (hotelFocus[hotel.slug] || "Ho Chi Minh City"), description: seoDescription(hotelDescriptions[hotel.slug] || hotel.description_en || "Compare rooms and rates for your stay in Ho Chi Minh City.") };
   if (segments.length !== 4 || segments[2] !== "phong") return null;
   const room = rooms.find(r => r.slug === segments[3])
     ?? rooms.find(r => canonicalRoomSlug(hotel.slug, r.slug) === segments[3]);
-  return room ? { ...result, kind: "room", hotel, room, rooms, title: cleanSeoText(room.name_en) + " – " + hotel.name_en, description: seoDescription(room.description_en || "View room details and check availability for your dates.") } : null;
+  return room ? { ...result, kind: "room", hotel, room, rooms, title: cleanSeoText(room.name_en) + " | " + seoHotelName(hotel.slug, hotel.name_en || hotel.name_vi || ""), description: seoDescription(room.description_en || "View room details and check availability for your dates.") } : null;
 }

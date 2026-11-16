@@ -6,20 +6,23 @@ import {
 
 export function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
+  const headers = new Headers(request.headers);
+  headers.set("x-huyen-route-language", /^\/en(?:\/|$)/.test(url.pathname) ? "en" : "vi");
+  const next = () => NextResponse.next({ request: { headers } });
 
   let decoded: string;
 
   try {
     decoded = decodeURIComponent(url.pathname);
   } catch {
-    return NextResponse.next();
+    return next();
   }
 
   const match = decoded.match(
     /^\/(en\/)?khach-san\/([^/]+)\/phong\/([^/]+)\/?$/
   );
 
-  if (!match) return NextResponse.next();
+  if (!match) return next();
 
   const prefix = match[1] ?? "";
   const hotel = match[2];
@@ -35,12 +38,13 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
-  return NextResponse.next();
+  return next();
 }
 
 export const config = {
   matcher: [
+    "/en/:path*",
     "/khach-san/:path*",
-    "/en/khach-san/:path*",
+    "/((?!api/|_next/|.*\\..*).*)",
   ],
 };

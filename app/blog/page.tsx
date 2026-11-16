@@ -1,4 +1,4 @@
-import { staticMetadata } from "../lib/seo";
+import { DEFAULT_SHARE_IMAGE, staticMetadata } from "../lib/seo";
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import BlogPageClient from "./BlogPageClient";
@@ -145,7 +145,7 @@ export const metadata: Metadata = {
     images: [
       {
         url:
-          `${siteUrl}/images/huyens-hotels-stays-logo.webp`,
+          `${siteUrl}${DEFAULT_SHARE_IMAGE}`,
         alt:
           siteName,
       },
@@ -163,7 +163,7 @@ export const metadata: Metadata = {
       blogDescription,
 
     images: [
-      `${siteUrl}/images/huyens-hotels-stays-logo.webp`,
+      `${siteUrl}${DEFAULT_SHARE_IMAGE}`,
     ],
   },
 };

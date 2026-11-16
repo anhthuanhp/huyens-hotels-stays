@@ -49,3 +49,15 @@ test("English blog links resolve only translated paths and use canonical room sl
   assert.equal(part.href, "/tim-phong?guests=2#dates");
   assert.equal(part.suffix, ").");
 });
+
+test("blog link parsing leaves Vietnamese slash-separated prose intact", () => {
+  const { splitBlogLinks } = blogExports;
+  const prose = "/phòng đôi /tối sáng/tối tối/phong";
+  const [plain] = splitBlogLinks(prose);
+  assert.equal(plain.text, prose);
+  assert.equal(plain.href, undefined);
+  const links = splitBlogLinks(`${prose} (/phong?guests=2#rooms).`).filter(part => part.href);
+  assert.equal(links.length, 1);
+  assert.equal(links[0].href, "/phong?guests=2#rooms");
+  assert.equal(links[0].suffix, ").");
+});
