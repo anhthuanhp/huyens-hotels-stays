@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { BedDouble, Maximize, Users } from "lucide-react";
 import Link from "./LocalizedLink";
 import type { BookingDraft } from "./BookingSearch";
@@ -26,7 +26,6 @@ export default function HomeRoomCollection({ rooms, roomCovers, lang, bookingDra
   const [hotelId, setHotelId] = useState<number | "all">("all");
   const [priceBand, setPriceBand] = useState("");
   const [beds, setBeds] = useState("");
-  const sectionRef = useRef<HTMLElement>(null);
   const hotelName = (hotel: RoomWithHotel["hotel"]) => vi ? hotel.name_vi || hotel.name_en : hotel.name_en || hotel.name_vi;
   const properties = new Map(rooms.map(({ hotel }) => [hotel.id, hotelName(hotel)]));
   const bedLabels = new Set(rooms.map(({ room }) => roomBedKey(room, lang)).filter(Boolean));
@@ -42,25 +41,8 @@ export default function HomeRoomCollection({ rooms, roomCovers, lang, bookingDra
   }
   const visibleRooms = hotelId === "all" ? [...firstByProperty.values()].slice(0, 4) : results;
 
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
-    const featured = section?.nextElementSibling;
-    if (!section || featured?.id !== "hotels") return;
-    const cards = [...featured.querySelectorAll("article")];
-    function syncCardHeights() {
-      cards.forEach((card, index) => {
-        const image = card.querySelector<HTMLElement>("[data-home-card-image]");
-        if (image) section?.style.setProperty(`--home-featured-body-${index}`, `${card.clientHeight - image.offsetHeight}px`);
-      });
-    }
-    const observer = new ResizeObserver(syncCardHeights);
-    cards.forEach(card => observer.observe(card));
-    syncCardHeights();
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <section ref={sectionRef} aria-labelledby="home-rooms-heading" className="bg-white px-4 pb-[22px] pt-[36px] [--home-room-height-default:78px] sm:px-6 lg:pb-8 lg:pt-12 lg:[--home-room-height-default:140px]">
+    <section aria-labelledby="home-rooms-heading" className="bg-white px-4 pb-[22px] pt-[36px] sm:px-6 lg:pb-8 lg:pt-12">
       <div className="mx-auto @container max-w-[1100px] lg:max-w-[1200px]">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -96,7 +78,7 @@ export default function HomeRoomCollection({ rooms, roomCovers, lang, bookingDra
 
         {visibleRooms.length ? (
           <div className={homeCardGrid}>
-            {visibleRooms.map((item, index) => {
+            {visibleRooms.map(item => {
               const { room, hotel } = item;
               const name = vi ? room.name_vi || room.name_en : room.name_en || room.name_vi;
               const description = (vi ? room.description_vi || room.description_en : room.description_en || room.description_vi)?.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -114,31 +96,31 @@ export default function HomeRoomCollection({ rooms, roomCovers, lang, bookingDra
               }
               const booking = "/tim-phong?" + bookingParams.toString();
               return (
-                <article key={room.id} className={homeCardFrame} style={{ "--home-room-body": `var(--home-featured-body-${index}, var(--home-room-height-default))` } as CSSProperties}>
-                  <div className={homeCardImage}>
+                <article key={room.id} className={homeCardFrame + " flex min-w-0 flex-col"}>
+                  <div className={homeCardImage + " shrink-0"}>
                     {image && <Image src={image} alt={name} fill loading="lazy" sizes={homeCardImageSizes} className="object-cover" />}
-                    <span className="absolute right-2 top-2 rounded-lg bg-white px-2 py-1 text-xs font-bold text-[#155d2f] shadow">
+                    <span className="absolute right-2 top-2 rounded-lg bg-white px-2 py-1 text-sm font-bold text-[#155d2f] shadow">
                       {price && price > 0 ? `${new Intl.NumberFormat(vi ? "vi-VN" : "en").format(price)} ₫ ${vi ? "/đêm" : "/night"}` : (vi ? "Liên hệ để biết giá" : "Ask for rates")}
                     </span>
                   </div>
 
-                  <div className="relative h-[var(--home-room-body)] overflow-hidden px-[14px] pb-[10px] pt-[7px] lg:px-[18px] lg:pb-4 lg:pt-3">
-                    <p className="truncate font-semibold leading-[13px] text-[#155d2f] [font-size:10px] lg:text-xs">{hotelName(hotel)}</p>
-                    <h3 className="truncate text-sm font-bold leading-[17px] text-[#111613] lg:text-[17px]">{name}</h3>
-                    {description && <p className="truncate leading-[13px] text-[#5b625d] [font-size:11px] lg:mt-1 lg:text-xs">{description}</p>}
-                    <div className="mt-1 flex items-center gap-2 leading-[13px] text-[#37433b] [font-size:10px] lg:text-xs">
-                      {room.size != null && room.size > 0 && <span className="inline-flex shrink-0 items-center gap-1"><Maximize size={12} aria-hidden="true" />{room.size} m²</span>}
-                      {bedLabel && <span className="inline-flex min-w-0 items-center gap-1" title={bedLabel}><BedDouble size={12} className="shrink-0" aria-hidden="true" /><span className="truncate">{bedLabel}</span></span>}
-                      {room.max_guests != null && room.max_guests > 0 && <span className="inline-flex shrink-0 items-center gap-1"><Users size={12} aria-hidden="true" />{room.max_guests} {vi ? "khách" : room.max_guests === 1 ? "guest" : "guests"}</span>}
+                  <div className="flex min-h-[230px] flex-1 flex-col gap-3 p-4 xl:px-[18px]">
+                    <p className="text-sm leading-snug font-semibold break-words text-[#155d2f]">{hotelName(hotel)}</p>
+                    <h3 className="text-xl leading-tight font-bold break-words text-[#111613]">{name}</h3>
+                    {description && <p className="line-clamp-4 text-sm leading-relaxed break-words text-[#5b625d]">{description}</p>}
+                    <div className="flex flex-wrap items-start gap-x-3 gap-y-2 text-sm leading-snug text-[#37433b]">
+                      {room.size != null && room.size > 0 && <span className="inline-flex shrink-0 items-center gap-1"><Maximize size={16} aria-hidden="true" />{room.size} m²</span>}
+                      {bedLabel && <span className="inline-flex min-w-0 items-center gap-1" title={bedLabel}><BedDouble size={16} className="shrink-0" aria-hidden="true" /><span className="min-w-0 break-words">{bedLabel}</span></span>}
+                      {room.max_guests != null && room.max_guests > 0 && <span className="inline-flex shrink-0 items-center gap-1"><Users size={16} aria-hidden="true" />{room.max_guests} {vi ? "khách" : room.max_guests === 1 ? "guest" : "guests"}</span>}
                     </div>
-                  </div>
-                  <div className="absolute inset-x-0 bottom-[var(--home-room-body)] flex items-center gap-2 bg-gradient-to-t from-black/65 to-transparent px-2 pb-2 pt-5 lg:bottom-4 lg:bg-none lg:px-[18px] lg:pb-0 lg:pt-0">
-                    <Link href={roomDetailPath(item)} className="flex min-h-10 items-center justify-center rounded-lg border border-[#d8e8dc] bg-white px-3 py-1 text-xs font-semibold text-[#155d2f] shadow-sm hover:bg-[#eaf6ed]">
-                      {vi ? "Xem chi tiết" : "View details"}
-                    </Link>
-                    <Link href={booking} prefetch={false} className="flex min-h-10 items-center rounded-lg bg-[#155d2f] px-3 py-1 text-xs font-semibold text-white hover:bg-[#104623]">
-                      {vi ? "Đặt ngay" : "Book now"}
-                    </Link>
+                    <div className="mt-auto grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 pt-2">
+                      <Link href={roomDetailPath(item)} className="flex min-h-11 items-center justify-center rounded-lg border border-[#d8e8dc] bg-white px-1.5 py-2 text-center text-sm leading-tight font-semibold text-[#155d2f] shadow-sm hover:bg-[#eaf6ed]">
+                        {vi ? "Xem chi tiết" : "View details"}
+                      </Link>
+                      <Link href={booking} prefetch={false} className="flex min-h-11 items-center justify-center rounded-lg bg-[#155d2f] px-1.5 py-2 text-center text-sm leading-tight font-semibold text-white hover:bg-[#104623]">
+                        {vi ? "Đặt ngay" : "Book now"}
+                      </Link>
+                    </div>
                   </div>
                 </article>
               );
