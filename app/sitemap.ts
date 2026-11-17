@@ -283,10 +283,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const path = new URL(entry.url).pathname;
     return paired.has(path) ? { ...entry, alternates: { languages: languageAlternates(path, siteUrl).languages } } : entry;
   });
+  const byPath = new Map(vietnamese.map(entry => [new URL(entry.url).pathname, entry]));
   return uniqueSitemap([
     ...vietnamese,
     ...[...paired].map(path => ({
       url: siteUrl + localizedHref(path, "en"),
+      lastModified: byPath.get(path)?.lastModified,
       changeFrequency: "weekly" as const,
       priority: 0.7,
       alternates: {

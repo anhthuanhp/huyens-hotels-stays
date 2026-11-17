@@ -57,7 +57,8 @@ export function englishInformationMetadata(path: string, title: string, descript
     title: { absolute: fullTitle },
     description,
     alternates: { ...languageAlternates(path, SITE_URL), canonical: url },
-    openGraph: { type: "website", title: fullTitle, description, url, locale: "en_US", siteName: SITE_NAME },
+    openGraph: { type: "website", title: fullTitle, description, url, locale: "en_US", siteName: SITE_NAME, images: [DEFAULT_SHARE_IMAGE] },
+    twitter: { card: "summary_large_image", title: fullTitle, description, images: [DEFAULT_SHARE_IMAGE] },
   };
 }
 

@@ -15,7 +15,7 @@ export async function englishRouteMetadata(parts: string[]): Promise<Metadata> {
   const viUrl = base + (path === "/" ? "" : path);
   const { description } = data;
   const title = data.title;
-  const image = data.post?.image?.trim() || data.room?.image?.trim() || data.hotel?.image?.trim() || DEFAULT_SHARE_IMAGE;
+  const image = data.post?.image?.trim() || data.room?.image?.trim() || data.hotel?.image?.trim() || (data.kind === "home" ? data.hotels.find(hotel => hotel.image?.trim())?.image?.trim() : undefined) || DEFAULT_SHARE_IMAGE;
   const social = { title, description, url: enUrl, locale: "en_US", siteName: SITE_NAME, images: [{ url: new URL(image, base).href, alt: data.title }] };
   return {
     title,

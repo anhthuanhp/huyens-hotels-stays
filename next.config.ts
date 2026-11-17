@@ -22,6 +22,11 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      ...["dat-phong", "huy-phong", "bao-mat", "khac"].map(policy => ({
+        source: `/en/chinh-sach-${policy}`,
+        destination: `/chinh-sach-${policy}`,
+        permanent: false,
+      })),
       {
         source: "/:path*",
         has: [{ type: "host", value: "www.huyenhotels.com" }],

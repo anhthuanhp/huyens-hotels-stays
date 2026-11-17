@@ -13,6 +13,7 @@ export type BlogPost = {
   date: string;
   read_time: number;
   featured: boolean;
+  hasEnglishContent: boolean;
   status: "active" | "inactive";
 };
 

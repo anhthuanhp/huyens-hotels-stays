@@ -127,7 +127,7 @@ export default function Footer() {
                   href={item.href}
                   className={linkStyle}
                 >
-                  {isVi ? item.vi : item.en}
+                  {isVi ? item.vi : `${item.en} (Vietnamese)`}
                 </Link>
               ))}
             </nav>
@@ -288,7 +288,7 @@ export default function Footer() {
               href="/chinh-sach-bao-mat"
               className="hover:underline"
             >
-              {isVi ? "Chính sách riêng tư" : "Privacy policy"}
+              {isVi ? "Chính sách riêng tư" : "Privacy policy (Vietnamese)"}
             </Link>
 
             <span aria-hidden="true">|</span>
@@ -297,7 +297,7 @@ export default function Footer() {
               href="/chinh-sach-khac"
               className="hover:underline"
             >
-              {isVi ? "Điều khoản sử dụng" : "Terms of use"}
+              {isVi ? "Điều khoản sử dụng" : "Terms of use (Vietnamese)"}
             </Link>
           </div>
         </div>

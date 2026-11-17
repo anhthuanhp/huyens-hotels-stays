@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Images, X } from 'lucide-react';
 import type { HotelImage, Locale } from '../types/hotel';
@@ -107,8 +108,12 @@ export default function HotelHero({ images, hotelName: rawHotelName, locale, pla
               className="group relative h-56 w-full overflow-hidden rounded-2xl sm:h-72 lg:h-full"
               aria-label={t(ui.viewAllImages, locale)}
             >
-              <img
+              <Image
                 src={main!.url}
+                fill
+                loading="eager"
+                fetchPriority="high"
+                sizes="(min-width: 1280px) 800px, (min-width: 1024px) 65vw, 100vw"
                 alt={main!.alt ? t(main!.alt, locale) : hotelName}
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
               />
@@ -123,8 +128,11 @@ export default function HotelHero({ images, hotelName: rawHotelName, locale, pla
                   onClick={() => openLightbox(i + 1)}
                   className="group relative overflow-hidden rounded-2xl"
                 >
-                  <img
+                  <Image
                     src={img.url}
+                    fill
+                    loading="lazy"
+                    sizes="(min-width: 1024px) 220px, 1px"
                     alt={img.alt ? t(img.alt, locale) : `${hotelName} ${i + 2}`}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.05]"
                   />

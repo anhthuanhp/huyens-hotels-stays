@@ -19,7 +19,7 @@ export default function JournalCard({ post, language }: JournalCardProps) {
   const title = getPostTitle(post, language);
   const excerpt = getPostExcerpt(post, language);
   const category = getPostCategory(post, language);
-  const href = getPostHref(post.slug);
+  const href = getPostHref(post.slug, post.hasEnglishContent ? language : "vi");
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-card transition-shadow duration-500 hover:shadow-card-hover">
