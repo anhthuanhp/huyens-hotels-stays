@@ -137,22 +137,22 @@ const HOTEL_LOCAL_SEO: Record<
 > = {
   "anh-kim-hotel": {
     vi: "Anh Kim Hotel trên đường Cô Bắc là lựa chọn để cân nhắc khi tìm khách sạn gần Bùi Viện và chợ Bến Thành. Khách đi công tác, cặp đôi và gia đình có thể so sánh phòng theo diện tích, số giường và sức chứa bên dưới. Chọn ngày ở để kiểm tra phòng và giá phù hợp với lịch trình.",
-    en: "Looking for a Co Bac hotel near Bui Vien and Ben Thanh Market? Compare the double and family rooms at Anh Kim Hotel by floor area, bed setup and guest capacity. Check your travel dates for available rooms and rates, whether you are visiting Ho Chi Minh City for work or a city break.",
+    en: "Looking for a budget hotel near Ben Thanh Market or Bui Vien? Anh Kim Hotel is on Co Bac Street in District 1. Compare the double and family rooms at Anh Kim Hotel by floor area, bed setup and guest capacity. Check your travel dates for available rooms and rates, whether you are visiting Ho Chi Minh City for work or a city break.",
   },
 
   "ae-guesthouse": {
     vi: "A&E Guesthouse tại Đỗ Quang Đẩu phù hợp để khám phá khu Bùi Viện và Phạm Ngũ Lão. Nếu ưu tiên ngân sách, hãy so sánh giá theo ngày ở cùng đặc điểm cửa sổ, ban công và số khách của từng phòng. Khu vực có nhiều hoạt động về đêm; bạn nên trao đổi trước với cơ sở nếu nhạy cảm với tiếng ồn.",
-    en: "A&E Guesthouse offers accommodation near Pham Ngu Lao and Bui Vien on Do Quang Dau Street. If you are looking for a budget hotel near Bui Vien, compare the actual room rates, window options and guest capacity here before booking. This is a lively nightlife area; ask the property about room placement if you are sensitive to noise.",
+    en: "A&E Guesthouse offers accommodation near Pham Ngu Lao and Bui Vien on Do Quang Dau Street. If you are looking for a budget guesthouse in District 1, compare nightly rates, window options and guest capacity before booking. This is a lively nightlife area; ask the property about room placement if you are sensitive to noise.",
   },
 
   "huyen-house": {
     vi: "Huyen House tại Nguyễn Thị Minh Khai hướng đến kỳ lưu trú yên tĩnh cho khách đi công tác, học tập hoặc có lịch hẹn gần Tổng Lãnh sự quán Mỹ. So sánh phòng cho một hoặc hai người, xác nhận giờ nhận phòng và kiểm tra đường đi đến đúng địa điểm hẹn trước chuyến đi.",
-    en: "Consider Huyen House for a quiet stay in Ho Chi Minh City on Nguyen Thi Minh Khai Street, near the US Consulate. Compare rooms for solo travellers and couples when planning a work trip, study visit or consular appointment. Confirm check-in arrangements and the route to your exact appointment address before travelling.",
+    en: "Huyen House offers private rooms on Nguyen Thi Minh Khai Street, near the US Consulate. If quiet is important to you, ask about room placement before booking. Compare rooms for solo travellers and couples when planning a work trip, study visit or consular appointment. Confirm check-in arrangements and the route to your exact appointment address before travelling.",
   },
 
   huyenhomestay: {
     vi: "Huyen Homestay tại Nguyễn Thị Minh Khai cung cấp các lựa chọn phòng nghỉ theo ngày ở trung tâm TP.HCM. Xem loại phòng, sức chứa và giá theo đêm để chọn chỗ ở phù hợp cho chuyến du lịch hoặc công tác.",
-    en: "Huyen Homestay on Nguyen Thi Minh Khai Street offers rooms for nightly stays in central Ho Chi Minh City. Compare room types and guest capacity, then check nightly rates for your travel dates.",
+    en: "Compare double and family rooms at Huyen Homestay on Nguyen Thi Minh Khai Street. Check nightly rates for your dates. If you are planning a longer stay, contact the property to confirm monthly availability and terms.",
   },
 };
 
@@ -165,22 +165,22 @@ const HOTEL_H1_SEO: Record<
 > = {
   "anh-kim-hotel": {
     vi: "Anh Kim Hotel – Khách sạn Cô Bắc, gần Bùi Viện",
-    en: "Anh Kim Hotel – Co Bac hotel near Bui Vien",
+    en: "Anh Kim Hotel near Ben Thanh Market",
   },
 
   "ae-guesthouse": {
     vi: "A&E Guesthouse – Gần Bùi Viện, Phạm Ngũ Lão và Bến Thành",
-    en: "A&E Guesthouse – Stay near Bui Vien and Pham Ngu Lao",
+    en: "A&E Guesthouse near Bui Vien Street",
   },
 
   "huyen-house": {
     vi: "Huyen House – Lưu trú gần Tổng Lãnh sự quán Mỹ",
-    en: "Huyen House – Quiet stay near the US Consulate",
+    en: "Huyen House – Homestay near the US Consulate",
   },
 
   huyenhomestay: {
     vi: "Huyen Homestay – Phòng nghỉ theo ngày tại Nguyễn Thị Minh Khai",
-    en: "Huyen Homestay – Nightly stays on Nguyen Thi Minh Khai",
+    en: "Huyen Homestay for Longer Stays in Ho Chi Minh City",
   },
 };
 

@@ -5,6 +5,7 @@ import { useLanguage } from "@/app/lib/use-language";
 
 import Image from "next/image";
 import CityTravelGuide from "../../components/CityTravelGuide";
+import { DISTRICT_ONE_GUIDE_EN, DISTRICT_ONE_GUIDE_SLUG } from "../../lib/seo";
 import { CITY_GUIDE_SLUG } from "../../data/city-guide";
 import { englishBlogHref, parseBlogContent, splitBlogLinks } from "../../lib/blog-content";
 import Link from "@/app/components/LocalizedLink";
@@ -43,9 +44,8 @@ export default function BlogDetailClient({
 
   const isVi = language === "vi";
 
-  const title = isVi
-    ? post.title_vi
-    : post.title_en;
+  const districtGuide = !isVi && post.slug === DISTRICT_ONE_GUIDE_SLUG ? DISTRICT_ONE_GUIDE_EN : null;
+  const title = isVi ? post.title_vi : districtGuide?.title ?? post.title_en;
 
   const category = isVi
     ? post.category_vi || "Du lịch"
@@ -53,7 +53,7 @@ export default function BlogDetailClient({
 
   const excerpt = isVi
     ? post.excerpt_vi
-    : post.excerpt_en;
+    : districtGuide?.description ?? post.excerpt_en;
 
   const contentText = isVi
     ? post.content_vi
