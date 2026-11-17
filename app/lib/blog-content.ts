@@ -1,4 +1,4 @@
-import { localizedHref } from "./localized-path";
+import { isLocalizedInformationPath, localizedHref } from "./localized-path";
 import { canonicalSeoPath } from "./room-seo-slugs";
 
 export type BlogBlock = { type: "heading" | "paragraph"; text: string };
@@ -27,7 +27,7 @@ export function englishBlogHref(href: string, translatedPaths: readonly string[]
     if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return href;
     if (![site.host, "www.huyenhotels.com", "huyenhotels.com"].includes(url.host)) return href;
     const path = canonicalSeoPath(url.pathname.replace(/\/+$/, "") || "/");
-    if (!translatedPaths.includes(path) && path !== "/tim-phong" && path !== "/dat-phong") return href;
+    if (!translatedPaths.includes(path) && !isLocalizedInformationPath(path) && path !== "/tim-phong" && path !== "/dat-phong") return href;
     return localizedHref(path, "en") + url.search + url.hash;
   } catch {
     return href;

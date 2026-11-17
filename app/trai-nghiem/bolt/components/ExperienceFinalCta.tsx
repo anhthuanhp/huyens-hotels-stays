@@ -1,3 +1,4 @@
+import { localizedHref } from '@/app/lib/localized-path';
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../lib/use-language';
 import { experienceCopy } from './experience-copy';
@@ -16,7 +17,7 @@ export default function ExperienceFinalCta() {
           {copy.finalBody}
         </p>
         <a
-          href="/phong"
+          href={localizedHref("/phong", language)}
           className="group mt-10 inline-flex items-center gap-3 rounded-full bg-cream px-8 py-4 text-sm font-medium tracking-[0.12em] text-pine-deep transition-colors hover:bg-sage focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cream"
         >
           {copy.finalCta}

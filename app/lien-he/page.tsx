@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useLanguage } from "../lib/use-language";
 import Link from "next/link";
+import { localizedHref } from "../lib/localized-path";
 import { FACEBOOK_PAGE_URL } from "../lib/social";
 import EmailLink from "../components/EmailLink";
 
@@ -195,7 +196,7 @@ return (
 
         <div className="mt-8">
           <Link
-            href="/tim-phong"
+            href={localizedHref("/tim-phong", language)}
             className="inline-flex w-full items-center justify-center rounded-xl bg-sky-500 px-5 py-3.5 font-semibold text-white transition hover:bg-sky-600"
           >
             {isVi ? "Đặt phòng trực tiếp" : "Book directly"}
