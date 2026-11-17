@@ -96,7 +96,9 @@ export default async function RootLayout({ children }: LayoutProps) {
               url: siteUrl,
               telephone: "+84 902095669",
               description:
-                "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay lưu trú theo đêm tại Thành phố Hồ Chí Minh.",
+                language === "en"
+                  ? "Huyen's Hotels & Stays offers hotels, guesthouses and homestays in Ho Chi Minh City."
+                  : "Huyen's Hotels & Stays cung cấp khách sạn, guesthouse và homestay lưu trú theo đêm tại Thành phố Hồ Chí Minh.",
             }),
           }}
         />

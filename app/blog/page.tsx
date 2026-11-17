@@ -1,7 +1,10 @@
 import { DEFAULT_SHARE_IMAGE, staticMetadata } from "../lib/seo";
+import { headers } from "next/headers";
+import { localizedHref } from "../lib/localized-path";
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import BlogPageClient from "./BlogPageClient";
+import type { BlogPost } from "./bolt/types";
 
 export const revalidate = 60;
 
@@ -20,22 +23,6 @@ const blogMetadata = staticMetadata("/blog");
 const blogTitle = (blogMetadata.title as { absolute: string }).absolute;
 const blogDescription = blogMetadata.description!;
 
-type BlogPost = {
-  id: number;
-  slug: string;
-  title_vi: string;
-  title_en: string;
-  excerpt_vi: string | null;
-  excerpt_en: string | null;
-  category_vi: string | null;
-  category_en: string | null;
-  image: string | null;
-  date: string;
-  read_time: number;
-  featured: boolean;
-  status: "active" | "inactive";
-};
-
 function getSupabaseServerClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -43,7 +30,7 @@ function getSupabaseServerClient() {
   );
 }
 
-async function getPosts(): Promise<
+async function getPosts(english: boolean): Promise<
   BlogPost[]
 > {
   const supabase =
@@ -57,6 +44,7 @@ async function getPosts(): Promise<
         slug,
         title_vi,
         title_en,
+        content_en,
         excerpt_vi,
         excerpt_en,
         category_vi,
@@ -80,10 +68,12 @@ async function getPosts(): Promise<
     return [];
   }
 
-  return (
-    (data as BlogPost[]) ||
-    []
-  );
+  return (data ?? [])
+    .map(({ content_en, ...post }) => ({
+      ...post,
+      hasEnglishContent: Boolean(post.title_en?.trim() && content_en?.trim()),
+    }) as BlogPost)
+    .filter(post => !english || post.hasEnglishContent);
 }
 
 /* =========================================================
@@ -173,8 +163,11 @@ export const metadata: Metadata = {
 ========================================================= */
 
 export default async function BlogPage() {
-  const posts =
-    await getPosts();
+  const english = (await headers()).get("x-huyen-route-language") === "en";
+  const blogUrl = siteUrl + localizedHref("/blog", english ? "en" : "vi");
+  const blogTitle = english ? "Ho Chi Minh City travel & accommodation guides" : (blogMetadata.title as { absolute: string }).absolute;
+  const blogDescription = english ? "Plan your visit to Saigon with Huyen's guides to neighbourhoods, choosing rooms, city breaks and business trips." : blogMetadata.description;
+  const posts = await getPosts(english);
 
   /*
    * Chỉ lấy các bài viết thực tế
@@ -194,10 +187,10 @@ export default async function BlogPage() {
             index + 1,
 
           url:
-            `${siteUrl}/blog/${post.slug}`,
+            `${blogUrl}/${encodeURIComponent(post.slug)}`,
 
           name:
-            post.title_vi,
+            english ? post.title_en : post.title_vi,
         })
       );
 
@@ -206,6 +199,8 @@ export default async function BlogPage() {
       .slice(0, 20)
       .map(
         (post) => {
+          const excerpt = english ? post.excerpt_en : post.excerpt_vi;
+          const category = english ? post.category_en : post.category_vi;
           const imageUrl =
             post.image
               ? post.image.startsWith(
@@ -229,13 +224,13 @@ export default async function BlogPage() {
               "BlogPosting",
 
             "@id":
-              `${siteUrl}/blog/${post.slug}#article`,
+              `${blogUrl}/${encodeURIComponent(post.slug)}#article`,
 
             headline:
-              post.title_vi,
+              english ? post.title_en : post.title_vi,
 
             url:
-              `${siteUrl}/blog/${post.slug}`,
+              `${blogUrl}/${encodeURIComponent(post.slug)}`,
 
             datePublished:
               post.date,
@@ -247,17 +242,17 @@ export default async function BlogPage() {
                 }
               : {}),
 
-            ...(post.excerpt_vi
+            ...(excerpt
               ? {
                   description:
-                    post.excerpt_vi,
+                    excerpt,
                 }
               : {}),
 
-            ...(post.category_vi
+            ...(category
               ? {
                   articleSection:
-                    post.category_vi,
+                    category,
                 }
               : {}),
 
@@ -296,11 +291,11 @@ export default async function BlogPage() {
                 "WebPage",
 
               "@id":
-                `${siteUrl}/blog/${post.slug}`,
+                `${blogUrl}/${encodeURIComponent(post.slug)}`,
             },
 
             inLanguage:
-              "vi-VN",
+              english ? "en" : "vi-VN",
           };
         }
       );
@@ -328,7 +323,7 @@ export default async function BlogPage() {
             blogDescription,
 
           inLanguage:
-            "vi-VN",
+            english ? "en" : "vi-VN",
 
           publisher: {
             "@type":
@@ -358,7 +353,7 @@ export default async function BlogPage() {
             `${blogUrl}#itemlist`,
 
           name:
-            "Các bài viết du lịch TP.HCM",
+            english ? "Ho Chi Minh City travel articles" : "Các bài viết du lịch TP.HCM",
 
           url:
             blogUrl,
@@ -393,10 +388,10 @@ export default async function BlogPage() {
           position: 1,
 
           name:
-            "Trang chủ",
+            english ? "Home" : "Trang chủ",
 
           item:
-            siteUrl,
+            english ? siteUrl + "/en" : siteUrl,
         },
 
         {

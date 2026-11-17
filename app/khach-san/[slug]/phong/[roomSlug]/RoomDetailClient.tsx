@@ -1045,6 +1045,10 @@ export default function RoomDetailClient({
               )}
             </div>
 
+            <a href="#room-booking" className="mt-5 inline-flex min-h-12 items-center rounded-xl bg-slate-900 px-5 font-semibold text-white hover:bg-slate-700 lg:hidden">
+              {language === "vi" ? "Kiểm tra phòng trống" : "Check availability"}
+            </a>
+
             {/* SPECS */}
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -1227,7 +1231,7 @@ export default function RoomDetailClient({
 
           {/* BOOKING CARD */}
 
-          <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
+          <aside id="room-booking" className="min-w-0 scroll-mt-6 lg:sticky lg:top-6 lg:self-start">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(15,23,42,0.08)]">
               {/* PRICE */}
 

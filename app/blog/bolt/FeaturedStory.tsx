@@ -19,7 +19,7 @@ export default function FeaturedStory({ post, language }: FeaturedStoryProps) {
   const title = getPostTitle(post, language);
   const excerpt = getPostExcerpt(post, language);
   const category = getPostCategory(post, language);
-  const href = getPostHref(post.slug);
+  const href = getPostHref(post.slug, post.hasEnglishContent ? language : "vi");
 
   return (
     <section aria-labelledby="featured-story-title" className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[55fr_45fr] lg:gap-16">

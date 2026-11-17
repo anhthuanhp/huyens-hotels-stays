@@ -1,3 +1,4 @@
+import { localizedHref } from "../../lib/localized-path";
 import { getBlogCopy } from "./blog-i18n";
 import type { Language } from "./types";
 
@@ -16,7 +17,7 @@ export default function BlogFinalCta({ language }: BlogFinalCtaProps) {
         </h2>
         <p className="mt-5 max-w-xl text-base leading-[1.5] text-cream/80 md:text-lg">{t.ctaDescription}</p>
         <a
-          href="/phong"
+          href={localizedHref("/phong", language)}
           className="mt-10 inline-flex items-center rounded-full bg-cream px-8 py-4 text-sm font-semibold uppercase tracking-[0.12em] text-pine transition-colors duration-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream focus-visible:ring-offset-2 focus-visible:ring-offset-pine"
         >
           {t.ctaButton}

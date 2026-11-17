@@ -1,3 +1,4 @@
+import { localizedHref } from "../../lib/localized-path";
 import type { BlogPost, Language } from "./types";
 
 export type BlogCategory = {
@@ -89,6 +90,6 @@ export function postMatchesCategory(post: BlogPost, category: BlogCategory) {
   return post.category_vi === category.vi || post.category_en === category.en;
 }
 
-export function getPostHref(slug: string) {
-  return `/blog/${encodeURIComponent(slug)}`;
+export function getPostHref(slug: string, language: Language) {
+  return localizedHref(`/blog/${encodeURIComponent(slug)}`, language);
 }

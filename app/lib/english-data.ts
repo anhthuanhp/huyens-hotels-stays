@@ -46,7 +46,7 @@ const hotelTitles: Record<string, string> = {
 export async function englishPage(segments: string[]): Promise<EnglishData | null> {
   const inventory = await englishInventory();
   const path = segments.length ? "/" + segments.map(encodeURIComponent).join("/") : "/";
-  const result: EnglishData = { ...inventory, kind: "home", path, title: "Budget Hotels & Homestays in District 1, Ho Chi Minh City | Huyen's", description: "Compare four hotels, guesthouses and homestays in District 1, Ho Chi Minh City. Choose a property and check dates and rates for direct booking.", hotel: null, room: null, post: null };
+  const result: EnglishData = { ...inventory, kind: "home", path, title: "Budget Hotels in District 1, Ho Chi Minh City | Huyen's", description: "Compare four hotels, guesthouses and homestays in District 1, Ho Chi Minh City. Choose a property and check dates and rates for direct booking.", hotel: null, room: null, post: null };
   if (!segments.length) return result;
   if (segments.length === 1 && segments[0] === "phong") return { ...result, kind: "rooms", title: "Hotel Rooms in District 1, Ho Chi Minh City | Huyen's", description: "Compare hotel, guesthouse and homestay rooms in District 1 by bed type, capacity and nightly rate. View room details and check your dates." };
   if (segments.length === 1 && segments[0] === "blog") return { ...result, kind: "blog", title: "Ho Chi Minh City travel & accommodation guides", description: "Plan your visit to Saigon with Huyen's guides to neighbourhoods, choosing rooms, city breaks and business trips." };
