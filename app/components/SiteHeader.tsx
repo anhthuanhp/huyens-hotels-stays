@@ -4,7 +4,7 @@ import { useLanguage, changeSiteLanguage } from "../lib/use-language";
 import Image from "next/image";
 import Link from "@/app/components/LocalizedLink";
 import { usePathname, useRouter } from "next/navigation";
-import { localizedHref, supportPaths } from "../lib/localized-path";
+import { isLocalizedInformationPath, localizedHref, supportPaths } from "../lib/localized-path";
 
 type Language = "vi" | "en";
 type BackLink = { href: string; label: string };
@@ -91,8 +91,8 @@ export default function SiteHeader() {
   const router = useRouter();
   const savedLanguage = useLanguage();
   const basePath = pathname.replace(/^\/en(?=\/|$)/, "") || "/";
-  const isSupportPage = supportPaths.includes(basePath);
-  const language = isSupportPage ? (pathname === basePath ? "vi" : "en") : savedLanguage;
+  const hasLocalizedInformation = supportPaths.includes(basePath) || isLocalizedInformationPath(basePath);
+  const language = hasLocalizedInformation ? (pathname === basePath ? "vi" : "en") : savedLanguage;
 
   if (
     (pathname === "/" || pathname === "/en") ||
@@ -104,8 +104,8 @@ export default function SiteHeader() {
 
   function changeLanguage(nextLanguage: Language) {
     changeSiteLanguage(nextLanguage);
-    if (isSupportPage && nextLanguage !== language) {
-      router.push(localizedHref(basePath, nextLanguage));
+    if (hasLocalizedInformation && nextLanguage !== language) {
+      router.push(localizedHref(basePath, nextLanguage) + window.location.search + window.location.hash);
     }
   }
 

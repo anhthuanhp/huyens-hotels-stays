@@ -20,7 +20,7 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync("app/lib/blog-content.ts",
 });
 test("English navigation preserves booking query parameters and anchors", () => {
   assert.equal(localizedHref("/tim-phong?hotel=anh-kim-hotel&room=standard-double", "en"), "/en/tim-phong?hotel=anh-kim-hotel&room=standard-double");
-  assert.equal(localizedHref("/#hotels", "en"), "/en/#hotels");
+  assert.equal(localizedHref("/#hotels", "en"), "/en#hotels");
   assert.equal(localizedHref("/dat-phong?rooms=a%2Cb", "en"), "/en/dat-phong?rooms=a%2Cb");
 });
 test("Vietnamese, external URLs, APIs and already localized paths stay unchanged", () => {
@@ -41,7 +41,8 @@ test("English blog links resolve only translated paths and use canonical room sl
   const targets = [room];
   assert.equal(englishBlogHref(site + "/khach-san/anh-kim-hotel/phong/deluxe%20double/?guests=2#rates", targets, site), "/en" + room + "?guests=2#rates");
   assert.equal(englishBlogHref("/tim-phong?guests=2", targets, site), "/en/tim-phong?guests=2");
-  for (const href of ["/lien-he", "/blog/untranslated", "/en" + room, "https://example.com" + room]) {
+  assert.equal(englishBlogHref("/lien-he", targets, site), "/en/lien-he");
+  for (const href of [ "/blog/untranslated", "/en" + room, "https://example.com" + room]) {
     assert.equal(englishBlogHref(href, targets, site), href);
   }
   assert.equal(parseBlogContent("See /tim-phong")[0].type, "paragraph");

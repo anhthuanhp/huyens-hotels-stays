@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { languageAlternates } from "./localized-path";
+import { isLocalizedPath, languageAlternates, localizedHref } from "./localized-path";
 
 export const SITE_NAME = "Huyen's Hotels & Stays";
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://huyenhotels.com").replace(/\/+$/, "");
@@ -43,10 +43,21 @@ export function staticMetadata(path: string): Metadata {
   const index = path !== "/tim-phong" && path !== "/dat-phong";
   return {
     title: { absolute: title }, description,
-    alternates: ["/", "/phong", "/blog"].includes(path) ? languageAlternates(path, SITE_URL) : { canonical: url },
+    alternates: isLocalizedPath(path) && index ? languageAlternates(path, SITE_URL) : { canonical: url },
     robots: { index, follow: true, googleBot: { index, follow: true, "max-image-preview": "large" } },
     openGraph: { type: "website", locale: "vi_VN", siteName: SITE_NAME, title, description, url, images: [DEFAULT_SHARE_IMAGE] },
     twitter: { card: "summary_large_image", title, description, images: [DEFAULT_SHARE_IMAGE] },
+  };
+}
+
+export function englishInformationMetadata(path: string, title: string, description: string): Metadata {
+  const url = SITE_URL + localizedHref(path, "en");
+  const fullTitle = `${title} | ${SITE_NAME}`;
+  return {
+    title: { absolute: fullTitle },
+    description,
+    alternates: { ...languageAlternates(path, SITE_URL), canonical: url },
+    openGraph: { type: "website", title: fullTitle, description, url, locale: "en_US", siteName: SITE_NAME },
   };
 }
 
