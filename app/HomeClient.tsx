@@ -974,10 +974,10 @@ export default function HomeClient({
                 </h2>
 
                 <Link
-                  href="/#cau-hoi-thuong-gap"
+                  href="/cau-hoi-thuong-gap"
                   className="ml-auto text-[11px] font-semibold text-[#12652f] hover:underline"
                 >
-                  {isVi ? "Xem thêm thông tin" : "More information"}
+                  {isVi ? "Câu hỏi thường gặp" : "Frequently asked questions"}
                   <span aria-hidden="true"> →</span>
                 </Link>
               </div>

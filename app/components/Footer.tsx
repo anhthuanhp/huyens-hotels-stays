@@ -136,11 +136,11 @@ export default function Footer() {
           {/* 3. CAC CAU HOI */}
           <div className={column}>
             <h3 className={heading}>
-              {questionLanguage === "vi" ? "Các câu hỏi" : "Questions"}
+              {questionLanguage === "vi" ? "Hỗ trợ khách" : "Guest support"}
             </h3>
 
             <nav
-              aria-label={questionLanguage === "vi" ? "Các câu hỏi" : "Questions"}
+              aria-label={questionLanguage === "vi" ? "Hỗ trợ khách" : "Guest support"}
             >
               {questions.map((item) => (
                 <NextLink
@@ -283,23 +283,6 @@ export default function Footer() {
               : "All rights reserved."}
           </p>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/chinh-sach-bao-mat"
-              className="hover:underline"
-            >
-              {isVi ? "Chính sách riêng tư" : "Privacy policy"}
-            </Link>
-
-            <span aria-hidden="true">|</span>
-
-            <Link
-              href="/chinh-sach-khac"
-              className="hover:underline"
-            >
-              {isVi ? "Điều khoản sử dụng" : "Terms of use"}
-            </Link>
-          </div>
         </div>
       </div>
     </footer>
