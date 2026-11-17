@@ -86,6 +86,12 @@ export function hotelSeo(hotel: HotelSeoData) {
   return { title: `${name} tại TP.HCM | Huyen's Hotels & Stays`, description: seoDescription(`${name}${address ? " tại " + address : ""}. Xem loại phòng, tiện nghi, giá thuê và gửi yêu cầu đặt phòng trực tiếp với Huyen's.`) };
 }
 
+export const DISTRICT_ONE_GUIDE_SLUG = "kinh-nghiem-chon-khach-san-o-quan-1";
+export const DISTRICT_ONE_GUIDE_EN = {
+  title: "Where to Stay in District 1, Ho Chi Minh City",
+  description: "Compare areas around Bui Vien, Ben Thanh and Nguyen Thi Minh Khai by transport, noise and room options before choosing where to stay in District 1.",
+};
+
 export const BLOG_SEO: Record<string, { title: string; description: string }> = {
   "huyen-homestay-luu-tru-dai-ngay-nguyen-thi-minh-khai": { title: "Chọn phòng nghỉ tại Huyen Homestay, Sài Gòn", description: "Xem các loại phòng tại Huyen Homestay trên đường Nguyễn Thị Minh Khai và chọn chỗ ở theo số khách, vị trí và nhu cầu lưu trú tại Sài Gòn." },
   "kinh-nghiem-chon-khach-san-o-quan-1": { title: "Cách chọn khách sạn Quận 1 TP.HCM", description: "Kinh nghiệm chọn khách sạn ở khu vực Quận 1 TP.HCM cho người lần đầu đến Sài Gòn: cân nhắc vị trí, loại phòng và điều kiện đặt phòng trước chuyến đi." },

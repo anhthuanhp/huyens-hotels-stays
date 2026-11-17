@@ -5,6 +5,7 @@ export type Hotel = {
   name_en: string;
   address_vi: string | null;
   address_en: string | null;
+  description_en: string | null;
 };
 
 export type Room = {

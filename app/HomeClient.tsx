@@ -474,7 +474,7 @@ export default function HomeClient({
                                 fontWeight: 700,
                               }}
                             >
-                              {title}
+                              {isVi ? title : heroFallbackTexts[0].titleEn}
                             </h1>
                           ) : (
                             <p
@@ -604,7 +604,7 @@ export default function HomeClient({
                 <p className="mb-3 text-[13px] leading-[1.55] text-[#111613]">
                   {isVi
                     ? "Chúng tôi chuyên vận hành khách sạn, căn hộ dịch vụ tại TP. Hồ Chí Minh. Cam kết mang đến không gian sạch sẽ, thoải mái, riêng tư và tiện lợi cho mọi chuyến đi."
-                    : "Choose a hotel, guesthouse or homestay in central Ho Chi Minh City. Enter your travel dates to check room availability and nightly rates."}
+                    : "Choose Anh Kim Hotel on Co Bac for a city break, A&E Guesthouse near Bui Vien for evenings out, Huyen House for a solo stay near the US Consulate, or Huyen Homestay on Nguyen Thi Minh Khai for a family trip. Enter your dates to check availability and nightly rates."}
                 </p>
 
                 <Link

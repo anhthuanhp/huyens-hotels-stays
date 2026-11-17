@@ -1,3 +1,4 @@
+import { localizedHref } from "@/app/lib/localized-path";
 import { canonicalRoomSlug } from "@/app/lib/room-seo-slugs";
 import { LayoutTemplate, MapPin, Users, Maximize, BedDouble, Sparkles } from 'lucide-react';
 import type { Lang, RoomWithHotel } from './types';
@@ -41,6 +42,10 @@ export function RoomCard({ data, cover, lang }: Props) {
   const address = (lang === 'vi' ? hotel.address_vi : hotel.address_en ?? hotel.address_vi) || null;
   const description = (lang === 'vi' ? room.description_vi : room.description_en ?? room.description_vi) || null;
   const beds = (lang === 'vi' ? room.beds_vi : room.beds_en ?? room.beds_vi) || null;
+
+  const hasEnglishDetails = hotel.name_en?.trim() && hotel.description_en?.trim()
+    && room.name_en?.trim() && room.description_en?.trim();
+  const detailHref = localizedHref(roomDetailPath(data), hasEnglishDetails ? lang : 'vi');
 
   const daily = room.base_price_daily && room.base_price_daily > 0 ? room.base_price_daily : null;
 
@@ -139,7 +144,7 @@ export function RoomCard({ data, cover, lang }: Props) {
             )}
           </div>
           <a
-            href={roomDetailPath(data)}
+            href={detailHref}
             className="flex w-full items-center justify-center gap-2 rounded-full border border-pine/20 bg-cream px-5 py-2.5 text-sm font-medium text-pine transition-colors duration-200 hover:border-pine hover:bg-pine hover:text-cream"
           >
             {pick(copy.card.detail, lang)}

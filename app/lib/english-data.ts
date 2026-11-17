@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Hotel, Room } from "../khach-san/[slug]/hotel-data";
-import { cleanSeoText, seoDescription, seoHotelName } from "./seo";
+import { cleanSeoText, DISTRICT_ONE_GUIDE_EN, DISTRICT_ONE_GUIDE_SLUG, seoDescription, seoHotelName } from "./seo";
 import { canonicalRoomSlug } from "./room-seo-slugs";
 
 export type EnglishPost = { slug: string; title_en: string; excerpt_en: string | null; content_en: string | null; image: string | null; date: string; updated_at: string | null };
@@ -30,40 +30,55 @@ export function englishPaths(data: Awaited<ReturnType<typeof englishInventory>>)
 }
 
 const hotelDescriptions: Record<string, string> = {
-  "anh-kim-hotel": "Stay at Anh Kim Hotel on Co Bac Street near Bui Vien and Ben Thanh Market. Compare double and family rooms, check nightly rates and book directly.",
-  "ae-guesthouse": "A&E Guesthouse on Do Quang Dau Street is near Bui Vien and Pham Ngu Lao. Explore room types, check nightly rates and plan your Saigon visit.",
-  "huyen-house": "Stay at Huyen House on Nguyen Thi Minh Khai Street near the US Consulate. Explore rooms and nightly rates for a short city visit or business trip.",
-  huyenhomestay: "Huyen Homestay on Nguyen Thi Minh Khai Street offers rooms for nightly stays in central Ho Chi Minh City. Compare room types and plan your visit.",
+  "anh-kim-hotel": "Looking for a budget hotel near Ben Thanh Market? Compare double and family rooms at Anh Kim Hotel on Co Bac Street and check your dates.",
+  "ae-guesthouse": "Explore A&E Guesthouse near Bui Vien Street and Pham Ngu Lao. Compare rooms on Do Quang Dau Street and check nightly rates for your dates.",
+  "huyen-house": "Find a private room near the US Consulate at Huyen House on Nguyen Thi Minh Khai Street. Compare options for a solo stay or a trip for two.",
+  huyenhomestay: "Compare double and family rooms at Huyen Homestay on Nguyen Thi Minh Khai Street. Contact the property about options for longer stays.",
 };
 
 const hotelTitles: Record<string, string> = {
-  "anh-kim-hotel": "Anh Kim Hotel on Co Bac Street | Double & Family Rooms",
-  "ae-guesthouse": "A&E Guesthouse near Bui Vien & Pham Ngu Lao",
-};
-
-const hotelFocus: Record<string, string> = {
-  "huyen-house": "Quiet stay near the US Consulate",
-  huyenhomestay: "Rooms on Nguyen Thi Minh Khai",
+  "anh-kim-hotel": "Anh Kim Hotel | Budget Stay near Ben Thanh Market",
+  "ae-guesthouse": "A&E Guesthouse near Bui Vien Street",
+  "huyen-house": "Huyen House | Homestay near the US Consulate",
+  huyenhomestay: "Huyen Homestay | Longer Stays in Ho Chi Minh City",
 };
 
 export async function englishPage(segments: string[]): Promise<EnglishData | null> {
   const inventory = await englishInventory();
   const path = segments.length ? "/" + segments.map(encodeURIComponent).join("/") : "/";
-  const result: EnglishData = { ...inventory, kind: "home", path, title: "Hotels & homestays in central Ho Chi Minh City", description: "Compare Huyen's hotels, guesthouses and homestays in central Ho Chi Minh City. Explore rooms, check nightly rates and book directly.", hotel: null, room: null, post: null };
+  const result: EnglishData = { ...inventory, kind: "home", path, title: "Budget Hotels & Homestays in District 1, Ho Chi Minh City | Huyen's", description: "Compare four hotels, guesthouses and homestays in District 1, Ho Chi Minh City. Choose a property and check dates and rates for direct booking.", hotel: null, room: null, post: null };
   if (!segments.length) return result;
-  if (segments.length === 1 && segments[0] === "phong") return { ...result, kind: "rooms", title: "Rooms & rates in Ho Chi Minh City", description: "Compare room sizes, beds, guest capacity and nightly rates at Huyen's Hotels & Stays in Ho Chi Minh City." };
+  if (segments.length === 1 && segments[0] === "phong") return { ...result, kind: "rooms", title: "Hotel Rooms in District 1, Ho Chi Minh City | Huyen's", description: "Compare hotel, guesthouse and homestay rooms in District 1 by bed type, capacity and nightly rate. View room details and check your dates." };
   if (segments.length === 1 && segments[0] === "blog") return { ...result, kind: "blog", title: "Ho Chi Minh City travel & accommodation guides", description: "Plan your visit to Saigon with Huyen's guides to neighbourhoods, choosing rooms, city breaks and business trips." };
   if (segments[0] === "blog" && segments.length === 2) {
     const post = inventory.posts.find(p => p.slug === segments[1]);
-    return post ? { ...result, kind: "article", post, title: post.slug === "kinh-nghiem-khi-luu-tru-tai-sai-gon" ? "Where to stay in Saigon: practical tips" : post.title_en, description: seoDescription(post.excerpt_en || cleanSeoText(post.content_en)) } : null;
+    if (!post) return null;
+    if (post.slug === DISTRICT_ONE_GUIDE_SLUG) {
+      return { ...result, kind: "article", post, ...DISTRICT_ONE_GUIDE_EN };
+    }
+    return { ...result, kind: "article", post, title: post.slug === "kinh-nghiem-khi-luu-tru-tai-sai-gon" ? "Where to stay in Saigon: practical tips" : post.title_en, description: seoDescription(post.excerpt_en || cleanSeoText(post.content_en)) };
   }
   if (segments[0] !== "khach-san") return null;
   const hotel = inventory.hotels.find(h => h.slug === segments[1]);
   if (!hotel) return null;
   const rooms = inventory.rooms.filter(r => r.hotel_id === hotel.id);
-  if (segments.length === 2) return { ...result, kind: "hotel", hotel, rooms, title: hotelTitles[hotel.slug] || seoHotelName(hotel.slug, hotel.name_en || hotel.name_vi || "") + " – " + (hotelFocus[hotel.slug] || "Ho Chi Minh City"), description: seoDescription(hotelDescriptions[hotel.slug] || hotel.description_en || "Compare rooms and rates for your stay in Ho Chi Minh City.") };
+  if (segments.length === 2) return { ...result, kind: "hotel", hotel, rooms, title: hotelTitles[hotel.slug] || seoHotelName(hotel.slug, hotel.name_en || hotel.name_vi || "") + " – Ho Chi Minh City", description: seoDescription(hotelDescriptions[hotel.slug] || hotel.description_en || "Compare rooms and rates for your stay in Ho Chi Minh City.") };
   if (segments.length !== 4 || segments[2] !== "phong") return null;
   const room = rooms.find(r => r.slug === segments[3])
     ?? rooms.find(r => canonicalRoomSlug(hotel.slug, r.slug) === segments[3]);
-  return room ? { ...result, kind: "room", hotel, room, rooms, title: cleanSeoText(room.name_en) + " | " + seoHotelName(hotel.slug, hotel.name_en || hotel.name_vi || ""), description: seoDescription(room.description_en || "View room details and check availability for your dates.") } : null;
+  if (!room) return null;
+  const roomName = cleanSeoText(room.name_en);
+  const propertyName = seoHotelName(hotel.slug, hotel.name_en || hotel.name_vi || "");
+  const capacity = room.max_guests && room.max_guests > 0 && !/\bguests?\b/i.test(roomName)
+    ? ` for up to ${room.max_guests} ${room.max_guests === 1 ? "guest" : "guests"}`
+    : "";
+  return {
+    ...result,
+    kind: "room",
+    hotel,
+    room,
+    rooms,
+    title: `${roomName} | ${propertyName}`,
+    description: seoDescription(`${roomName} at ${propertyName}${capacity}. View room photos and check availability for your dates.`),
+  };
 }
